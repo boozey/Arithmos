@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Google Play game services IDs.
+Save this file as res/values/games-games-ids.xml in your project.
+-->
+<resources>
+    <string name="app_id">551423461786</string>
+    <string name="package_name">com.nakedape.arithmos</string>
+
+    <!-- Achievement Ids -->
+    <string name="achievement_arithmetic_master">CgkImpOZm4YQEAIQAg</string>
+    <string name="achievement_crazy_eights">CgkImpOZm4YQEAIQBA</string>
+    <string name="achievement_collector">CgkImpOZm4YQEAIQBQ</string>
+    <string name="achievement_level_master">CgkImpOZm4YQEAIQBg</string>
+    <string name="achievement_challenge_master">CgkImpOZm4YQEAIQBw</string>
+    <string name="achievement_301_in_3">CgkImpOZm4YQEAIQCA</string>
+    <string name="achievement_blackout">CgkImpOZm4YQEAIQCQ</string>
+    <string name="achievement_the_one_percent">CgkImpOZm4YQEAIQCg</string>
+
+    <!-- Leaderboard Ids -->
+    <string name="leaderboard_crazy_eights_6x6">CgkImpOZm4YQEAIQAw</string>
+
+</resources>

@@ -1,0 +1,155 @@
+<resources>
+    <string name="app_name">Arithmos</string>
+
+    <string name="action_settings">Settings</string>
+
+    <string name="play_button_text">Create game</string>
+
+    <!-- Utility Strings -->
+    <string name="number_before_x">%d X</string>
+    <string name="number_after_x">X %d</string>
+    <string name="save_button_text">Save</string>
+    <string name="exit_button_text">Exit</string>
+    <string name="cancel">Cancel</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="loading">Loading &#8230;</string>
+    <string name="percent">%d%%</string>
+
+    <!-- Main Activity Strings -->
+    <string name="activity_button_text">Activity</string>
+    <string name="challenge_button_text">Challenges</string>
+    <string name="specials_button_text">Specials</string>
+    <string name="achievemtns_button_text">Achievements</string>
+    <string name="match_button_text">Start match</string>
+    <string name="sign_out">Sign out</string>
+    <string name="reset_game_message">Reset challenge progress, activity history, and saved games.  Jewels and specials will be saved.</string>
+    <string name="reset_game_progress_message">Resetting game &#8230;</string>
+
+    <!-- Activity List Item Strings -->
+    <string name="empty_activity_item">No recent activity</string>
+    <string name="continue_text">Continue</string>
+    <string name="replay_text">Replay</string>
+    <string name="saved_game_text">Saved game</string>
+    <string name="level_completed">Level completed</string>
+    <string name="level_incomplete">Level incomplete</string>
+    <string name="match_invitation">Invitation to play a match</string>
+    <string name="accept_invitation">Accept</string>
+    <string name="accept_invitation_progress">Accepting invitation &#8230;</string>
+    <string name="match_my_turn">My turn</string>
+    <string name="take_my_turn">Take turn</string>
+    <string name="match_their_turn">Their turn</string>
+    <string name="match_complete">Match complete</string>
+    <string name="rematch">Rematch</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="decline">Decline</string>
+    <string name="remove">Remove</string>
+    <string name="leave">Leave</string>
+
+    <!-- Match update listener strings -->
+    <string name="match_turn_taken_alert">%1$s took a turn</string>
+    <string name="match_invitation_alert">%1$s invited you to play</string>
+    <string name="match_completed_alert">%1$s finished the match</string>
+    <string name="match_canceled_alert">%1$s canceled your match</string>
+
+    <!-- Achievement list item strings -->
+    <string name="xp">%d XP</string>
+
+    <!-- Game Activity Strings -->
+    <string name="bomb_message">for 3 turns</string>
+
+    <!-- Game over popup strings -->
+    <string name="times_up">TIME\'S UP!</string>
+    <string name="congratulations">Congratulations!</string>
+    <string name="unlock_level_x_x">Unlocked %1$s %2$s</string>
+
+    <!-- Level info strings -->
+    <string name="no_time_limit">No time limit</string>
+    <string name="time_limit_x">Time limit: %s</string>
+
+    <!-- Save game prompt -->
+    <string name="quit_no_save_prompt">Forfeit this level?</string>
+    <string name="save_game_prompt">Do you want to save your progress on this level?</string>
+    <string name="save_checkbox_text">Save automatically in the future</string>
+    <string name="game_saved_message">Level progress saved</string>
+    <string name="cancel_button_text">Cancel</string>
+    <string name="saving_game_message">Saving game progress &#8230;</string>
+    <string name="saving_level_message">Saving level progress &#8230;</string>
+    <string name="loading_saved_game_message">Loading level &#8230;</string>
+
+
+
+    <!-- Match Activity Strings -->
+    <plurals name="finish_turn_prompt">
+        <item quantity="one">You still have %d move remaining</item>
+        <item quantity="other">You still have %d moves remaining</item>
+    </plurals>
+    <string name="submit_turn">Submit turn</string>
+    <string name="forfeit_match">Forfeit match</string>
+    <string name="end_turn">Turn finished</string>
+    <string name="message_hint">Message</string>
+    <string name="match_finished">Match complete</string>
+    <string name="finish_match">Finish</string>
+    <string name="you_won">You won!</string>
+    <string name="you_lost">You lost</string>
+    <string name="tie">It\'s a tie!</string>
+
+
+    <!-- Game Options -->
+    <string name="action_reset_game">Reset game</string>
+    <string name="reset_game_success">Game progress has been reset</string>
+    <string name="grid_10x10">10x10 Grid</string>
+    <string name="grid_8x8">8x8 Grid</string>
+    <string name="grid_6x6">6x6 Grid</string>
+    <string name="random_grid">Random Grid</string>
+    <string name="single_number">Single Target Number</string>
+    <string name="random_number">Changing Target Numbers</string>
+    <string name="multiples">Multiples of X</string>
+    <string name="three01">First to reach 301</string>
+    <string name="bonuses">Allow bonuses</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="auto_complete_math">Autocomplete equations</string>
+
+
+
+    <!-- Game Challenge and Level Strings -->
+    <string name="level_locked">Locked</string>
+    <string name="challenge_name_crazy_eights">Crazy Eights</string>
+    <string name="challenge_name_easy_as_123">Easy as 123</string>
+    <string name="challenge_name_lucky_7">Lucky Number 7</string>
+
+    <string name="level_6x6">6x6</string>
+    <string name="level_8x8">8x8</string>
+    <string name="level_10x10">10x10</string>
+    <string name="level_301">301</string>
+    <string name="level_timed">Time challenge</string>
+
+
+
+    <!-- Time Strings -->
+    <string name="just_now">Just now</string>
+    <string name="long_time_ago">A long time ago</string>
+    <plurals name="minute_ago_plurals">
+        <item quantity="one">A minute ago</item>
+        <item quantity="few">A few minutes ago</item>
+        <item quantity="other">%d minutes ago</item>
+    </plurals>
+    <plurals name="hour_ago_plurals">
+        <item quantity="one">About an hour ago</item>
+        <item quantity="other">%d hours ago</item>
+    </plurals>
+    <plurals name="day_ago_plurals">
+        <item quantity="one">Yesterday</item>
+        <item quantity="other">%d days ago</item>
+    </plurals>
+    <plurals name="week_ago_plurals">
+        <item quantity="one">Last week</item>
+        <item quantity="other">%d weeks ago</item>
+    </plurals>
+    <plurals name="month_ago_plurals">
+        <item quantity="one">Last month</item>
+        <item quantity="other">%d months ago</item>
+    </plurals>
+
+
+</resources>

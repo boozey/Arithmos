@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/match_finished_popup">
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:minWidth="300dp"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:layout_margin="16dp"
+        android:background="@drawable/rounded_corner_primary">
+        <TextView android:id="@+id/title_textview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_primary_light"
+            android:textSize="30sp"
+            android:text="@string/match_finished"/>
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal"
+            android:layout_gravity="center_horizontal">
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
+                <TextView android:id="@+id/winner_name_textview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:drawableTop="@drawable/ic_gold_trophy"
+                    android:gravity="center_horizontal"
+                    android:textSize="24sp"
+                    android:maxLength="12"
+                    android:textColor="@color/text_primary_light"
+                    android:text="First Place"/>
+                <TextView android:id="@+id/winner_score_textview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textSize="20sp"
+                    android:textColor="@color/text_primary_light"
+                    android:text="1000"/>
+                <TextView android:id="@+id/winner_jewel_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:drawableStart="@drawable/ic_red_jewel_32dp"
+                    android:gravity="center_vertical"
+                    android:textColor="@color/text_primary_light"
+                    android:text="X 0"/>
+
+                <TextView android:id="@+id/winner_balloon_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:drawableStart="@drawable/ic_balloon_32dp"
+                    android:gravity="center_vertical"
+                    android:textColor="@color/text_primary_light"
+                    android:text="X 0"/>
+
+                <TextView android:id="@+id/winner_lock_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:drawableStart="@drawable/ic_lock_image"
+                    android:gravity="center_vertical"
+                    android:textColor="@color/text_primary_light"
+                    android:text="X 0"/>
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_marginStart="24dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
+                <TextView android:id="@+id/loser_name_textview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:drawableTop="@drawable/ic_silver_trophy"
+                    android:gravity="center_horizontal"
+                    android:textSize="24sp"
+                    android:maxLength="12"
+                    android:textColor="@color/text_primary_light"
+                    android:text="Second Place"/>
+                <TextView android:id="@+id/loser_score_textview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textSize="20sp"
+                    android:textColor="@color/text_primary_light"
+                    android:text="1000"/>
+                <TextView android:id="@+id/loser_jewel_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:drawableStart="@drawable/ic_red_jewel_32dp"
+                    android:gravity="center_vertical"
+                    android:textColor="@color/text_primary_light"
+                    android:text="X 0"/>
+
+                <TextView android:id="@+id/loser_balloon_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:drawableStart="@drawable/ic_balloon_32dp"
+                    android:gravity="center_vertical"
+                    android:textColor="@color/text_primary_light"
+                    android:text="X 0"/>
+
+                <TextView android:id="@+id/loser_lock_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:drawableStart="@drawable/ic_lock_image"
+                    android:gravity="center_vertical"
+                    android:textColor="@color/text_primary_light"
+                    android:text="X 0"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <Button android:id="@+id/ok_button"
+            android:layout_width="wrap_content"
+            android:layout_height="30dp"
+            android:layout_marginTop="24dp"
+            android:layout_gravity="end"
+            android:background="@drawable/rounded_corner_primary_accent"
+            android:textColor="@color/text_primary_light"
+            android:text="@string/finish_match"/>
+    </LinearLayout>
+</RelativeLayout>

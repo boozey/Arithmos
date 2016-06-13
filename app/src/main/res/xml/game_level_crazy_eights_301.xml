@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Level challenge_name="CRAZY_EIGHTS"
+    challenge_level="2"
+    gridsize="6"
+    goal_type="301">
+    <GridBaseNumbers>1, 2, 3, 4, 5, 6, 8, 8, 8, 8</GridBaseNumbers>
+    <GridSpecialNumbers>0, 7, 16, 64, 48</GridSpecialNumbers>
+    <StarLevels>500, 1000, 2000</StarLevels>
+    <Bonus name="balloons">5</Bonus>
+    <Bonus name="red_jewel">15</Bonus>
+</Level>
