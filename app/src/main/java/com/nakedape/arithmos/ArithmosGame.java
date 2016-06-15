@@ -61,7 +61,7 @@ public class ArithmosGame {
     transient private int challengeLevel;
     transient private int[] starLevels;
     transient private int numStars = 0;
-    transient private int timeLimit = -1, timeRemaining = -1;
+    transient private long timeLimit = -1, timeRemaining = -1;
     transient private boolean reached301 = false, isGameOver = false;
     transient private String[] p1AvailableOperations, p2AvailableOperations;
     transient private HashMap<String, Integer> p1OpLimitCounts, p2OpLimitCounts;
@@ -301,7 +301,7 @@ public class ArithmosGame {
     public String getChallengeName() { return challengeName; }
     public int getChallengeLevel() { return challengeLevel; }
     public String getLeaderboardId() {return leaderboardId;}
-    public int getTimeLimit(){
+    public long getTimeLimit(){
         return timeLimit;
     }
     public boolean hasTimeLimit() {
@@ -1021,7 +1021,7 @@ public class ArithmosGame {
 
 
     // Serialization
-    private static final int serializationVersion = 2;
+    private static final int serializationVersion = 3;
 
     public byte[] getSaveGameData(){
         ByteArrayOutputStream bos = null;
@@ -1064,6 +1064,7 @@ public class ArithmosGame {
         out.writeObject(p2BonusCounts);
         out.writeObject(p1Message);
         out.writeObject(p2Message);
+        out.writeLong(timeLimit);
     }
     public void loadGameData(byte[] gameData){
         ByteArrayInputStream bis = new ByteArrayInputStream(gameData);
@@ -1105,6 +1106,9 @@ public class ArithmosGame {
         if (version >= 2){
             p1Message = (String)in.readObject();
             p2Message = (String)in.readObject();
+        }
+        if (version >= 3){
+            timeLimit = in.readLong();
         }
     }
 

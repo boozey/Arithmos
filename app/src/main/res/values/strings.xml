@@ -6,13 +6,14 @@
     <string name="play_button_text">Create game</string>
 
     <!-- Utility Strings -->
-    <string name="number_before_x">%d X</string>
-    <string name="number_after_x">X %d</string>
+    <string name="number_before_x">%d x</string>
+    <string name="number_after_x">x %d</string>
     <string name="save_button_text">Save</string>
     <string name="exit_button_text">Exit</string>
     <string name="cancel">Cancel</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
+    <string name="done">Done</string>
     <string name="loading">Loading &#8230;</string>
     <string name="percent">%d%%</string>
 
@@ -25,6 +26,7 @@
     <string name="sign_out">Sign out</string>
     <string name="reset_game_message">Reset challenge progress, activity history, and saved games.  Jewels and specials will be saved.</string>
     <string name="reset_game_progress_message">Resetting game &#8230;</string>
+    <string name="more_jewels_text">Get more jewels</string>
 
     <!-- Activity List Item Strings -->
     <string name="empty_activity_item">No recent activity</string>
@@ -53,7 +55,19 @@
     <string name="match_canceled_alert">%1$s canceled your match</string>
 
     <!-- Achievement list item strings -->
+    <string name="all">All</string>
+    <string name="all_underline"><u>All</u></string>
+    <string name="matches">Matches</string>
+    <string name="matches_underline"><u>Matches</u></string>
+    <string name="saves">Saves</string>
+    <string name="saves_underline"><u>Saves</u></string>
+    <string name="history">History</string>
+    <string name="history_underline"><u>History</u></string>
     <string name="xp">%d XP</string>
+
+    <!-- In-app billing strings -->
+    <string name="buy">Buy</string>
+    <string name="owned">Owned</string>
 
     <!-- Game Activity Strings -->
     <string name="bomb_message">for 3 turns</string>

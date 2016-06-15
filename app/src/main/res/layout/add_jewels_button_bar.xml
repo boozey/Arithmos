@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:id="@+id/add_jewel_button_bar"
+    android:padding="8dp"
+    android:gravity="center_vertical">
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/ic_content_add_circle_32dp"
+        android:onClick="IabButtonClick"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_height="wrap_content"
+        android:text="@string/more_jewels_text"/>
+
+</LinearLayout>

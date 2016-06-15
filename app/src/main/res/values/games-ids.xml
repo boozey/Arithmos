@@ -9,7 +9,6 @@ Save this file as res/values/games-games-ids.xml in your project.
 
     <!-- Achievement Ids -->
     <string name="achievement_arithmetic_master">CgkImpOZm4YQEAIQAg</string>
-    <string name="achievement_crazy_eights">CgkImpOZm4YQEAIQBA</string>
     <string name="achievement_collector">CgkImpOZm4YQEAIQBQ</string>
     <string name="achievement_level_master">CgkImpOZm4YQEAIQBg</string>
     <string name="achievement_challenge_master">CgkImpOZm4YQEAIQBw</string>

@@ -17,6 +17,7 @@ import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
@@ -133,6 +134,8 @@ public class Utils {
         return layout;
     }
 
+
+
     // Time & Dates
     /**
      * Return date in specified format.
@@ -156,7 +159,6 @@ public class Utils {
     public static final long DAY_IN_MILLIS = HOUR_IN_MILLIS * 24;
     public static final long WEEK_IN_MILLIS = DAY_IN_MILLIS * 7;
     public static final long MONTH_IN_MILLIS = DAY_IN_MILLIS * 30;
-
 
     public static String getTimeAgo(Resources res, long millis){
         long elapsedMillis = System.currentTimeMillis() - millis;
@@ -190,5 +192,18 @@ public class Utils {
         else {
             return res.getString(R.string.long_time_ago);
         }
+    }
+
+
+    // File I/O
+    public static File getTempFile(Context context, String fileName) {
+        File file = null;
+        try {
+            file = File.createTempFile(fileName, null, context.getCacheDir());
+        } catch (IOException e) {
+            // Error while creating file
+            e.printStackTrace();
+        }
+        return file;
     }
 }

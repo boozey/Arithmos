@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="8dp"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp"
+    android:paddingEnd="8dp"
+    android:gravity="center_vertical">
+    <ImageView android:id="@+id/icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+    <TextView android:id="@+id/item_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:textSize="20sp"
+        android:text=" x 3"/>
+    <TextView android:id="@+id/description_textview"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_marginStart="16dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:textSize="16sp"
+        android:text="Lorem ipsum ..."/>
+    <TextView android:id="@+id/cost_textview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:text="100"/>
+    <ImageView
+        android:layout_width="20dp"
+        android:layout_marginStart="2dp"
+        android:layout_height="20dp"
+        android:layout_gravity="center_vertical"
+        android:background="@drawable/ic_red_jewel"/>
+    <Button android:id="@+id/get_button"
+        android:layout_width="44dp"
+        android:layout_marginStart="4dp"
+        android:layout_height="30dp"
+        android:layout_gravity="center_vertical"
+        android:textColor="@color/text_primary_light"
+        android:text="add"
+        android:background="@drawable/rounded_corner_primary_accent"/>
+
+</LinearLayout>

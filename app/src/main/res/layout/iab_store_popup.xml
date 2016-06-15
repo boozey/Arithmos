@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/popup">
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:minWidth="400dp"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:padding="24dp"
+        android:layout_margin="16dp"
+        android:orientation="vertical"
+        android:background="@drawable/rounded_corner_primary">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="24sp"
+            android:textColor="@color/text_primary_light"
+            android:text="Arithmos Store"/>
+        <ListView android:id="@+id/inventory_listview"
+            android:layout_gravity="center_horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="16dp"/>
+
+        <Button android:id="@+id/button"
+            android:layout_width="wrap_content"
+            android:layout_height="35dp"
+            android:layout_marginTop="16dp"
+            android:layout_gravity="end"
+            android:background="@drawable/rounded_corner_primary_accent"
+            android:textColor="@color/text_primary_light"
+            android:text="@string/done"/>
+    </LinearLayout>
+    <ProgressBar android:id="@id/progress_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"/>
+
+</RelativeLayout>

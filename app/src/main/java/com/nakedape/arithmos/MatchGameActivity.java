@@ -42,6 +42,9 @@ import com.google.android.gms.games.snapshot.SnapshotMetadataChange;
 import com.google.android.gms.games.snapshot.Snapshots;
 import com.google.example.games.basegameutils.BaseGameUtils;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -58,6 +61,12 @@ public class MatchGameActivity extends AppCompatActivity implements
     public static final String CREATE_MATCH = "create_match";
     public static final String GAME_BASE_FILE_NAME = "game_base_file_name";
     public static final String MATCH = "match";
+
+    // Saving/recreating the activity state
+    private static final String JEWEL_COUNT = "JEWEL_COUNT";
+    private static final String PLAY_COUNT = "PLAY_COUNT";
+    private static final String levelCacheFileName = "arithmos_level_cache";
+    private static final String gameCacheFileName = "arithmos_game_cache";
 
     private Context context;
     private RelativeLayout rootLayout;
@@ -105,15 +114,29 @@ public class MatchGameActivity extends AppCompatActivity implements
             }
         });
 
-        // Prepare for match game
-        Intent data = getIntent();
-        if (data.hasExtra(MATCH))
-            match = data.getParcelableExtra(MATCH);
-        else {
-            finish();
+        // Load saved state and cached data
+        if (savedInstanceState != null) {
+            jewelCount = savedInstanceState.getInt(JEWEL_COUNT, 0);
+            playCount = savedInstanceState.getInt(PLAY_COUNT, 0);
+            match = savedInstanceState.getParcelable(MATCH);
         }
 
-        showLoadingPopup(R.string.loading, 200);
+        if (loadCachedGame())
+            gameBaseNeedsDownload = false;
+
+        if (match != null && loadCachedLevel())
+            matchHasLoaded = true;
+        else {
+            // Prepare for match game
+            Intent data = getIntent();
+            if (match == null && data.hasExtra(MATCH)) {
+                match = data.getParcelableExtra(MATCH);
+                showLoadingPopup(R.string.loading, 200);
+            }
+            else {
+                finish();
+            }
+        }
     }
 
     @Override
@@ -126,6 +149,17 @@ public class MatchGameActivity extends AppCompatActivity implements
     protected void onStop() {
         super.onStop();
         mGoogleApiClient.disconnect();
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        // Save the user's current game state
+        savedInstanceState.putInt(JEWEL_COUNT, jewelCount);
+        savedInstanceState.putInt(PLAY_COUNT, playCount);
+        savedInstanceState.putParcelable(MATCH, match);
+
+        // Always call the superclass so it can save the view hierarchy state
+        super.onSaveInstanceState(savedInstanceState);
     }
 
     @Override
@@ -217,9 +251,51 @@ public class MatchGameActivity extends AppCompatActivity implements
 
     // Game saving and loading
     private ArithmosGameBase gameBase;
+    private File levelCache, gameCache;
     private boolean retrySaveGameState = false, gameBaseNeedsDownload = true,
             retryFinishTurn = false, retryFinishMatch = false, matchHasLoaded = false;
     private int levelXmlId;
+
+    private void setupGameUi(){
+        gameBoard.setGame(game);
+
+        TextView p1NameView = (TextView)rootLayout.findViewById(R.id.p1_name_textview);
+        p1NameView.setText(match.getParticipant(game.PLAYER1).getDisplayName());
+
+        TextView p2NameView = (TextView)rootLayout.findViewById(R.id.p2_name_textview);
+        p2NameView.setText(match.getParticipant(game.PLAYER2).getDisplayName());
+
+        TextView p1ScoreView = (TextView)rootLayout.findViewById(R.id.p1_score_textview);
+
+        TextView p2ScoreView = (TextView)rootLayout.findViewById(R.id.p2_score_textview);
+
+        if (game.getCurrentPlayer().equals(game.PLAYER1))
+            scoreTextView = p1ScoreView;
+        else
+            scoreTextView = p2ScoreView;
+
+        if (game.getGoalType() == ArithmosLevel.GOAL_301){
+            p1ScoreView.setText(String.valueOf(game.get301Total(game.PLAYER1)));
+            p2ScoreView.setText(String.valueOf(game.get301Total(game.PLAYER2)));
+            prevScore = game.get301Total();
+        } else {
+            p1ScoreView.setText(String.valueOf(game.getScore(game.PLAYER1)));
+            p2ScoreView.setText(String.valueOf(game.getScore(game.PLAYER2)));
+
+            prevScore = game.getScore(game.getCurrentPlayer());
+
+            final ListView goalList = (ListView) rootLayout.findViewById(R.id.upcoming_goal_listview);
+            goalList.setAdapter(new ArrayAdapter<>(context, R.layout.goal_list_item, game.getUpcomingGoals()));
+            goalList.setVisibility(View.VISIBLE);
+
+            if (!gameBaseNeedsDownload) {
+                setupSpecials();
+                TextView jewelText = (TextView) rootLayout.findViewById(R.id.jewel_count);
+                Animations.CountTo(jewelText, 0, gameBase.getJewelCount());
+            }
+        }
+        matchHasLoaded = true;
+    }
 
     private void setupSpecials(){
         TextView bomb = (TextView)rootLayout.findViewById(R.id.bomb_button);
@@ -349,6 +425,80 @@ public class MatchGameActivity extends AppCompatActivity implements
             });
             set.start();
         }
+    }
+
+    private void cacheGame(){
+        if (gameCache == null)
+            gameCache = new File(getCacheDir(), gameCacheFileName);
+        FileOutputStream outputStream;
+        try {
+            outputStream = new FileOutputStream(gameCache);
+            byte[] data = gameBase.getByteData();
+            outputStream.write(data, 0, data.length);
+            outputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private boolean loadCachedGame(){
+        gameCache = new File(getCacheDir(), gameCacheFileName);
+        if (gameCache.exists()){
+            FileInputStream inputStream;
+            try {
+                inputStream = new FileInputStream(gameCache);
+                byte[] data = new byte[inputStream.available()];
+                if (inputStream.read(data) > 0) {
+                    gameBase.loadByteData(data);
+                    gameBaseNeedsDownload = false;
+                    setupSpecials();
+                    TextView jewelText = (TextView)rootLayout.findViewById(R.id.jewel_count);
+                    Animations.CountTo(jewelText, 0, gameBase.getJewelCount());
+                    Log.d(LOG_TAG, "Game state loaded from cache");
+                    return true;
+                }
+                inputStream.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        return false;
+    }
+
+    private void cacheLevel(){
+        if (levelCache == null)
+            levelCache = new File(getCacheDir(), levelCacheFileName);
+        FileOutputStream outputStream;
+        try {
+            outputStream = new FileOutputStream(levelCache);
+            byte[] data = game.getSaveGameData();
+            outputStream.write(data, 0, data.length);
+            outputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private boolean loadCachedLevel(){
+        levelCache = new File(getCacheDir(), levelCacheFileName);
+        if (levelCache.exists()){
+            FileInputStream inputStream;
+            try {
+                inputStream = new FileInputStream(levelCache);
+                byte[] data = new byte[inputStream.available()];
+                if (inputStream.read(data) > 0){
+                    game = new ArithmosGame(data);
+                    setupGameUi();
+                    Log.d(LOG_TAG, "Level loaded from cache");
+                    return true;
+                }
+                inputStream.close();
+            } catch (IOException e){
+                e.printStackTrace();
+            }
+        }
+        return false;
     }
 
     private void loadGameState(String gameFileName){
@@ -691,6 +841,8 @@ public class MatchGameActivity extends AppCompatActivity implements
                 @Override
                 public void onResult(@NonNull TurnBasedMultiplayer.UpdateMatchResult updateMatchResult) {
                     saveGameState();
+                    if (gameCache != null) gameCache.delete();
+                    if (levelCache != null) levelCache.delete();
                     finish();
                 }
             });
@@ -725,6 +877,8 @@ public class MatchGameActivity extends AppCompatActivity implements
                     @Override
                     public void onResult(@NonNull TurnBasedMultiplayer.UpdateMatchResult updateMatchResult) {
                         saveGameState();
+                        if (gameCache != null) gameCache.delete();
+                        if (levelCache != null) levelCache.delete();
                         finish();
                     }
                 });
@@ -732,6 +886,8 @@ public class MatchGameActivity extends AppCompatActivity implements
                 Games.TurnBasedMultiplayer.finishMatch(mGoogleApiClient, match.getMatchId()).setResultCallback(new ResultCallback<TurnBasedMultiplayer.UpdateMatchResult>() {
                     @Override
                     public void onResult(@NonNull TurnBasedMultiplayer.UpdateMatchResult updateMatchResult) {
+                        if (gameCache != null) gameCache.delete();
+                        if (levelCache != null) levelCache.delete();
                         finish();
                     }
                 });
@@ -768,7 +924,10 @@ public class MatchGameActivity extends AppCompatActivity implements
                     calc.setText("");
                 else
                     calc.setText(String.valueOf(count));
+                cacheGame();
             }
+
+            cacheLevel();
 
             // Count the plays, finish after three
             playCount++;
@@ -834,6 +993,7 @@ public class MatchGameActivity extends AppCompatActivity implements
     @Override
     public void OnJewel(){
         gameBase.recordJewels(1);
+        cacheGame();
         jewelCount++;
         TextView jewelTextView = (TextView)rootLayout.findViewById(R.id.jewel_count);
         String text = String.valueOf(gameBase.getJewelCount());
@@ -1110,44 +1270,7 @@ public class MatchGameActivity extends AppCompatActivity implements
     private void initializeTurn(){
         String currentPlayer = match.getParticipantId(Games.Players.getCurrentPlayerId(mGoogleApiClient));
         game.setCurrentPlayer(currentPlayer);
-        gameBoard.setGame(game);
-
-        TextView p1NameView = (TextView)rootLayout.findViewById(R.id.p1_name_textview);
-        p1NameView.setText(match.getParticipant(game.PLAYER1).getDisplayName());
-
-        TextView p2NameView = (TextView)rootLayout.findViewById(R.id.p2_name_textview);
-        p2NameView.setText(match.getParticipant(game.PLAYER2).getDisplayName());
-
-        TextView p1ScoreView = (TextView)rootLayout.findViewById(R.id.p1_score_textview);
-
-        TextView p2ScoreView = (TextView)rootLayout.findViewById(R.id.p2_score_textview);
-
-        if (currentPlayer.equals(game.PLAYER1))
-            scoreTextView = p1ScoreView;
-        else
-            scoreTextView = p2ScoreView;
-
-        if (game.getGoalType() == ArithmosLevel.GOAL_301){
-            p1ScoreView.setText(String.valueOf(game.get301Total(game.PLAYER1)));
-            p2ScoreView.setText(String.valueOf(game.get301Total(game.PLAYER2)));
-            prevScore = game.get301Total();
-        } else {
-            p1ScoreView.setText(String.valueOf(game.getScore(game.PLAYER1)));
-            p2ScoreView.setText(String.valueOf(game.getScore(game.PLAYER2)));
-
-            prevScore = game.getScore(game.getCurrentPlayer());
-
-            final ListView goalList = (ListView) rootLayout.findViewById(R.id.upcoming_goal_listview);
-            goalList.setAdapter(new ArrayAdapter<>(context, R.layout.goal_list_item, game.getUpcomingGoals()));
-            goalList.setVisibility(View.VISIBLE);
-
-            if (!gameBaseNeedsDownload) {
-                setupSpecials();
-                TextView jewelText = (TextView) rootLayout.findViewById(R.id.jewel_count);
-                Animations.CountTo(jewelText, 0, gameBase.getJewelCount());
-            }
-        }
-        matchHasLoaded = true;
+        setupGameUi();
         hideLoadingPopup();
         if (game.getScore(game.getCurrentPlayer()) == 0)
             showLevelInfoPopup();

@@ -3,6 +3,7 @@ package com.nakedape.arithmos;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.content.res.Resources;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
@@ -128,4 +129,16 @@ public class Animations {
         countUp.start();
     }
 
+    public static void CountTo(final Resources resources, final int stringResId, final TextView textView, int start, int end){
+        // Animate score
+        ValueAnimator countUp = ValueAnimator.ofInt(start, end);
+        countUp.setDuration(1000);
+            countUp.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator animation) {
+                    textView.setText(resources.getString(stringResId, (int)animation.getAnimatedValue()));
+                }
+            });
+        countUp.start();
+    }
 }

@@ -10,6 +10,7 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.AppCompatImageButton;
@@ -60,10 +61,19 @@ import com.google.android.gms.games.snapshot.SnapshotMetadata;
 import com.google.android.gms.games.snapshot.SnapshotMetadataChange;
 import com.google.android.gms.games.snapshot.Snapshots;
 import com.google.example.games.basegameutils.BaseGameUtils;
+import com.nakedape.arithmos.purchaseUtils.IabHelper;
+import com.nakedape.arithmos.purchaseUtils.IabResult;
+import com.nakedape.arithmos.purchaseUtils.Inventory;
+import com.nakedape.arithmos.purchaseUtils.Purchase;
+import com.nakedape.arithmos.purchaseUtils.SkuDetails;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity implements
@@ -97,6 +107,7 @@ public class MainActivity extends AppCompatActivity implements
                 // add other APIs and scopes here as needed
                 .build();
 
+        // Initialize fields and UI
         setContentView(R.layout.activity_main);
         context = this;
         rootLayout = (RelativeLayout) findViewById(R.id.main_activity_rootlayout);
@@ -106,10 +117,18 @@ public class MainActivity extends AppCompatActivity implements
                 signInClicked(v);
             }
         });
+        //
+        ListView activityList = (ListView)rootLayout.findViewById(R.id.activity_listview);
+        View header = getLayoutInflater().inflate(R.layout.activity_button_bar, null);
+        activityList.addHeaderView(header);
         gameBase = new ArithmosGameBase();
         activityListAdapter = new ActivityListAdapter(R.layout.activity_list_item);
-        ListView activityList = (ListView)rootLayout.findViewById(R.id.activity_listview);
         activityList.setAdapter(activityListAdapter);
+
+        ListView specialList = (ListView)rootLayout.findViewById(R.id.special_store_listview);
+        View header2 = getLayoutInflater().inflate(R.layout.add_jewels_button_bar, null);
+        specialList.addHeaderView(header2);
+
     }
 
     @Override
@@ -131,6 +150,11 @@ public class MainActivity extends AppCompatActivity implements
     protected void onStop() {
         super.onStop();
         mGoogleApiClient.disconnect();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
     }
 
     @Override
@@ -270,6 +294,21 @@ public class MainActivity extends AppCompatActivity implements
                     .setResultCallback(new MatchInitiatedCallback());
         }
 
+        // In-app purchases
+        if (requestCode == PURCHASE_REQUEST){
+            if (resultCode == Activity.RESULT_CANCELED) {
+                Log.d(LOG_TAG, "User canceled purchase");
+                hideLoadingPopup();
+                return;
+            }
+            else {
+                int responseCode = intent.getIntExtra("RESPONSE_CODE", 0);
+                if (responseCode != 0)
+                    Log.d(LOG_TAG, "Error making purchase");
+                hideLoadingPopup();
+            }
+        }
+
     }
 
     // Game Activity List
@@ -280,24 +319,45 @@ public class MainActivity extends AppCompatActivity implements
     private class ActivityListAdapter extends BaseAdapter{
         private int resource_id;
         private LayoutInflater mInflater;
-        private ArrayList<GameActivityItem> items;
+        private ArrayList<GameActivityItem> history;
         private ArrayList<GameActivityItem> matches;
         private ArrayList<GameActivityItem> saves;
+        private ArrayList<GameActivityItem> items;
         private GameActivityItem emptyItem;
         private ImageManager imageManager = ImageManager.create(context);
+        private static final int ALL = 0, MATCHES = 1, SAVES = 2, HISTORY = 3;
+        private int mode = ALL;
 
         public ActivityListAdapter(int resource_id){
             this.resource_id = resource_id;
-            items = new ArrayList<>();
+            history = new ArrayList<>();
             saves = new ArrayList<>();
             matches = new ArrayList<>();
+            items = new ArrayList<>();
             emptyItem = new GameActivityItem(GameActivityItem.EMPTY_ITEM);
             emptyItem.description = getString(R.string.empty_activity_item);
             //items.add(emptyItem);
         }
 
+        public void setMode(int mode){
+            this.mode = mode;
+            notifyDataSetChanged();
+        }
+
+        public void sort(){
+            Collections.sort(items, new Comparator<GameActivityItem>() {
+                @Override
+                public int compare(GameActivityItem item2, GameActivityItem item1)
+                {
+                    return  (int)(item1.timeStamp - item2.timeStamp);
+                }
+            });
+        }
+
         public void addItems(ArrayList<GameActivityItem> newItems){
             for (GameActivityItem item : newItems){
+                if (items.contains(item)) items.remove(item);
+                items.add(item);
                 switch (item.itemType){
                     case GameActivityItem.GOOGLE_PLAY_SAVED_GAME:
                         if (saves.contains(item))
@@ -306,9 +366,9 @@ public class MainActivity extends AppCompatActivity implements
                         break;
                     case GameActivityItem.COMPLETED_LEVEL:
                     case GameActivityItem.INCOMPLETE_LEVEL:
-                        if (items.contains(item))
-                            items.remove(item);
-                        items.add(item);
+                        if (history.contains(item))
+                            history.remove(item);
+                        history.add(item);
                         break;
                     case GameActivityItem.MATCH_COMPLETE:
                     case GameActivityItem.MATCH_INVITATION:
@@ -321,11 +381,13 @@ public class MainActivity extends AppCompatActivity implements
                 }
             }
             if (getCount() > 1)
-                items.remove(emptyItem);
+                history.remove(emptyItem);
             notifyDataSetChanged();
         }
 
         public void addItem(GameActivityItem item){
+            if (items.contains(item)) items.remove(item);
+            items.add(item);
             switch (item.itemType){
                 case GameActivityItem.GOOGLE_PLAY_SAVED_GAME:
                     if (saves.contains(item))
@@ -334,10 +396,11 @@ public class MainActivity extends AppCompatActivity implements
                     break;
                 case GameActivityItem.COMPLETED_LEVEL:
                 case GameActivityItem.INCOMPLETE_LEVEL:
+                    if (history.contains(item))
+                        history.remove(item);
+                    history.add(item);
+                    break;
                 case GameActivityItem.EMPTY_ITEM:
-                    if (items.contains(item))
-                        items.remove(item);
-                    items.add(item);
                     break;
                 case GameActivityItem.MATCH_COMPLETE:
                 case GameActivityItem.MATCH_INVITATION:
@@ -349,12 +412,12 @@ public class MainActivity extends AppCompatActivity implements
                     break;
             }
             if (getCount() > 1)
-                items.remove(emptyItem);
+                removeItem(emptyItem);
             notifyDataSetChanged();
         }
 
         public void clearList(){
-            items = new ArrayList<>(1);
+            history = new ArrayList<>(1);
             matches = new ArrayList<>();
             saves = new ArrayList<>();
             //items.add(emptyItem);
@@ -362,40 +425,37 @@ public class MainActivity extends AppCompatActivity implements
         }
 
         public void removeItem(GameActivityItem item) {
+            items.remove(item);
+            history.remove(item);
+            saves.remove(item);
+            matches.remove(item);
             switch (item.itemType) {
                 case GameActivityItem.INCOMPLETE_LEVEL:
                 case GameActivityItem.COMPLETED_LEVEL:
                     gameBase.removeActivityItem(item);
                     saveGameState();
-                    items.remove(item);
                     break;
-                case GameActivityItem.GOOGLE_PLAY_SAVED_GAME:
-                    saves.remove(item);
-                    break;
-                case GameActivityItem.MATCH_COMPLETE:
-                case GameActivityItem.MATCH_INVITATION:
-                case GameActivityItem.MATCH_MY_TURN:
-                case GameActivityItem.MATCH_THEIR_TURN:
-                    matches.remove(item);
-                    break;
-            }
-            if (getCount() == 0) {
-                addItem(emptyItem);
             }
 
             notifyDataSetChanged();
         }
 
         public void removeItem(int position){
-            if (position < matches.size())
-                matches.remove(position);
-            else if (position < matches.size() + saves.size())
-                saves.remove(position - matches.size());
-            else if (position < matches.size() + saves.size() + items.size()){
-                GameActivityItem item = items.get(position - matches.size() - saves.size());
-                gameBase.removeActivityItem(item);
-                items.remove(position - matches.size() - saves.size());
+            GameActivityItem item = emptyItem;
+            switch (mode){
+                case ALL:
+                    item = items.get(position);
+                    break;
+                case MATCHES:
+                    item = matches.get(position);
+                    break;
+                case SAVES:
+                    item = saves.get(position);
+                    break;
+                case HISTORY:
+                    item = history.get(position);
             }
+            removeItem(item);
 
             if (getCount() == 0) {
                 addItem(emptyItem);
@@ -421,14 +481,18 @@ public class MainActivity extends AppCompatActivity implements
 
         @Override
         public GameActivityItem getItem(int position) {
-            if (position < matches.size())
-                return matches.get(position);
-            else if (position < matches.size() + saves.size())
-                return saves.get(position - matches.size());
-            else if (position < matches.size() + saves.size() + items.size()){
-                return items.get(position - matches.size() - saves.size());
+            switch (mode) {
+                case ALL:
+                    return items.get(position);
+                case MATCHES:
+                    return matches.get(position);
+                case SAVES:
+                    return saves.get(position);
+                case HISTORY:
+                    return history.get(position);
+                default:
+                    return emptyItem;
             }
-            else return emptyItem;
         }
 
         @Override
@@ -438,7 +502,22 @@ public class MainActivity extends AppCompatActivity implements
 
         @Override
         public int getCount(){
-            return matches.size() + saves.size() + items.size();
+            switch (mode){
+                case ALL:
+                    if (items.size() == 0) items.add(emptyItem);
+                    return items.size();
+                case MATCHES:
+                    if (matches.size() == 0) matches.add(emptyItem);
+                    return matches.size();
+                case SAVES:
+                    if (saves.size() == 0) saves.add(emptyItem);
+                    return saves.size();
+                case HISTORY:
+                    if (history.size() == 0) history.add(emptyItem);
+                    return history.size();
+                default:
+                    return 0;
+            }
         }
 
         @Override
@@ -813,6 +892,35 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
+    public void ActivityButtonBarClick(View v){
+        TextView all = (TextView)rootLayout.findViewById(R.id.all_button);
+        all.setText(R.string.all);
+        TextView matches = (TextView)rootLayout.findViewById(R.id.matches_button);
+        matches.setText(R.string.matches);
+        TextView saves = (TextView)rootLayout.findViewById(R.id.saves_button);
+        saves.setText(R.string.saves);
+        TextView history = (TextView)rootLayout.findViewById(R.id.history_button);
+        history.setText(R.string.history);
+        switch (v.getId()){
+            case R.id.all_button:
+                all.setText(R.string.all_underline);
+                activityListAdapter.setMode(ActivityListAdapter.ALL);
+                break;
+            case R.id.matches_button:
+                matches.setText(R.string.matches_underline);
+                activityListAdapter.setMode(ActivityListAdapter.MATCHES);
+                break;
+            case R.id.saves_button:
+                saves.setText(R.string.saves_underline);
+                activityListAdapter.setMode(ActivityListAdapter.SAVES);
+                break;
+            case R.id.history_button:
+                history.setText(R.string.history_underline);
+                activityListAdapter.setMode(ActivityListAdapter.HISTORY);
+                break;
+        }
+    }
+
     private void saveGameState(){
         if (gameBase.needsSaving() && mGoogleApiClient.isConnected()){
             retrySaveGameBase = false;
@@ -890,6 +998,7 @@ public class MainActivity extends AppCompatActivity implements
                         activityListAdapter.addItem(item);
                     }
                 }
+                activityListAdapter.sort();
                 loadSnapshotsResult.release();
             }
         });
@@ -910,11 +1019,12 @@ public class MainActivity extends AppCompatActivity implements
                         gameBase.loadByteData(openSnapshotResult.getSnapshot().getSnapshotContents().readFully());
                         // Update jewel count and challenges
                         TextView jewelText = (TextView)rootLayout.findViewById(R.id.jewel_count);
-                        Animations.CountTo(jewelText, 0, gameBase.getJewelCount());
+                        Animations.CountTo(getResources(), R.string.number_after_x, jewelText, 0, gameBase.getJewelCount());
                         // Update challenge list if it has already been displayed
                         if (challengeListAdapter != null) challengeListAdapter.notifyDataSetChanged();
                         // Update recent activity
                         activityListAdapter.addItems(gameBase.getActivityItems());
+                        activityListAdapter.sort();
                         gameBaseNeedsRefresh = false;
                         isGameBaseRefreshing = false;
                         Log.d(LOG_TAG, "Game refreshed");
@@ -1243,7 +1353,7 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private class SpecialListAdapter extends BaseAdapter {
-        private int resource_id = R.layout.store_item_layout;
+        private int resource_id = R.layout.special_store_item_layout;
         private LayoutInflater mInflater;
         private String[] names = getResources().getStringArray(R.array.special_item_names);
         private String[] descriptions = getResources().getStringArray(R.array.special_descriptions);
@@ -1297,9 +1407,9 @@ public class MainActivity extends AppCompatActivity implements
                         int prevCount = gameBase.getJewelCount();
                         gameBase.addSpecial(names[position], 1);
                         gameBase.spendJewels(costs[position]);
-                        countView.setText(String.valueOf(gameBase.getSpecialCount(names[position])));
+                        countView.setText(getString(R.string.number_after_x, gameBase.getSpecialCount(names[position])));
                         TextView jewelText = (TextView)rootLayout.findViewById(R.id.jewel_count);
-                        Animations.CountTo(jewelText, prevCount, gameBase.getJewelCount());
+                        Animations.CountTo(getResources(), R.string.number_after_x, jewelText, prevCount, gameBase.getJewelCount());
                         saveGameState();
                     }
                 }
@@ -1307,6 +1417,257 @@ public class MainActivity extends AppCompatActivity implements
             return convertView;
         }
     }
+
+
+    // Purchasing API
+    private static final int PURCHASE_REQUEST = 7001;
+    private static final String SKU_1000_JEWELS = "jewels_1000";
+    private IabHelper iabHelper;
+    private IabListAdapter iabListAdapter;
+
+    public void IabButtonClick(View v){
+        showIabStorePopup();
+    }
+
+    private void showIabStorePopup(){
+
+        // Prepare popup window
+        final View layout = getLayoutInflater().inflate(R.layout.iab_store_popup, null);
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        layout.setLayoutParams(params);
+        layout.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                return true;
+            }
+        });
+
+        Button button = (Button)layout.findViewById(R.id.button);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AnimatorSet set = Animations.slideDown(layout, 200, 0, rootLayout.getHeight() / 3);
+                set.addListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        rootLayout.removeView(layout);
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+
+                    }
+                });
+                set.start();
+                consumePurchases();
+            }
+        });
+
+        // Setup in-App purchasing
+        final ProgressBar progressBar = (ProgressBar)layout.findViewById(R.id.progress_bar);
+        iabHelper = new IabHelper(this, getString(R.string.base64EncodedPublicKey));
+        iabHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
+            public void onIabSetupFinished(IabResult result) {
+                if (!result.isSuccess()) {
+                    // Oh noes, there was a problem.
+                    Log.d(LOG_TAG, "Problem setting up In-app Billing: " + result);
+                    return;
+                }
+                progressBar.setVisibility(View.GONE);
+                ListView iabListView = (ListView)layout.findViewById(R.id.inventory_listview);
+                iabListAdapter = new IabListAdapter();
+                iabListView.setAdapter(iabListAdapter);
+                final ArrayList<String> skuList = new ArrayList<>();
+                skuList.add(SKU_1000_JEWELS);
+                try {
+                    iabHelper.queryInventoryAsync(true, skuList, null, new IabHelper.QueryInventoryFinishedListener() {
+                        @Override
+                        public void onQueryInventoryFinished(IabResult result, Inventory inv) {
+                            if (result.isSuccess()) {
+                                for (String id : skuList){
+                                    if (inv.hasDetails(id)) {
+                                        iabListAdapter.addItem(id, inv.getSkuDetails(id), inv.hasPurchase(id));
+                                    }
+                                }
+                            }
+                            Log.d(LOG_TAG, result.getMessage());
+                            progressBar.setVisibility(View.GONE);
+                        }
+                    });
+                } catch (IabHelper.IabAsyncInProgressException e){e.printStackTrace();}
+            }
+        });
+
+
+
+
+        rootLayout.addView(layout);
+        Animations.slideUp(layout, 200, 0, rootLayout.getHeight() / 3).start();
+    }
+
+    private void startPurchaseFlow(String productId){
+        showLoadingPopup(R.string.loading, 0);
+        Log.d(LOG_TAG, "Purchasing " + productId);
+        try {
+            iabHelper.launchPurchaseFlow(this, productId, PURCHASE_REQUEST, new IabHelper.OnIabPurchaseFinishedListener() {
+                @Override
+                public void onIabPurchaseFinished(IabResult result, Purchase info) {
+                    if (!result.isSuccess()) {
+                        Log.d(LOG_TAG, "Error processing purchase " + result.getMessage());
+                        hideLoadingPopup();
+                        return;
+                    } else {
+                        iabListAdapter.setPurchased(info.getSku(), true);
+                        hideLoadingPopup();
+                    }
+
+                }
+            });
+        } catch (IabHelper.IabAsyncInProgressException e) {e.printStackTrace();}
+    }
+
+    private void consumePurchases(){
+        try {
+            iabHelper.queryInventoryAsync(true, iabListAdapter.getOwnedSkus(), null, new IabHelper.QueryInventoryFinishedListener() {
+                @Override
+                public void onQueryInventoryFinished(IabResult result, Inventory inv) {
+                    if (result.isSuccess()) {
+                        ArrayList<Purchase> purchases = new ArrayList<>(iabListAdapter.getOwnedSkus().size());
+                        for (String sku : iabListAdapter.getOwnedSkus()){
+                            if (inv.hasPurchase(sku)) purchases.add(inv.getPurchase(sku));
+                        }
+                        if (purchases.size() > 0)
+                            try {
+                                iabHelper.consumeAsync(purchases, new IabHelper.OnConsumeMultiFinishedListener() {
+                                    @Override
+                                    public void onConsumeMultiFinished(List<Purchase> purchases, List<IabResult> results) {
+                                        for (int i = 0; i < results.size(); i++){
+                                            if (results.get(i).isSuccess()){
+                                                processConsumedPurchase(purchases.get(i).getSku());
+                                            }
+                                        }
+                                        saveGameState();
+                                    }
+                                });
+                            } catch (IabHelper.IabAsyncInProgressException e) {e.printStackTrace();}
+                    }
+                    Log.d(LOG_TAG, result.getMessage());
+                }
+            });
+        } catch (IabHelper.IabAsyncInProgressException e){e.printStackTrace();}
+    }
+
+    private void processConsumedPurchase(String sku){
+        switch (sku){
+            case SKU_1000_JEWELS:
+                gameBase.recordJewels(1000);
+                break;
+        }
+    }
+
+    private class IabListAdapter extends BaseAdapter {
+        private int resource_id = R.layout.iab_store_item;
+        private LayoutInflater mInflater;
+        private ArrayList<SkuDetails> items;
+        private ArrayList<String> productIds;
+        private ArrayList<Boolean> purchasedList;
+
+        public IabListAdapter(){
+            items = new ArrayList<>();
+            productIds = new ArrayList<>();
+            purchasedList = new ArrayList<>();
+        }
+
+        public void setPurchased(String productId, boolean purchased){
+            int index = productIds.indexOf(productId);
+            if (index >= 0)
+                purchasedList.set(index, purchased);
+            notifyDataSetChanged();
+        }
+
+        public void addItem(String id, SkuDetails item, boolean purchase){
+            productIds.add(id);
+            items.add(item);
+            purchasedList.add(purchase);
+            notifyDataSetChanged();
+        }
+
+        public ArrayList<String> getOwnedSkus(){
+            ArrayList<String> skus = new ArrayList<>(productIds.size());
+            for (int i = 0; i < purchasedList.size(); i++){
+                if (purchasedList.get(i))
+                    skus.add(productIds.get(i));
+            }
+            return skus;
+        }
+
+        @Override
+        public int getCount(){
+            return items.size();
+        }
+
+        @Override
+        public long getItemId(int position){
+            return position;
+        }
+
+        @Override
+        public SkuDetails getItem(int position){
+            return items.get(position);
+        }
+
+        public SkuDetails getItem(String productId){
+            int index = productIds.indexOf(productId);
+            return items.get(index);
+        }
+
+        @Override
+        public View getView(final int position, View convertView, final ViewGroup parent){
+            if (convertView == null) {
+                mInflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                convertView = mInflater.inflate(resource_id, null);
+            }
+
+            ImageView iconView = (ImageView)convertView.findViewById(R.id.icon);
+            iconView.setImageResource(R.drawable.ic_red_jewel);
+
+            TextView titleView = (TextView)convertView.findViewById(R.id.title_textview);
+            titleView.setText(getItem(position).getTitle());
+
+            TextView descView = (TextView)convertView.findViewById(R.id.description_textview);
+            descView.setText(getItem(position).getDescription());
+
+            TextView priceView = (TextView)convertView.findViewById(R.id.price_textview);
+            priceView.setText(getItem(position).getPrice());
+
+            Button button = (Button)convertView.findViewById(R.id.get_button);
+            if (purchasedList.get(position)) {
+                button.setText(R.string.owned);
+                button.setOnClickListener(null);
+            }
+            else {
+                button.setText(R.string.buy);
+                button.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        startPurchaseFlow(productIds.get(position));
+                    }
+                });
+            }
+            return convertView;
+        }
+    }
+
 
 
     // Achievements
@@ -1426,13 +1787,13 @@ public class MainActivity extends AppCompatActivity implements
             }
 
             if (getItem(position).state == Achievement.STATE_UNLOCKED) {
-                titleView.setTextColor(getColor(R.color.text_primary_dark));
-                descView.setTextColor(getColor(R.color.text_primary_dark));
-                xpView.setTextColor(getColor(R.color.text_primary_dark));
+                titleView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.text_primary_dark, null));
+                descView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.text_primary_dark, null));
+                xpView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.text_primary_dark, null));
             } else {
-                titleView.setTextColor(getColor(R.color.text_inactive_dark));
-                descView.setTextColor(getColor(R.color.text_inactive_dark));
-                xpView.setTextColor(getColor(R.color.text_inactive_dark));
+                titleView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.text_inactive_dark, null));
+                descView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.text_inactive_dark, null));
+                xpView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.text_inactive_dark, null));
             }
 
             return convertView;
@@ -1556,7 +1917,6 @@ public class MainActivity extends AppCompatActivity implements
         }
 
         Intent intent = new Intent(this, GameActivity.class);
-        intent.putExtra(GameActivity.EXTRAS, options);
         startActivity(intent);
     }
 
@@ -1632,6 +1992,7 @@ public class MainActivity extends AppCompatActivity implements
                     activityListAdapter.addItem(item);
                 }
 
+                activityListAdapter.sort();
                 loadMatchesResult.release();
                 rootLayout.findViewById(R.id.progress_bar).setVisibility(View.GONE);
                 Log.d(LOG_TAG, "Matches loaded");
@@ -1905,7 +2266,6 @@ public class MainActivity extends AppCompatActivity implements
         return Games.Snapshots.commitAndClose(mGoogleApiClient, snapshot, metadataChange);
     }
 
-    // Call when the sign-in button is clicked
     public void signInClicked(View v) {
             // start the asynchronous sign in flow
             mSignInClicked = true;
