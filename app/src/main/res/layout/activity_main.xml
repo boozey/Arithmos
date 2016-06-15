@@ -17,63 +17,63 @@
     <RelativeLayout android:id="@+id/banner_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
         android:background="@color/primary">
+
         <ImageView
             android:id="@+id/player_image"
             android:layout_width="wrap_content"
-            android:minWidth="80dp"
-            android:layout_marginEnd="@dimen/activity_horizontal_margin"
             android:layout_height="wrap_content"
-            android:minHeight="80dp"
-            android:layout_centerVertical="true"
             android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
             android:onClick="PlayerImageClick"/>
+        <LinearLayout android:id="@+id/player_info_layout"
+            android:layout_width="match_parent"
+            android:layout_marginStart="@dimen/activity_horizontal_margin"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:orientation="vertical">
         <TextView
             android:id="@+id/player_name_textview"
             android:layout_width="wrap_content"
-            android:layout_marginStart="@dimen/activity_horizontal_margin"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
             android:textSize="28sp"
-            android:textColor="@color/text_primary_light"/>
+            android:textColor="@color/text_primary_light"
+            android:text="ScreenName"
+            android:visibility="gone"/>
         <TextView android:id="@+id/player_full_name_textview"
             android:layout_width="wrap_content"
-            android:layout_marginStart="@dimen/activity_horizontal_margin"
             android:layout_height="wrap_content"
-            android:layout_below="@id/player_name_textview"
             android:textSize="12sp"
-            android:textColor="@color/text_primary_light"/>
-        <TextView android:id="@+id/player_title_textview"
-            android:layout_width="wrap_content"
-            android:layout_marginStart="@dimen/activity_horizontal_margin"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/player_full_name_textview"
-            android:textSize="16sp"
-            android:textColor="@color/text_primary_light" />
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_marginStart="@dimen/activity_horizontal_margin"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:orientation="horizontal"
-            android:layout_below="@id/player_title_textview"
-            android:gravity="end">
-
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_gravity="center_vertical"
-                android:background="@drawable/ic_red_jewel"/>
-            <TextView android:id="@+id/jewel_count"
+            android:textColor="@color/text_primary_light"
+            android:text="Player Name"
+            android:visibility="gone"/>
+            <TextView android:id="@+id/player_xp_textview"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
+                android:textSize="16sp"
                 android:textColor="@color/text_primary_light"
-                android:textSize="20sp"
-                android:text="x 0"/>
+                android:text="9,000,000 XP"
+                android:visibility="gone"/>
+        <TextView android:id="@+id/player_title_textview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textColor="@color/text_primary_light"
+            android:text="Level Title"
+            android:visibility="gone"/>
+
+        <TextView android:id="@+id/jewel_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:drawableStart="@drawable/ic_red_jewel_32dp"
+            android:gravity="center_vertical"
+            android:textColor="@color/text_primary_light"
+            android:textSize="20sp"
+            android:text="x 0"/>
         </LinearLayout>
     </RelativeLayout>
+
     <LinearLayout android:id="@+id/button_bar_layout"
         android:layout_width="match_parent"
         android:layout_marginStart="@dimen/activity_horizontal_margin"
@@ -81,7 +81,8 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="4dp"
         android:orientation="horizontal"
-        android:layout_below="@id/banner_layout">
+        android:layout_below="@id/banner_layout"
+        android:layout_alignTop="@id/button_bar_layout">
         <Button android:id="@+id/activity_button"
             android:layout_width="wrap_content"
             android:layout_weight="1"

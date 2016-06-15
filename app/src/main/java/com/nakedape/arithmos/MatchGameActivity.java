@@ -198,7 +198,7 @@ public class MatchGameActivity extends AppCompatActivity implements
                     showFinishTurnPrompt();
                 }
                 else {
-                    AnimatorSet set = Animations.slideDown(rootLayout.findViewById(R.id.generic_popup), 150, 0, rootLayout.getHeight() / 3);
+                    AnimatorSet set = Animations.slideOutDown(rootLayout.findViewById(R.id.generic_popup), 150, 0, rootLayout.getHeight() / 3);
                     set.addListener(new Animator.AnimatorListener() {
                         @Override
                         public void onAnimationStart(Animator animation) {
@@ -361,7 +361,7 @@ public class MatchGameActivity extends AppCompatActivity implements
         okButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AnimatorSet set = Animations.slideDown(layout, 100, 0, rootLayout.getHeight() / 3);
+                AnimatorSet set = Animations.slideOutDown(layout, 100, 0, rootLayout.getHeight() / 3);
                 // Time is started in OnAnimationEnd
                 set.addListener(new Animator.AnimatorListener() {
                     @Override
@@ -401,7 +401,7 @@ public class MatchGameActivity extends AppCompatActivity implements
     private void hideLoadingPopup(){
         final View popup = rootLayout.findViewById(R.id.loading_popup);
         if (popup != null){
-            AnimatorSet set = Animations.slideDown(popup, 150, 0, rootLayout.getHeight() / 3);
+            AnimatorSet set = Animations.slideOutDown(popup, 150, 0, rootLayout.getHeight() / 3);
             set.addListener(new Animator.AnimatorListener() {
                 @Override
                 public void onAnimationStart(Animator animation) {
@@ -576,7 +576,7 @@ public class MatchGameActivity extends AppCompatActivity implements
         okButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AnimatorSet set = Animations.slideDown(layout, 100, 0, rootLayout.getHeight() / 3);
+                AnimatorSet set = Animations.slideOutDown(layout, 100, 0, rootLayout.getHeight() / 3);
                 set.addListener(new Animator.AnimatorListener() {
                     @Override
                     public void onAnimationStart(Animator animation) {
@@ -630,7 +630,7 @@ public class MatchGameActivity extends AppCompatActivity implements
             @Override
             public void onClick(View v) {
                 rootLayout.removeView(layout);
-                Animations.slideDown(layout, 150, 0, rootLayout.getHeight() / 3).start();
+                Animations.slideOutDown(layout, 150, 0, rootLayout.getHeight() / 3).start();
                 showEndTurnPopup();
             }
         });
@@ -643,7 +643,7 @@ public class MatchGameActivity extends AppCompatActivity implements
                 ArithmosGame.GameResult result = new ArithmosGame.GameResult(ArithmosGame.GameResult.FORFEIT);
                 result.isGameOver = true;
                 OnGameOver(result);
-                Animations.slideDown(layout, 150, 0, rootLayout.getHeight() / 3).start();
+                Animations.slideOutDown(layout, 150, 0, rootLayout.getHeight() / 3).start();
             }
         });
 
@@ -677,7 +677,7 @@ public class MatchGameActivity extends AppCompatActivity implements
                 EditText messageView = (EditText)layout.findViewById(R.id.message);
                 game.setMessage(game.getCurrentPlayer(), messageView.getText().toString());
                 finishTurn();
-                AnimatorSet set = Animations.slideDown(layout, 100, 0, rootLayout.getHeight() / 3);
+                AnimatorSet set = Animations.slideOutDown(layout, 100, 0, rootLayout.getHeight() / 3);
                 set.addListener(new Animator.AnimatorListener() {
                     @Override
                     public void onAnimationStart(Animator animation) {
@@ -774,7 +774,7 @@ public class MatchGameActivity extends AppCompatActivity implements
             @Override
             public void onClick(View v) {
                 finishMatch();
-                AnimatorSet set = Animations.slideDown(layout, 100, 0, rootLayout.getHeight() / 3);
+                AnimatorSet set = Animations.slideOutDown(layout, 100, 0, rootLayout.getHeight() / 3);
                 set.addListener(new Animator.AnimatorListener() {
                     @Override
                     public void onAnimationStart(Animator animation) {

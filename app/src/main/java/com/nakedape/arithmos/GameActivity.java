@@ -220,7 +220,7 @@ public class GameActivity extends AppCompatActivity implements
                     }
                 }
                 else {
-                    AnimatorSet set = Animations.slideDown(rootLayout.findViewById(R.id.generic_popup), 150, 0, rootLayout.getHeight() / 3);
+                    AnimatorSet set = Animations.slideOutDown(rootLayout.findViewById(R.id.generic_popup), 150, 0, rootLayout.getHeight() / 3);
                     set.addListener(new Animator.AnimatorListener() {
                         @Override
                         public void onAnimationStart(Animator animation) {
@@ -398,7 +398,7 @@ public class GameActivity extends AppCompatActivity implements
         okButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AnimatorSet set = Animations.slideDown(layout, 200, 0, rootLayout.getHeight() / 3);
+                AnimatorSet set = Animations.slideOutDown(layout, 200, 0, rootLayout.getHeight() / 3);
                 // Time is started in OnAnimationEnd
                 set.addListener(new Animator.AnimatorListener() {
                     @Override
@@ -612,7 +612,7 @@ public class GameActivity extends AppCompatActivity implements
                 ArithmosGame.GameResult result = new ArithmosGame.GameResult(ArithmosGame.GameResult.FORFEIT);
                 result.isGameOver = true;
                 OnGameOver(result);
-                Animations.slideDown(layout, 200, 0, rootLayout.getHeight() / 3).start();
+                Animations.slideOutDown(layout, 200, 0, rootLayout.getHeight() / 3).start();
             }
         });
 
@@ -621,7 +621,7 @@ public class GameActivity extends AppCompatActivity implements
         button2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AnimatorSet set = Animations.slideDown(layout, 200, 0, rootLayout.getHeight() / 3);
+                AnimatorSet set = Animations.slideOutDown(layout, 200, 0, rootLayout.getHeight() / 3);
                 set.addListener(new Animator.AnimatorListener() {
                     @Override
                     public void onAnimationStart(Animator animation) {
@@ -694,7 +694,7 @@ public class GameActivity extends AppCompatActivity implements
             public void onClick(View v) {
                 rootLayout.removeView(layout);
                 saveLevel = true;
-                Animations.slideDown(layout, 200, 0, rootLayout.getHeight() / 3).start();
+                Animations.slideOutDown(layout, 200, 0, rootLayout.getHeight() / 3).start();
                 SaveLevel();
             }
         });
@@ -708,7 +708,7 @@ public class GameActivity extends AppCompatActivity implements
                 ArithmosGame.GameResult result = new ArithmosGame.GameResult(ArithmosGame.GameResult.FORFEIT);
                 result.isGameOver = true;
                 OnGameOver(result);
-                Animations.slideDown(layout, 200, 0, rootLayout.getHeight() / 3).start();
+                Animations.slideOutDown(layout, 200, 0, rootLayout.getHeight() / 3).start();
             }
         });
 
@@ -842,7 +842,7 @@ public class GameActivity extends AppCompatActivity implements
     }
 
     public void ExitButtonClick(View v){
-        Animations.slideDown(findViewById(R.id.game_over_popup), 200, 0, rootLayout.getHeight() / 3).start();
+        Animations.slideOutDown(findViewById(R.id.game_over_popup), 200, 0, rootLayout.getHeight() / 3).start();
         saveLevel = false;
         saveGameState();
     }

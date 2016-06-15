@@ -34,6 +34,7 @@ import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -67,12 +68,17 @@ import com.nakedape.arithmos.purchaseUtils.Inventory;
 import com.nakedape.arithmos.purchaseUtils.Purchase;
 import com.nakedape.arithmos.purchaseUtils.SkuDetails;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
@@ -175,6 +181,9 @@ public class MainActivity extends AppCompatActivity implements
             case R.id.action_reset_game:
                 showResetGamePrompt();
                 return true;
+            case R.id.action_order_history:
+                showOrderHistoryPopup();
+                return true;
         }
 
         return super.onOptionsItemSelected(item);
@@ -186,7 +195,7 @@ public class MainActivity extends AppCompatActivity implements
             case KeyEvent.KEYCODE_BACK:
                 final View popup = rootLayout.findViewById(R.id.pop_up);
                 if (popup != null) {
-                    AnimatorSet set = Animations.shrinkOut(popup, 200);
+                    AnimatorSet set = Animations.slideOutDown(popup, 200, 0, rootLayout.getHeight() / 3);
                     set.addListener(new Animator.AnimatorListener() {
                         @Override
                         public void onAnimationStart(Animator animation) {
@@ -196,7 +205,6 @@ public class MainActivity extends AppCompatActivity implements
                         @Override
                         public void onAnimationEnd(Animator animation) {
                             rootLayout.removeView(popup);
-                            Animations.popIn(rootLayout.findViewById(R.id.challenges_button), 200, 0).start();
                         }
 
                         @Override
@@ -296,17 +304,8 @@ public class MainActivity extends AppCompatActivity implements
 
         // In-app purchases
         if (requestCode == PURCHASE_REQUEST){
-            if (resultCode == Activity.RESULT_CANCELED) {
-                Log.d(LOG_TAG, "User canceled purchase");
-                hideLoadingPopup();
-                return;
-            }
-            else {
-                int responseCode = intent.getIntExtra("RESPONSE_CODE", 0);
-                if (responseCode != 0)
-                    Log.d(LOG_TAG, "Error making purchase");
-                hideLoadingPopup();
-            }
+            if (iabHelper != null)
+                iabHelper.handleActivityResult(requestCode, resultCode, intent);
         }
 
     }
@@ -921,6 +920,46 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
+    private void refreshSavedGames(){
+        Games.Snapshots.load(mGoogleApiClient, false).setResultCallback(new ResultCallback<Snapshots.LoadSnapshotsResult>() {
+            @Override
+            public void onResult(@NonNull Snapshots.LoadSnapshotsResult loadSnapshotsResult) {
+                for (SnapshotMetadata snapshot : loadSnapshotsResult.getSnapshots()){
+                    if (!snapshot.getUniqueName().startsWith(GAME_FILE_PREFIX)) {
+                        GameActivityItem item = new GameActivityItem(GameActivityItem.GOOGLE_PLAY_SAVED_GAME);
+                        item.uniqueName = snapshot.getUniqueName();
+                        item.description = snapshot.getDescription();
+                        item.imageUri = snapshot.getCoverImageUri();
+                        item.timeStamp = snapshot.getLastModifiedTimestamp();
+                        activityListAdapter.addItem(item);
+                    }
+                }
+                activityListAdapter.sort();
+                loadSnapshotsResult.release();
+            }
+        });
+    }
+
+    private void deleteSavedGame(final String uniqueName){
+        if (uniqueName != null && mGoogleApiClient.isConnected()) {
+            Games.Snapshots.open(mGoogleApiClient, uniqueName, false).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
+                @Override
+                public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
+                    Games.Snapshots.delete(mGoogleApiClient, openSnapshotResult.getSnapshot().getMetadata());
+                }
+            });
+            retryDeleteSavedLevel = false;
+            gameToDeleteId = null;
+        }
+        else if (uniqueName != null){
+            retryDeleteSavedLevel = true;
+            gameToDeleteId = uniqueName;
+            if (!mGoogleApiClient.isConnecting()){
+                mGoogleApiClient.connect();
+            }
+        }
+    }
+
     private void saveGameState(){
         if (gameBase.needsSaving() && mGoogleApiClient.isConnected()){
             retrySaveGameBase = false;
@@ -946,26 +985,6 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    private void deleteSavedGame(final String uniqueName){
-        if (uniqueName != null && mGoogleApiClient.isConnected()) {
-            Games.Snapshots.open(mGoogleApiClient, uniqueName, false).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
-                @Override
-                public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
-                    Games.Snapshots.delete(mGoogleApiClient, openSnapshotResult.getSnapshot().getMetadata());
-                }
-            });
-            retryDeleteSavedLevel = false;
-            gameToDeleteId = null;
-        }
-        else if (uniqueName != null){
-            retryDeleteSavedLevel = true;
-            gameToDeleteId = uniqueName;
-            if (!mGoogleApiClient.isConnecting()){
-                mGoogleApiClient.connect();
-            }
-        }
-    }
-
     private void refreshGameState(){
         if (!isGameBaseRefreshing) {
             isGameBaseRefreshing = true;
@@ -982,26 +1001,6 @@ public class MainActivity extends AppCompatActivity implements
                 }
             });
         }
-    }
-
-    private void refreshSavedGames(){
-        Games.Snapshots.load(mGoogleApiClient, false).setResultCallback(new ResultCallback<Snapshots.LoadSnapshotsResult>() {
-            @Override
-            public void onResult(@NonNull Snapshots.LoadSnapshotsResult loadSnapshotsResult) {
-                for (SnapshotMetadata snapshot : loadSnapshotsResult.getSnapshots()){
-                    if (!snapshot.getUniqueName().startsWith(GAME_FILE_PREFIX)) {
-                        GameActivityItem item = new GameActivityItem(GameActivityItem.GOOGLE_PLAY_SAVED_GAME);
-                        item.uniqueName = snapshot.getUniqueName();
-                        item.description = snapshot.getDescription();
-                        item.imageUri = snapshot.getCoverImageUri();
-                        item.timeStamp = snapshot.getLastModifiedTimestamp();
-                        activityListAdapter.addItem(item);
-                    }
-                }
-                activityListAdapter.sort();
-                loadSnapshotsResult.release();
-            }
-        });
     }
 
     private void loadGameState(SnapshotMetadata metadata){
@@ -1027,6 +1026,7 @@ public class MainActivity extends AppCompatActivity implements
                         activityListAdapter.sort();
                         gameBaseNeedsRefresh = false;
                         isGameBaseRefreshing = false;
+                        consumePurchases();
                         Log.d(LOG_TAG, "Game refreshed");
                     } catch (IOException | NullPointerException | ClassCastException e) {
                         e.printStackTrace();
@@ -1241,7 +1241,7 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void onClick(View v) {
                 resetGame();
-                AnimatorSet set = Animations.slideDown(layout, 150, 0, rootLayout.getHeight() / 3);
+                AnimatorSet set = Animations.slideOutDown(layout, 150, 0, rootLayout.getHeight() / 3);
                 set.addListener(new Animator.AnimatorListener() {
                     @Override
                     public void onAnimationStart(Animator animation) {
@@ -1272,7 +1272,7 @@ public class MainActivity extends AppCompatActivity implements
         button2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AnimatorSet set = Animations.slideDown(layout, 150, 0, rootLayout.getHeight() / 3);
+                AnimatorSet set = Animations.slideOutDown(layout, 150, 0, rootLayout.getHeight() / 3);
                 set.addListener(new Animator.AnimatorListener() {
                     @Override
                     public void onAnimationStart(Animator animation) {
@@ -1419,9 +1419,10 @@ public class MainActivity extends AppCompatActivity implements
     }
 
 
-    // Purchasing API
+    // Purchasing API and purchase processing
     private static final int PURCHASE_REQUEST = 7001;
     private static final String SKU_1000_JEWELS = "jewels_1000";
+    private static final String ORDER_HISTORY_FILENAME = "order_history";
     private IabHelper iabHelper;
     private IabListAdapter iabListAdapter;
 
@@ -1432,7 +1433,7 @@ public class MainActivity extends AppCompatActivity implements
     private void showIabStorePopup(){
 
         // Prepare popup window
-        final View layout = getLayoutInflater().inflate(R.layout.iab_store_popup, null);
+        final View layout = getLayoutInflater().inflate(R.layout.popup_listview, null);
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         layout.setLayoutParams(params);
         layout.setOnTouchListener(new View.OnTouchListener() {
@@ -1442,11 +1443,14 @@ public class MainActivity extends AppCompatActivity implements
             }
         });
 
+        TextView titleView = (TextView)layout.findViewById(R.id.title_textview);
+        titleView.setText(R.string.iab_popup_title);
+
         Button button = (Button)layout.findViewById(R.id.button);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AnimatorSet set = Animations.slideDown(layout, 200, 0, rootLayout.getHeight() / 3);
+                AnimatorSet set = Animations.slideOutDown(layout, 200, 0, rootLayout.getHeight() / 3);
                 set.addListener(new Animator.AnimatorListener() {
                     @Override
                     public void onAnimationStart(Animator animation) {
@@ -1469,7 +1473,6 @@ public class MainActivity extends AppCompatActivity implements
                     }
                 });
                 set.start();
-                consumePurchases();
             }
         });
 
@@ -1484,7 +1487,7 @@ public class MainActivity extends AppCompatActivity implements
                     return;
                 }
                 progressBar.setVisibility(View.GONE);
-                ListView iabListView = (ListView)layout.findViewById(R.id.inventory_listview);
+                ListView iabListView = (ListView)layout.findViewById(R.id.listview);
                 iabListAdapter = new IabListAdapter();
                 iabListView.setAdapter(iabListAdapter);
                 final ArrayList<String> skuList = new ArrayList<>();
@@ -1527,7 +1530,9 @@ public class MainActivity extends AppCompatActivity implements
                         hideLoadingPopup();
                         return;
                     } else {
-                        iabListAdapter.setPurchased(info.getSku(), true);
+                        Log.d(LOG_TAG, "Purchase Successful");
+                        recordOrderAsync(info);
+                        consumePurchase(info);
                         hideLoadingPopup();
                     }
 
@@ -1536,41 +1541,262 @@ public class MainActivity extends AppCompatActivity implements
         } catch (IabHelper.IabAsyncInProgressException e) {e.printStackTrace();}
     }
 
-    private void consumePurchases(){
-        try {
-            iabHelper.queryInventoryAsync(true, iabListAdapter.getOwnedSkus(), null, new IabHelper.QueryInventoryFinishedListener() {
-                @Override
-                public void onQueryInventoryFinished(IabResult result, Inventory inv) {
-                    if (result.isSuccess()) {
-                        ArrayList<Purchase> purchases = new ArrayList<>(iabListAdapter.getOwnedSkus().size());
-                        for (String sku : iabListAdapter.getOwnedSkus()){
-                            if (inv.hasPurchase(sku)) purchases.add(inv.getPurchase(sku));
-                        }
-                        if (purchases.size() > 0)
-                            try {
-                                iabHelper.consumeAsync(purchases, new IabHelper.OnConsumeMultiFinishedListener() {
-                                    @Override
-                                    public void onConsumeMultiFinished(List<Purchase> purchases, List<IabResult> results) {
-                                        for (int i = 0; i < results.size(); i++){
-                                            if (results.get(i).isSuccess()){
-                                                processConsumedPurchase(purchases.get(i).getSku());
-                                            }
-                                        }
-                                        saveGameState();
-                                    }
-                                });
-                            } catch (IabHelper.IabAsyncInProgressException e) {e.printStackTrace();}
+    private void recordOrderAsync(final Purchase purchase){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                // Load order history from file
+                ArrayList<OrderData> orders = null;
+                File orderHistoryFile = new File(getFilesDir(), ORDER_HISTORY_FILENAME);
+                if (orderHistoryFile.exists()) {
+                    FileInputStream fis;
+                    ObjectInputStream ois;
+                    try {
+                        fis = new FileInputStream(orderHistoryFile);
+                        ois = new ObjectInputStream(fis);
+                        orders = (ArrayList<OrderData>)ois.readObject();
+                        ois.close();
+                        fis.close();
+                        Log.d(LOG_TAG, "Order history opened");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        orderHistoryFile.delete();
                     }
-                    Log.d(LOG_TAG, result.getMessage());
+                }
+                if (orders == null)
+                    orders = new ArrayList<>();
+
+                // Write order to history and save
+                orders.add(new OrderData(purchase.getOrderId(), purchase.getSku(), purchase.getPurchaseTime()));
+
+                FileOutputStream fos;
+                ObjectOutputStream oos;
+                try {
+                    fos = new FileOutputStream(orderHistoryFile);
+                    oos = new ObjectOutputStream(fos);
+                    oos.writeObject(orders);
+                    oos.close();
+                    fos.close();
+                    Log.d(LOG_TAG, "Order history saved");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+    }
+
+    private class OrderData implements Serializable {
+        public OrderData(String orderId, String sku, long timeStamp){
+            this.orderId = orderId;
+            this.sku = sku;
+            this.timeStamp = timeStamp;
+        }
+        transient private int serializationVersion = 0;
+        transient String orderId, sku;
+        transient long timeStamp;
+
+        private void writeObject(ObjectOutputStream out) throws IOException {
+            out.writeInt(serializationVersion);
+            out.writeObject(orderId);
+            out.writeObject(sku);
+            out.writeLong(timeStamp);
+        }
+        private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException{
+            int version = in.readInt();
+            orderId = (String)in.readObject();
+            sku = (String)in.readObject();
+            timeStamp = in.readLong();
+        }
+    }
+
+    private void showOrderHistoryPopup(){
+        // Prepare popup window
+        final View layout = getLayoutInflater().inflate(R.layout.popup_listview, null);
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        layout.setLayoutParams(params);
+        layout.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                return true;
+            }
+        });
+
+        layout.findViewById(R.id.progress_bar).setVisibility(View.GONE);
+
+
+        TextView titleView = (TextView)layout.findViewById(R.id.title_textview);
+        titleView.setText(R.string.order_history_popup_title);
+
+        Button button = (Button)layout.findViewById(R.id.button);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AnimatorSet set = Animations.slideOutDown(layout, 200, 0, rootLayout.getHeight() / 3);
+                set.addListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        rootLayout.removeView(layout);
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+
+                    }
+                });
+                set.start();
+            }
+        });
+
+        // Load and display order history
+        // Load order history from file
+        ArrayList<OrderData> orders = null;
+        File orderHistoryFile = new File(getFilesDir(), ORDER_HISTORY_FILENAME);
+        if (orderHistoryFile.exists()) {
+            FileInputStream fis;
+            ObjectInputStream ois;
+            try {
+                fis = new FileInputStream(orderHistoryFile);
+                ois = new ObjectInputStream(fis);
+                orders = (ArrayList<OrderData>)ois.readObject();
+                ois.close();
+                fis.close();
+                Log.d(LOG_TAG, "Order history opened");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        if (orders == null)
+            orders = new ArrayList<>();
+
+        ListView listView = (ListView)layout.findViewById(R.id.listview);
+        OrderListAdapter adapter = new OrderListAdapter(orders);
+        listView.setAdapter(adapter);
+
+
+        rootLayout.addView(layout);
+        Animations.slideUp(layout, 200, 0, rootLayout.getHeight() / 3).start();
+    }
+
+    private class OrderListAdapter extends BaseAdapter {
+        private int resource_id = R.layout.order_history_list_item;
+        private LayoutInflater mInflater;
+        private ArrayList<OrderData> items;
+
+        public OrderListAdapter(ArrayList<OrderData> purchases) {
+            items = purchases;
+        }
+
+        @Override
+        public int getCount() {
+            return items.size();
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public OrderData getItem(int position) {
+            return items.get(position);
+        }
+
+        @Override
+        public View getView(final int position, View convertView, final ViewGroup parent) {
+            if (convertView == null) {
+                mInflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                convertView = mInflater.inflate(resource_id, null);
+            }
+
+            TextView orderView = (TextView)convertView.findViewById(R.id.order_number_textview);
+            orderView.setText(getString(R.string.order_number, getItem(position).orderId));
+
+            TextView skuView = (TextView)convertView.findViewById(R.id.sku_textview);
+            skuView.setText(getString(R.string.product_id, getItem(position).sku));
+
+            TextView timeView = (TextView)convertView.findViewById(R.id.time_stamp_textview);
+            timeView.setText(Utils.getDate(getItem(position).timeStamp, "kk:mm:ss MM/dd/yy"));
+
+            return convertView;
+        }
+    }
+
+    private void consumePurchase(Purchase purchase){
+        try {
+            iabHelper.consumeAsync(purchase, new IabHelper.OnConsumeFinishedListener() {
+                @Override
+                public void onConsumeFinished(Purchase purchase, IabResult result) {
+                    if (result.isSuccess()) {
+                        processConsumedPurchase(purchase.getSku());
+                        saveGameState();
+                    }
                 }
             });
-        } catch (IabHelper.IabAsyncInProgressException e){e.printStackTrace();}
+        } catch (IabHelper.IabAsyncInProgressException e) {e.printStackTrace();}
+    }
+
+    private void consumePurchases(){
+        iabHelper = new IabHelper(this, getString(R.string.base64EncodedPublicKey));
+        final ArrayList<String> skuList = new ArrayList<>();
+        skuList.add(SKU_1000_JEWELS);iabHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
+            public void onIabSetupFinished(IabResult result) {
+                if (!result.isSuccess()) {
+                    // Oh noes, there was a problem.
+                    Log.d(LOG_TAG, "Problem setting up In-app Billing: " + result);
+                    return;
+                }
+                try {
+                    iabHelper.queryInventoryAsync(true, skuList, null, new IabHelper.QueryInventoryFinishedListener() {
+                        @Override
+                        public void onQueryInventoryFinished(IabResult result, Inventory inv) {
+                            if (result.isSuccess()) {
+                                ArrayList<Purchase> purchases = new ArrayList<>(skuList.size());
+                                for (String sku : skuList){
+                                    if (inv.hasPurchase(sku)) purchases.add(inv.getPurchase(sku));
+                                }
+                                if (purchases.size() > 0)
+                                    try {
+                                        iabHelper.consumeAsync(purchases, new IabHelper.OnConsumeMultiFinishedListener() {
+                                            @Override
+                                            public void onConsumeMultiFinished(List<Purchase> purchases, List<IabResult> results) {
+                                                for (int i = 0; i < results.size(); i++){
+                                                    if (results.get(i).isSuccess()){
+                                                        processConsumedPurchase(purchases.get(i).getSku());
+                                                    }
+                                                }
+                                                saveGameState();
+                                            }
+                                        });
+                                    } catch (IabHelper.IabAsyncInProgressException e) {e.printStackTrace();}
+                            }
+                            iabHelper.disposeWhenFinished();
+                            Log.d(LOG_TAG, result.getMessage());
+                        }
+                    });
+                } catch (IabHelper.IabAsyncInProgressException e){e.printStackTrace();}
+            }
+        });
     }
 
     private void processConsumedPurchase(String sku){
         switch (sku){
             case SKU_1000_JEWELS:
+                int prevCount = gameBase.getJewelCount();
                 gameBase.recordJewels(1000);
+                TextView jewelView = (TextView)rootLayout.findViewById(R.id.jewel_count);
+                Animations.CountTo(getResources(), R.string.number_after_x, jewelView, prevCount, gameBase.getJewelCount());
+                Log.d(LOG_TAG, "Consumed 1000 jewel purchase");
+                Toast.makeText(context, getString(R.string.jewel_purchase, 1000), Toast.LENGTH_SHORT).show();
                 break;
         }
     }
@@ -2296,12 +2522,28 @@ public class MainActivity extends AppCompatActivity implements
         Player player = Games.Players.getCurrentPlayer(mGoogleApiClient);
         TextView nameTextView = (TextView)rootLayout.findViewById(R.id.player_name_textview);
         nameTextView.setText(player.getDisplayName());
+        if (nameTextView.getVisibility() != View.VISIBLE)
+            Animations.fadeIn(nameTextView, 200, 0).start();
 
         TextView titleView = (TextView)rootLayout.findViewById(R.id.player_title_textview);
         titleView.setText(player.getTitle());
+        if (titleView.getVisibility() != View.VISIBLE)
+            Animations.fadeIn(titleView, 200, 75).start();
 
-        TextView fullNameView = (TextView)rootLayout.findViewById(R.id.player_full_name_textview);
-        fullNameView.setText(player.getName());
+        TextView fullNameView = (TextView) rootLayout.findViewById(R.id.player_full_name_textview);
+        if (player.getName() != null) {
+            fullNameView.setText(player.getName());
+            if (fullNameView.getVisibility() != View.VISIBLE)
+                Animations.fadeIn(fullNameView, 200, 150).start();
+        } else {
+            fullNameView.setVisibility(View.GONE);
+        }
+
+        TextView xpView = (TextView)rootLayout.findViewById(R.id.player_xp_textview);
+        xpView.setText(getString(R.string.xp, player.getLevelInfo().getCurrentXpTotal()));
+        if (xpView.getVisibility() != View.VISIBLE)
+            Animations.fadeIn(xpView, 200, 225).start();
+
 
         ImageView playerImageView = (ImageView)rootLayout.findViewById(R.id.player_image);
         ImageManager imageManager = ImageManager.create(context);
@@ -2333,7 +2575,7 @@ public class MainActivity extends AppCompatActivity implements
     private void hideLoadingPopup(){
         final View popup = rootLayout.findViewById(R.id.loading_popup);
         if (popup != null){
-            AnimatorSet set = Animations.slideDown(popup, 150, 0, rootLayout.getHeight() / 3);
+            AnimatorSet set = Animations.slideOutDown(popup, 150, 0, rootLayout.getHeight() / 3);
             set.addListener(new Animator.AnimatorListener() {
                 @Override
                 public void onAnimationStart(Animator animation) {

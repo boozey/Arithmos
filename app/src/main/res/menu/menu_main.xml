@@ -2,6 +2,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.nakedape.arithmos.MainActivity">
+    <item android:id="@+id/action_order_history"
+        android:title="@string/order_history_popup_title"
+        app:showAsAction="never"/>
     <item android:id="@+id/action_reset_game"
         android:title="@string/action_reset_game"
         app:showAsAction="never"/>

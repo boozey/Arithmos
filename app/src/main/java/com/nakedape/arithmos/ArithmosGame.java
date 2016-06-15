@@ -1021,7 +1021,7 @@ public class ArithmosGame {
 
 
     // Serialization
-    private static final int serializationVersion = 3;
+    transient private static final int serializationVersion = 3;
 
     public byte[] getSaveGameData(){
         ByteArrayOutputStream bos = null;

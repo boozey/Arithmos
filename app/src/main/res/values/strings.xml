@@ -66,8 +66,14 @@
     <string name="xp">%d XP</string>
 
     <!-- In-app billing strings -->
+    <string name="iab_popup_title">Arithmos Store</string>
     <string name="buy">Buy</string>
     <string name="owned">Owned</string>
+    <string name="jewel_purchase">%d jewels added to inventory</string>
+    <string name="bomb_purchase">%d bombs added to inventory</string>
+    <string name="order_history_popup_title">Order History</string>
+    <string name="order_number">Order number: %s</string>
+    <string name="product_id">Product id: %s</string>
 
     <!-- Game Activity Strings -->
     <string name="bomb_message">for 3 turns</string>

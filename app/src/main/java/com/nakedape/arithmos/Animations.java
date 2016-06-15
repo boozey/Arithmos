@@ -54,7 +54,8 @@ public class Animations {
 
     public static AnimatorSet fadeIn(View v, int duration, int delay){
         v.setVisibility(View.VISIBLE);
-        ObjectAnimator fadeOut = ObjectAnimator.ofFloat(v, "alpha",01f, 1f);
+        v.setAlpha(0f);
+        ObjectAnimator fadeOut = ObjectAnimator.ofFloat(v, "alpha",0f, 1f);
 
         AnimatorSet set = new AnimatorSet();
         set.setInterpolator(new DecelerateInterpolator());
@@ -91,13 +92,26 @@ public class Animations {
         return set;
     }
 
-    public static AnimatorSet slideDown(View v, int duration, int delay, float amount){
+    public static AnimatorSet slideOutDown(View v, int duration, int delay, float amount){
         ObjectAnimator slide = ObjectAnimator.ofFloat(v, "TranslationY", v.getTranslationY(), v.getTranslationY() + amount);
         ObjectAnimator fadeIn = ObjectAnimator.ofFloat(v, "alpha", 1f, 0f);
 
         AnimatorSet set = new AnimatorSet();
         set.setInterpolator(new AccelerateInterpolator());
         set.playTogether(slide, fadeIn);
+        set.setStartDelay(delay);
+        set.setDuration(duration);
+
+        return set;
+    }
+
+    public static AnimatorSet slideInDown(View v, int duration, int delay, float amount){
+        v.setVisibility(View.VISIBLE);
+        ObjectAnimator slide = ObjectAnimator.ofFloat(v, "TranslationY", v.getTranslationY(), v.getTranslationY() + amount);
+
+        AnimatorSet set = new AnimatorSet();
+        set.setInterpolator(new DecelerateInterpolator());
+        set.play(slide);
         set.setStartDelay(delay);
         set.setDuration(duration);
 
