@@ -1356,10 +1356,11 @@ public class MainActivity extends AppCompatActivity implements
         private int resource_id = R.layout.special_store_item_layout;
         private LayoutInflater mInflater;
         private String[] names = getResources().getStringArray(R.array.special_item_names);
-        private String[] descriptions = getResources().getStringArray(R.array.special_descriptions);
         private int[] costs = getResources().getIntArray(R.array.special_costs);
         private int[] iconResIds = {R.drawable.ic_right_arrow, R.drawable.ic_bomb,
                 R.drawable.ic_pencil, R.drawable.ic_calculator};
+        private int[] descResIds = {R.string.skip_description, R.string.bomb_description,
+                R.string.pencil_description, R.string.calc_description};
 
         public SpecialListAdapter(){
 
@@ -1394,7 +1395,7 @@ public class MainActivity extends AppCompatActivity implements
             countView.setText(getString(R.string.number_after_x, gameBase.getSpecialCount(names[position])));
 
             TextView descView = (TextView)convertView.findViewById(R.id.description_textview);
-            descView.setText(descriptions[position]);
+            descView.setText(descResIds[position]);
 
             TextView costView = (TextView)convertView.findViewById(R.id.cost_textview);
             costView.setText(String.valueOf(costs[position]));

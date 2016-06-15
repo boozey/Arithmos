@@ -14,12 +14,12 @@
         <item>@drawable/ic_calculator</item>
     </integer-array>
 
-    <string-array name="special_descriptions">
-        <item>Skips the current goal number</item>
-        <item>Destroys the operation that sets off the bomb preventing its use for three turns</item>
-        <item>Allows a number to be changed</item>
-        <item>Evaluates a run from start to end without following the order of operations like an old-school calculator.</item>
-    </string-array>
+    <integer-array name="special_descriptions">
+        <item>@string/skip_description</item>
+        <item>@string/bomb_description</item>
+        <item>@string/pencil_description</item>
+        <item>@string/calc_description</item>
+    </integer-array>
 
     <integer-array name="special_costs">
         <item>100</item>

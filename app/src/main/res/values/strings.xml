@@ -17,6 +17,10 @@
     <string name="loading">Loading &#8230;</string>
     <string name="percent">%d%%</string>
 
+
+
+
+
     <!-- Main Activity Strings -->
     <string name="activity_button_text">Activity</string>
     <string name="challenge_button_text">Challenges</string>
@@ -75,6 +79,14 @@
     <string name="order_number">Order number: %s</string>
     <string name="product_id">Product id: %s</string>
 
+    <!-- Special descriptions -->
+    <string name="skip_description">Skips the top goal number</string>
+    <string name="bomb_description">Destroys the operation that sets off the bomb preventing its use for three turns</string>
+    <string name="pencil_description">Allows a number to be changed</string>
+    <string name="calc_description">Evaluates a run from start to end without following the order of operations like an old-school calculator.</string>
+
+
+
     <!-- Game Activity Strings -->
     <string name="bomb_message">for 3 turns</string>
 
@@ -99,6 +111,8 @@
 
 
 
+
+
     <!-- Match Activity Strings -->
     <plurals name="finish_turn_prompt">
         <item quantity="one">You still have %d move remaining</item>
@@ -113,6 +127,8 @@
     <string name="you_won">You won!</string>
     <string name="you_lost">You lost</string>
     <string name="tie">It\'s a tie!</string>
+
+
 
 
     <!-- Game Options -->
@@ -132,6 +148,7 @@
 
 
 
+
     <!-- Game Challenge and Level Strings -->
     <string name="level_locked">Locked</string>
     <string name="challenge_name_crazy_eights">Crazy Eights</string>
@@ -146,7 +163,7 @@
 
 
 
-    <!-- Time Strings -->
+    <!-- Time Strings and Plurals -->
     <string name="just_now">Just now</string>
     <string name="long_time_ago">A long time ago</string>
     <plurals name="minute_ago_plurals">
