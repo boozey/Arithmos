@@ -4,58 +4,80 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:id="@+id/match_turn_end_popup">
-    <LinearLayout
+    <LinearLayout android:id="@+id/pop_up_foreground"
         android:layout_width="wrap_content"
         android:minWidth="300dp"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         android:orientation="vertical"
-        android:padding="24dp"
-        android:layout_margin="16dp"
+        android:paddingBottom="36dp"
         android:background="@drawable/rounded_corner_primary">
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/text_primary_light"
-            android:textSize="20sp"
-            android:text="@string/end_turn"/>
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
             android:orientation="horizontal">
-            <ImageView android:id="@+id/player_icon"
-                android:layout_width="wrap_content"
-                android:minWidth="60dp"
-                android:layout_height="wrap_content"
-                android:minHeight="60dp" />
             <TextView android:id="@+id/player_comment"
                 android:layout_width="0dp"
                 android:layout_weight="1"
-                android:layout_marginStart="4dp"
+                android:layout_marginTop="36dp"
+                android:layout_marginStart="24dp"
+                android:layout_marginEnd="60dp"
                 android:minWidth="60dp"
                 android:layout_height="wrap_content"
                 android:minHeight="40dp"
                 android:padding="6dp"
-                android:background="@drawable/speech_bubble"
+                android:background="@drawable/speech_bubble_below_left"
                 android:textColor="@color/text_primary_dark"
                 android:textSize="12sp"/>
         </LinearLayout>
         <EditText android:id="@+id/message"
-            android:layout_width="match_parent"
+            android:layout_gravity="center_horizontal"
+            android:layout_width="250dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="36dp"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp"
+            android:inputType="textCapSentences|textMultiLine"
+            android:imeOptions="actionSend"
             android:minLines="2"
+            android:maxLines="5"
             android:hint="@string/message_hint"
             android:background="@drawable/rounded_corner_primary_light"/>
 
-        <Button android:id="@+id/ok_button"
-            android:layout_width="wrap_content"
-            android:layout_height="30dp"
-            android:layout_marginTop="24dp"
-            android:layout_gravity="end"
-            android:background="@drawable/rounded_corner_primary_accent"
-            android:textColor="@color/text_primary_light"
-            android:text="@string/submit_turn"/>
         </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/pop_up_foreground"
+        android:layout_marginBottom="-18dp"
+        android:layout_alignStart="@id/pop_up_foreground"
+        android:layout_marginStart="-24dp"
+        android:background="@drawable/rounded_corner_primary_accent"
+        android:padding="8dp"
+        android:textColor="@color/text_primary_light"
+        android:textSize="@dimen/game_popup_medium_text_size"
+        android:text="@string/end_turn"/>
+
+    <ImageView android:id="@+id/player_icon"
+        android:layout_above="@id/pop_up_foreground"
+        android:layout_alignEnd="@id/pop_up_foreground"
+        android:layout_width="wrap_content"
+        android:layout_marginEnd="-20dp"
+        android:minWidth="80dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="-60dp"
+        android:minHeight="80dp"/>
+
+    <Button android:id="@+id/ok_button"
+        android:layout_width="wrap_content"
+        android:layout_height="35dp"
+        android:layout_below="@id/pop_up_foreground"
+        android:layout_marginTop="-17dp"
+        android:layout_alignEnd="@id/pop_up_foreground"
+        android:layout_marginEnd="-24dp"
+        android:padding="8dp"
+        android:background="@drawable/rounded_corner_primary_accent"
+        android:textColor="@color/text_primary_light"
+        android:text="@string/submit_turn"/>
 </RelativeLayout>

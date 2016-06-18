@@ -1,5 +1,6 @@
 package com.nakedape.arithmos;
 
+import android.os.SystemClock;
 import android.util.Log;
 
 import java.io.ByteArrayInputStream;
@@ -14,17 +15,18 @@ import java.util.HashMap;
  * Created by Nathan on 5/8/2016.
  */
 public class ArithmosGameBase {
-    private static final String LOG_TAG = "ArithmosGameBaseData";
+    transient private static final String LOG_TAG = "ArithmosGameBaseData";
 
-    public static final String CRAZY_EIGHTS = "CRAZY_EIGHTS";
-    public static final String EASY_123 = "EASY_123";
-    public static final String LUCKY_7 = "LUCKY_7";
-    public static final String SPECIAL_BOMB = "SPECIAL_BOMB";
-    public static final String SPECIAL_SKIP = "SPECIAL_SKIP";
-    public static final String SPECIAL_OP_ORDER = "SPECIAL_OP_ORDER";
-    public static final String SPECIAL_CHANGE = "SPECIAL_CHANGE";
+    transient public static final String CRAZY_EIGHTS = "CRAZY_EIGHTS";
+    transient public static final String EASY_123 = "EASY_123";
+    transient public static final String LUCKY_7 = "LUCKY_7";
+    transient public static final String SPECIAL_BOMB = "SPECIAL_BOMB";
+    transient public static final String SPECIAL_SKIP = "SPECIAL_SKIP";
+    transient public static final String SPECIAL_OP_ORDER = "SPECIAL_OP_ORDER";
+    transient public static final String SPECIAL_CHANGE = "SPECIAL_CHANGE";
 
-    public static final String[] challenges = {CRAZY_EIGHTS, EASY_123, LUCKY_7};
+    // Order of challenges is that of the array
+    transient public static final String[] challenges = {CRAZY_EIGHTS, EASY_123, LUCKY_7};
 
     public static int getChallengeDisplayNameResId(String challenge){
         switch (challenge){
@@ -41,60 +43,74 @@ public class ArithmosGameBase {
 
     public static int[] getLevelXmlIds(String challenge){
         switch (challenge){
-            case CRAZY_EIGHTS:
-                return new int[] {R.xml.game_level_crazy_eights_6x6, R.xml.game_level_crazy_eights_8x8,
-                        R.xml.game_level_crazy_eights_301, R.xml.game_level_crazy_eights_timed};
             case EASY_123:
-                return new int[] {R.xml.game_level_easy_123_301, R.xml.game_level_easy_123_6x6, R.xml.game_level_easy_123_timed};
+                return new int[] {R.xml.game_level_easy_123_4x4, R.xml.game_level_easy_123_4x4_timed, R.xml.game_level_easy_123_5x5,
+                        R.xml.game_level_easy_123_5x5_301, R.xml.game_level_easy_123_5x5_timed,
+                        R.xml.game_level_easy_123_6x6};
+            case CRAZY_EIGHTS:
+                return new int[] {R.xml.game_level_crazy_eights_4x4, R.xml.game_level_crazy_eights_4x4_301, R.xml.game_level_crazy_eights_5x5,
+                        R.xml.game_level_crazy_eights_5x5_301, R.xml.game_level_crazy_eights_5x5_timed, R.xml.game_level_crazy_eights_6x6,
+                        R.xml.game_level_crazy_eights_6x6_301, R.xml.game_level_crazy_eights_6x6_timed};
+            case LUCKY_7:
+                return new int[] {R.xml.game_level_lucky_7_4x4};
             default:
-                return getLevelXmlIds(CRAZY_EIGHTS);
+                return getLevelXmlIds(EASY_123);
         }
     }
 
     public static int[] getLevelDisplayNameResIds(String challenge){
         switch (challenge){
-            case CRAZY_EIGHTS:
-                return new int[] {R.string.level_6x6, R.string.level_8x8, R.string.level_301, R.string.level_timed};
             case EASY_123:
-                return new int[] {R.string.level_301, R.string.level_6x6, R.string.level_timed};
+                return new int[] {R.string.level_4x4, R.string.level_4x4_timed,
+                        R.string.level_5x5, R.string.level_5x5_301, R.string.level_5x5_timed,
+                        R.string.level_6x6};
+            case CRAZY_EIGHTS:
+                return new int[] {R.string.level_4x4, R.string.level_4x4_301, R.string.level_5x5, R.string.level_5x5_301, R.string.level_5x5_timed,
+                        R.string.level_6x6, R.string.level_6x6_301, R.string.level_6x6_timed};
+            case LUCKY_7:
+                return new int[] {R.string.level_4x4};
             default:
-                return getLevelDisplayNameResIds(CRAZY_EIGHTS);
+                return getLevelDisplayNameResIds(EASY_123);
         }
     }
 
-    private static final int serializationVersion = 3;
-    private static final long weekInMillis = 604800000;
-    private static final long dayInMillis = 86400000;
-    private ArrayList<String> unlockedLevels;
-    private int[] crazyEightsStars;
-    private HashMap<String, Integer> stars;
-    private int jewelCount;
-    private HashMap<String, Integer> specials;
-    private ArrayList<GameActivityItem> activityItems;
-    private boolean needsSaving = false;
+    transient private static final int serializationVersion = 4;
+    transient private static final long weekInMillis = 604800000;
+    transient private static final long dayInMillis = 86400000;
+    transient private ArrayList<String> unlockedLevels;
+    transient private HashMap<String, Integer> stars;
+    transient private int jewelCount;
+    transient private HashMap<String, Integer> specials;
+    transient private ArrayList<GameActivityItem> activityItems;
+    transient private boolean needsSaving = false;
+    transient private long timeStamp = 0;
 
     public ArithmosGameBase(){
         unlockedLevels = new ArrayList<>();
-        unlockedLevels.add(CRAZY_EIGHTS + "0");
+        unlockedLevels.add(EASY_123 + "0");
         stars = new HashMap<>();
         jewelCount = 0;
-        specials = new HashMap<>(4);
-        specials.put(SPECIAL_BOMB, 1);
-        specials.put(SPECIAL_SKIP, 3);
-        specials.put(SPECIAL_CHANGE, 1);
-        specials.put(SPECIAL_OP_ORDER, 2);
+        specials = new HashMap<>(1);
+        specials.put(SPECIAL_SKIP, 1);
         activityItems = new ArrayList<>();
+    }
+
+    public void setSaved(boolean state){
+        needsSaving = state;
     }
 
     public boolean needsSaving(){return needsSaving;}
 
     public void resetGame(){
         unlockedLevels = new ArrayList<>(1);
-        unlockedLevels.add(CRAZY_EIGHTS + "0");
+        //unlockedLevels.add(CRAZY_EIGHTS + "0");
+        unlockAllLevels();
         stars = new HashMap<>();
         activityItems = new ArrayList<>();
         needsSaving = true;
     }
+
+    public long timeStamp() {return timeStamp;}
 
     // Level unlocking
     public boolean isLevelUnlocked(String challengeName, int level){
@@ -118,6 +134,13 @@ public class ArithmosGameBase {
             }
         }
         return null;
+    }
+
+    private void unlockAllLevels(){
+        for (String challenge : challenges){
+            for (int i = 0; i < getLevelXmlIds(challenge).length; i++)
+                unlockedLevels.add(challenge + i);
+        }
     }
 
 
@@ -247,7 +270,8 @@ public class ArithmosGameBase {
         out.writeInt(jewelCount);
         out.writeObject(specials);
         out.writeObject(activityItems);
-        needsSaving = false;
+        timeStamp = SystemClock.elapsedRealtime();
+        out.writeLong(timeStamp);
     }
 
     public void loadByteData(byte[] data){
@@ -273,7 +297,8 @@ public class ArithmosGameBase {
                 if (item.timeStamp > System.currentTimeMillis() - dayInMillis)
                     activityItems.add(item);
             }
-        }
+        } if (version >= 4)
+            timeStamp = in.readLong();
 
         needsSaving = false;
     }

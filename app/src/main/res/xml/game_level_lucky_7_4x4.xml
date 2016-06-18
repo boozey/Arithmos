@@ -1,0 +1,14 @@
+<Level challenge_name="LUCKY_7"
+    challenge_level="0"
+    gridsize="4">
+    <GridBaseNumbers>7, 7, 2, 3</GridBaseNumbers>
+    <GridSpecialNumbers>14, 28</GridSpecialNumbers>
+    <GoalNumbers count="6">13, 14, 21, 42</GoalNumbers>
+    <StarLevels>1000, 1500, 2500</StarLevels>
+    <!-- 33 Bonus spaces available -->
+    <run>2, ?, 7, ?, 7, ?, 2</run>
+    <run>2, bonus_lock*, 3, bonus_balloons, 7</run>
+    <Bonus name="balloons">12</Bonus>
+    <Bonus name="red_jewel">20</Bonus>
+    <Bonus name="bomb">1</Bonus>
+</Level>

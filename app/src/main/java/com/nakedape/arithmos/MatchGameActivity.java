@@ -46,6 +46,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 
 public class MatchGameActivity extends AppCompatActivity implements
@@ -65,7 +68,8 @@ public class MatchGameActivity extends AppCompatActivity implements
     // Saving/recreating the activity state
     private static final String JEWEL_COUNT = "JEWEL_COUNT";
     private static final String PLAY_COUNT = "PLAY_COUNT";
-    private static final String levelCacheFileName = "arithmos_level_cache";
+    public static final String matchCacheFileName = "arithmos_match_cache";
+    public static final String levelCacheFileName = "arithmos_level_cache";
     private static final String gameCacheFileName = "arithmos_game_cache";
 
     private Context context;
@@ -124,13 +128,16 @@ public class MatchGameActivity extends AppCompatActivity implements
         if (loadCachedGame())
             gameBaseNeedsDownload = false;
 
-        if (match != null && loadCachedLevel())
+        if (loadCachedLevel() && match != null) {
             matchHasLoaded = true;
+        }
         else {
+            loadCachedMatch();
             // Prepare for match game
             Intent data = getIntent();
             if (match == null && data.hasExtra(MATCH)) {
                 match = data.getParcelableExtra(MATCH);
+                cacheMatch();
                 showLoadingPopup(R.string.loading, 200);
             }
             else {
@@ -260,14 +267,14 @@ public class MatchGameActivity extends AppCompatActivity implements
         gameBoard.setGame(game);
 
         TextView p1NameView = (TextView)rootLayout.findViewById(R.id.p1_name_textview);
-        p1NameView.setText(match.getParticipant(game.PLAYER1).getDisplayName());
-
         TextView p2NameView = (TextView)rootLayout.findViewById(R.id.p2_name_textview);
-        p2NameView.setText(match.getParticipant(game.PLAYER2).getDisplayName());
-
         TextView p1ScoreView = (TextView)rootLayout.findViewById(R.id.p1_score_textview);
-
         TextView p2ScoreView = (TextView)rootLayout.findViewById(R.id.p2_score_textview);
+        p1NameView.setText(match.getParticipant(game.PLAYER1).getDisplayName());
+        p2NameView.setText(match.getParticipant(game.PLAYER2).getDisplayName());
+        p1ScoreView.setText(String.valueOf(game.getScore(game.PLAYER1)));
+        p2ScoreView.setText(String.valueOf(game.getScore(game.PLAYER2)));
+        prevScore = game.getScore(game.getCurrentPlayer());
 
         if (game.getCurrentPlayer().equals(game.PLAYER1))
             scoreTextView = p1ScoreView;
@@ -275,15 +282,25 @@ public class MatchGameActivity extends AppCompatActivity implements
             scoreTextView = p2ScoreView;
 
         if (game.getGoalType() == ArithmosLevel.GOAL_301){
-            p1ScoreView.setText(String.valueOf(game.get301Total(game.PLAYER1)));
-            p2ScoreView.setText(String.valueOf(game.get301Total(game.PLAYER2)));
-            prevScore = game.get301Total();
+            rootLayout.findViewById(R.id.upcoming_goal_listview).setVisibility(View.GONE);
+
+            // Show score and 301 total together for other player
+            if (game.getCurrentPlayer().equals(game.PLAYER1)){
+                p2ScoreView.setText(getString(R.string.score_slash_301, String.valueOf(game.getScore(game.PLAYER2)),
+                        String.valueOf(game.get301Total(game.PLAYER2))));
+            } else {
+                p1ScoreView.setText(getString(R.string.score_slash_301, String.valueOf(game.getScore(game.PLAYER1)),
+                        String.valueOf(game.get301Total(game.PLAYER1))));
+            }
+
+            TextView three01 = (TextView)rootLayout.findViewById(R.id.three01_textview);
+            three01.setVisibility(View.VISIBLE);
+            String value = String.valueOf(game.get301Total()), finalValue = "";
+            for (int i = 0; i < value.length(); i++){
+                finalValue += value.charAt(i) + "\n";
+            }
+            three01.setText(finalValue.trim());
         } else {
-            p1ScoreView.setText(String.valueOf(game.getScore(game.PLAYER1)));
-            p2ScoreView.setText(String.valueOf(game.getScore(game.PLAYER2)));
-
-            prevScore = game.getScore(game.getCurrentPlayer());
-
             final ListView goalList = (ListView) rootLayout.findViewById(R.id.upcoming_goal_listview);
             goalList.setAdapter(new ArrayAdapter<>(context, R.layout.goal_list_item, game.getUpcomingGoals()));
             goalList.setVisibility(View.VISIBLE);
@@ -341,18 +358,19 @@ public class MatchGameActivity extends AppCompatActivity implements
         });
 
         TextView titleView = (TextView)layout.findViewById(R.id.title_textview);
-        String titleText = getString(ArithmosGameBase.getChallengeDisplayNameResId(game.getChallengeName())) + " " +
-                getString(ArithmosGameBase.getLevelDisplayNameResIds(game.getChallengeName())[game.getChallengeLevel()]);
-        titleView.setText(titleText);
+        titleView.setText(ArithmosGameBase.getChallengeDisplayNameResId(game.getChallengeName()));
+
+        TextView subTitleView = (TextView)layout.findViewById(R.id.subtitle_textview);
+        subTitleView.setText(ArithmosGameBase.getLevelDisplayNameResIds(game.getChallengeName())[game.getChallengeLevel()]);
 
         TextView oneStarView = (TextView)layout.findViewById(R.id.one_star);
         oneStarView.setText(String.valueOf(game.getPointsForStar(1)));
 
         TextView twoStarView = (TextView)layout.findViewById(R.id.two_star);
-        twoStarView.setText(String.valueOf(game.getPointsForStar(1)));
+        twoStarView.setText(String.valueOf(game.getPointsForStar(2)));
 
         TextView threeStarView = (TextView)layout.findViewById(R.id.three_star);
-        threeStarView.setText(String.valueOf(game.getPointsForStar(1)));
+        threeStarView.setText(String.valueOf(game.getPointsForStar(3)));
 
         TextView timeView = (TextView)layout.findViewById(R.id.time_limit_text);
         timeView.setVisibility(View.GONE);
@@ -450,6 +468,7 @@ public class MatchGameActivity extends AppCompatActivity implements
                 byte[] data = new byte[inputStream.available()];
                 if (inputStream.read(data) > 0) {
                     gameBase.loadByteData(data);
+                    gameBase.setSaved(false);
                     gameBaseNeedsDownload = false;
                     setupSpecials();
                     TextView jewelText = (TextView)rootLayout.findViewById(R.id.jewel_count);
@@ -475,6 +494,7 @@ public class MatchGameActivity extends AppCompatActivity implements
             byte[] data = game.getSaveGameData();
             outputStream.write(data, 0, data.length);
             outputStream.close();
+            cacheMatch();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -489,7 +509,6 @@ public class MatchGameActivity extends AppCompatActivity implements
                 byte[] data = new byte[inputStream.available()];
                 if (inputStream.read(data) > 0){
                     game = new ArithmosGame(data);
-                    setupGameUi();
                     Log.d(LOG_TAG, "Level loaded from cache");
                     return true;
                 }
@@ -499,6 +518,61 @@ public class MatchGameActivity extends AppCompatActivity implements
             }
         }
         return false;
+    }
+
+    private void cacheMatch(){
+        File matchCacheFile = new File(getCacheDir(), matchCacheFileName);
+        FileOutputStream outputStream;
+        try {
+            outputStream = new FileOutputStream(matchCacheFile);
+            ObjectOutputStream oos = new ObjectOutputStream(outputStream);
+            oos.writeObject(new MatchCacheData(match.getMatchId(), playCount));
+            oos.close();
+            outputStream.close();
+            Log.d(LOG_TAG, "Match cached. Playcount = " + playCount);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static class MatchCacheData implements Serializable{
+        transient private int serializationVersion = 0;
+        transient public String matchId;
+        transient public int playCount;
+        public MatchCacheData(String matchId, int playCount){
+            this.matchId = matchId;
+            this.playCount = playCount;
+        }
+        private void writeObject(ObjectOutputStream out) throws IOException {
+            out.writeInt(serializationVersion);
+            out.writeObject(matchId);
+            out.writeInt(playCount);
+        }
+        private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException{
+            int version = in.readInt();
+            matchId = (String)in.readObject();
+            playCount = in.readInt();
+        }
+    }
+
+    private void loadCachedMatch(){
+        File matchCacheFile = new File(getCacheDir(), matchCacheFileName);
+        if (matchCacheFile.exists()) {
+            FileInputStream fis;
+            ObjectInputStream ois;
+            try {
+                fis = new FileInputStream(matchCacheFile);
+                ois = new ObjectInputStream(fis);
+                MatchCacheData data = (MatchCacheData) ois.readObject();
+                playCount = data.playCount;
+                ois.close();
+                fis.close();
+                Log.d(LOG_TAG, "Match loaded from cache");
+            } catch (Exception e) {
+                e.printStackTrace();
+                matchCacheFile.delete();
+            }
+        }
     }
 
     private void loadGameState(String gameFileName){
@@ -532,78 +606,15 @@ public class MatchGameActivity extends AppCompatActivity implements
                     public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
                         String desc = "Arithmos Game Data";
                         writeSnapshot(openSnapshotResult.getSnapshot(), gameBase.getByteData(), desc);
+                        gameBase.setSaved(true);
                         Log.i(LOG_TAG, "Game state saved");
                     }
                 });
-            } else {
+            } else if (!mGoogleApiClient.isConnected()){
                 retrySaveGameState = true;
                 mGoogleApiClient.connect();
             }
         }
-    }
-
-    private void showStartTurnPopup(){
-        final View layout = getLayoutInflater().inflate(R.layout.match_turn_start_popup, null);
-
-        // Prepare popup window
-        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        layout.setLayoutParams(params);
-        layout.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                return true;
-            }
-        });
-
-        ImageManager imageManager = ImageManager.create(context);
-        ImageView p1Icon = (ImageView)layout.findViewById(R.id.p1_icon);
-        imageManager.loadImage(p1Icon, match.getParticipant(game.PLAYER1).getIconImageUri());
-
-        ImageView p2Icon = (ImageView)layout.findViewById(R.id.p2_icon);
-        imageManager.loadImage(p2Icon, match.getParticipant(game.PLAYER2).getIconImageUri());
-
-        if (game.getP1Message() != null){
-            TextView textView = (TextView)layout.findViewById(R.id.p1_comment);
-            textView.setText(game.getP1Message());
-        }
-        if (game.getP2Message() != null){
-            TextView textView = (TextView)layout.findViewById(R.id.p2_comment);
-            textView.setText(game.getP2Message());
-        }
-
-
-        Button okButton = (Button)layout.findViewById(R.id.ok_button);
-        okButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                AnimatorSet set = Animations.slideOutDown(layout, 100, 0, rootLayout.getHeight() / 3);
-                set.addListener(new Animator.AnimatorListener() {
-                    @Override
-                    public void onAnimationStart(Animator animation) {
-
-                    }
-
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        rootLayout.removeView(layout);
-                    }
-
-                    @Override
-                    public void onAnimationCancel(Animator animation) {
-
-                    }
-
-                    @Override
-                    public void onAnimationRepeat(Animator animation) {
-
-                    }
-                });
-                set.start();
-            }
-        });
-
-        rootLayout.addView(layout);
-        Animations.slideUp(layout, 100, 0, rootLayout.getHeight() / 3).start();
     }
 
     private void showFinishTurnPrompt(){
@@ -642,7 +653,7 @@ public class MatchGameActivity extends AppCompatActivity implements
             public void onClick(View v) {
                 ArithmosGame.GameResult result = new ArithmosGame.GameResult(ArithmosGame.GameResult.FORFEIT);
                 result.isGameOver = true;
-                OnGameOver(result);
+                OnGameOver(result, 0);
                 Animations.slideOutDown(layout, 150, 0, rootLayout.getHeight() / 3).start();
             }
         });
@@ -670,11 +681,43 @@ public class MatchGameActivity extends AppCompatActivity implements
         TextView textView = (TextView)layout.findViewById(R.id.player_comment);
         textView.setText(game.getMessage(game.getNextPlayer()));
 
+        final EditText messageView = (EditText)layout.findViewById(R.id.message);
+        messageView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                game.setMessage(game.getCurrentPlayer(), messageView.getText().toString());
+                finishTurn();
+                AnimatorSet set = Animations.slideOutDown(layout, 100, 0, rootLayout.getHeight() / 3);
+                set.addListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        rootLayout.removeView(layout);
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+
+                    }
+                });
+                set.start();
+                return true;
+            }
+        });
+
         Button okButton = (Button)layout.findViewById(R.id.ok_button);
         okButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                EditText messageView = (EditText)layout.findViewById(R.id.message);
                 game.setMessage(game.getCurrentPlayer(), messageView.getText().toString());
                 finishTurn();
                 AnimatorSet set = Animations.slideOutDown(layout, 100, 0, rootLayout.getHeight() / 3);
@@ -707,7 +750,7 @@ public class MatchGameActivity extends AppCompatActivity implements
         Animations.slideUp(layout, 100, 0, rootLayout.getHeight() / 3).start();
     }
 
-    private void showEndMatchPopup() {
+    private void showEndMatchPopup(int delay) {
         recordAchievements();
         final View layout = getLayoutInflater().inflate(R.layout.match_finished_popup, null);
 
@@ -801,7 +844,8 @@ public class MatchGameActivity extends AppCompatActivity implements
         });
 
         rootLayout.addView(layout);
-        Animations.slideUp(layout, 100, 0, rootLayout.getHeight() / 3).start();
+        AnimatorSet set = Animations.slideUp(layout, 100, delay, rootLayout.getHeight() / 3);
+        set.start();
     }
 
     private void recordAchievements(){
@@ -841,8 +885,13 @@ public class MatchGameActivity extends AppCompatActivity implements
                 @Override
                 public void onResult(@NonNull TurnBasedMultiplayer.UpdateMatchResult updateMatchResult) {
                     saveGameState();
-                    if (gameCache != null) gameCache.delete();
                     if (levelCache != null) levelCache.delete();
+                    File matchCache = new File(getCacheDir(), matchCacheFileName);
+                    if (matchCache.exists()) {
+                        if (matchCache.delete()) Log.d(LOG_TAG, "Match cache deleted");
+                        else Log.d(LOG_TAG, "Error deleting match cache");
+                    }
+
                     finish();
                 }
             });
@@ -877,8 +926,9 @@ public class MatchGameActivity extends AppCompatActivity implements
                     @Override
                     public void onResult(@NonNull TurnBasedMultiplayer.UpdateMatchResult updateMatchResult) {
                         saveGameState();
-                        if (gameCache != null) gameCache.delete();
                         if (levelCache != null) levelCache.delete();
+                        File matchCache = new File(getCacheDir(), matchCacheFileName);
+                        if (matchCache.exists()) matchCache.delete();
                         finish();
                     }
                 });
@@ -886,8 +936,9 @@ public class MatchGameActivity extends AppCompatActivity implements
                 Games.TurnBasedMultiplayer.finishMatch(mGoogleApiClient, match.getMatchId()).setResultCallback(new ResultCallback<TurnBasedMultiplayer.UpdateMatchResult>() {
                     @Override
                     public void onResult(@NonNull TurnBasedMultiplayer.UpdateMatchResult updateMatchResult) {
-                        if (gameCache != null) gameCache.delete();
                         if (levelCache != null) levelCache.delete();
+                        File matchCache = new File(getCacheDir(), matchCacheFileName);
+                        if (matchCache.exists()) matchCache.delete();
                         finish();
                     }
                 });
@@ -899,17 +950,23 @@ public class MatchGameActivity extends AppCompatActivity implements
     }
 
     // Game events
+    private int animStartDelay = 0;
+
     @Override
     public void OnPlayCompleted(ArithmosGame.GameResult result){
         TextView calc = (TextView) rootLayout.findViewById(R.id.calc_button);
         if (result.result == ArithmosGame.GameResult.SUCCESS) {
             // Animate score
+            Animations.CountTo(scoreTextView, prevScore, prevScore + result.score);
+            prevScore += result.score;
             if (game.getGoalType() == ArithmosLevel.GOAL_301) {
-                Animations.CountTo(scoreTextView, prevScore, game.get301Total());
-                prevScore = game.get301Total();
+                TextView three01 = (TextView)rootLayout.findViewById(R.id.three01_textview);
+                String value = String.valueOf(game.get301Total()), finalValue = "";
+                for (int i = 0; i < value.length(); i++){
+                    finalValue += value.charAt(i) + "\n";
+                }
+                three01.setText(finalValue.trim());
             } else {
-                Animations.CountTo(scoreTextView, prevScore, prevScore + result.score);
-                prevScore += result.score;
                 ListView upcomingGoalsList = (ListView)rootLayout.findViewById(R.id.upcoming_goal_listview);
                 ArrayAdapter<String> adapter = (ArrayAdapter<String>)upcomingGoalsList.getAdapter();
                 adapter.notifyDataSetChanged();
@@ -929,9 +986,10 @@ public class MatchGameActivity extends AppCompatActivity implements
 
             cacheLevel();
 
-            // Count the plays, finish after three
+            // Count the plays, finish after three normally, one turn for 301
             playCount++;
-            if (playCount == 3 && !result.isGameOver){
+            cacheMatch();
+            if ((playCount == 3 || game.getGoalType() == ArithmosLevel.GOAL_301) && !result.isGameOver){
                 showEndTurnPopup();
             }
         }
@@ -979,10 +1037,10 @@ public class MatchGameActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void OnGameOver(ArithmosGame.GameResult result){
+    public void OnGameOver(ArithmosGame.GameResult result, int animDelay){
         if (result.result == ArithmosGame.GameResult.FORFEIT)
             forfeit = true;
-        showEndMatchPopup();
+        showEndMatchPopup(animDelay);
     }
 
     @Override
@@ -1034,8 +1092,9 @@ public class MatchGameActivity extends AppCompatActivity implements
         }
 
         rootLayout.addView(layout);
-        Animations.slideUp(layout, 200, 0, rootLayout.getHeight() / 3).start();
-        AnimatorSet set = Animations.explodeFade(layout, 200, 1200);
+        Animations.slideUp(layout, 200, animStartDelay, rootLayout.getHeight() / 3).start();
+        AnimatorSet set = Animations.explodeFade(layout, 200, 1200 + animStartDelay);
+        animStartDelay += 1400;
         set.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
@@ -1044,6 +1103,7 @@ public class MatchGameActivity extends AppCompatActivity implements
 
             @Override
             public void onAnimationEnd(Animator animation) {
+                animStartDelay -= 1400;
                 rootLayout.removeView(layout);
             }
 
@@ -1110,7 +1170,7 @@ public class MatchGameActivity extends AppCompatActivity implements
     public void SkipGoalNumberClick(View v){
         if (gameBase.getSpecialCount(ArithmosGameBase.SPECIAL_SKIP) > 0) {
             int count = gameBase.useSpecial(ArithmosGameBase.SPECIAL_SKIP);
-            game.skipGoalNumber();
+            gameBoard.useSkipSpecial();
             TextView skip = (TextView)rootLayout.findViewById(R.id.skip_button);
             if (count < 1)
                 skip.setVisibility(View.GONE);
@@ -1121,6 +1181,7 @@ public class MatchGameActivity extends AppCompatActivity implements
             ArithmosGame.GameResult result = new ArithmosGame.GameResult(ArithmosGame.GameResult.SUCCESS);
             result.isGameOver = game.isGameOver();
             OnPlayCompleted(result);
+            cacheGame();
         }
     }
 
@@ -1161,6 +1222,9 @@ public class MatchGameActivity extends AppCompatActivity implements
                             bomb.setText("");
                         else
                             bomb.setText(String.valueOf(count));
+                        playCount++;
+                        cacheGame();
+                        cacheMatch();
                     }
                     return true;
                 default:
@@ -1227,6 +1291,9 @@ public class MatchGameActivity extends AppCompatActivity implements
                     pencil.setText("");
                 else
                     pencil.setText(String.valueOf(count));
+                cacheGame();
+                playCount++;
+                cacheMatch();
                 rootLayout.removeView(numberList);
             }
         });
@@ -1261,8 +1328,86 @@ public class MatchGameActivity extends AppCompatActivity implements
     // Turn  match
     private TurnBasedMatch match;
     private boolean forfeit = false;
+
+    private void showStartTurnPopup(){
+        final View layout = getLayoutInflater().inflate(R.layout.match_turn_start_popup, null);
+
+        // Prepare popup window
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        layout.setLayoutParams(params);
+        layout.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                return true;
+            }
+        });
+
+        ImageManager imageManager = ImageManager.create(context);
+        ImageView upperPlayerView = (ImageView)layout.findViewById(R.id.upper_player_icon);
+        ImageView lowerPlayerView = (ImageView)layout.findViewById(R.id.lower_player_icon);
+
+        if (game.getMessage(game.getCurrentPlayer()) != null && !game.getMessage(game.getCurrentPlayer()).equals("")) {
+            imageManager.loadImage(upperPlayerView, match.getParticipant(game.getCurrentPlayer()).getIconImageUri());
+            TextView upperComment = (TextView)layout.findViewById(R.id.upper_comment);
+            upperComment.setVisibility(View.VISIBLE);
+            upperComment.setText(game.getMessage(game.getCurrentPlayer()));
+            imageManager.loadImage(lowerPlayerView, match.getParticipant(game.getNextPlayer()).getIconImageUri());
+            TextView lowerComment = (TextView)layout.findViewById(R.id.lower_comment);
+            lowerComment.setVisibility(View.VISIBLE);
+            lowerComment.setText(game.getMessage(game.getNextPlayer()));
+        } else if (game.getMessage(game.getNextPlayer()) != null && !game.getMessage(game.getNextPlayer()).equals("")){
+            imageManager.loadImage(upperPlayerView, match.getParticipant(game.getNextPlayer()).getIconImageUri());
+            TextView upperComment = (TextView)layout.findViewById(R.id.upper_comment);
+            upperComment.setVisibility(View.VISIBLE);
+            upperComment.setText(game.getMessage(game.getNextPlayer()));
+            imageManager.loadImage(lowerPlayerView, match.getParticipant(game.getCurrentPlayer()).getIconImageUri());
+            TextView lowerComment = (TextView)layout.findViewById(R.id.lower_comment);
+            lowerComment.setText(game.getMessage(game.getCurrentPlayer()));
+            lowerComment.setVisibility(View.VISIBLE);
+        } else {
+            imageManager.loadImage(upperPlayerView, match.getParticipant(game.getCurrentPlayer()).getIconImageUri());
+            layout.findViewById(R.id.good_luck_message).setVisibility(View.VISIBLE);
+            imageManager.loadImage(lowerPlayerView, match.getParticipant(game.getNextPlayer()).getIconImageUri());
+        }
+
+
+        Button okButton = (Button)layout.findViewById(R.id.ok_button);
+        okButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AnimatorSet set = Animations.slideOutDown(layout, 100, 0, rootLayout.getHeight() / 3);
+                set.addListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        rootLayout.removeView(layout);
+                        if (!match.getLastUpdaterId().equals(game.getCurrentPlayer()) && game.getScore(game.getCurrentPlayer()) == 0)
+                            showLevelInfoPopup();
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+
+                    }
+                });
+                set.start();
+            }
+        });
+
+        rootLayout.addView(layout);
+        Animations.slideUp(layout, 100, 0, rootLayout.getHeight() / 3).start();
+    }
     private void initializeMatchGame(){
-        final ArithmosLevel level = new ArithmosLevel(context, levelXmlId);
+        ArithmosLevel level = new ArithmosLevel(context, levelXmlId);
         ArrayList<String> playerIds = match.getParticipantIds();
         game = new ArithmosGame(level, playerIds.get(0), playerIds.get(1));
         game.setCurrentPlayer(match.getCreatorId());
@@ -1272,12 +1417,10 @@ public class MatchGameActivity extends AppCompatActivity implements
         game.setCurrentPlayer(currentPlayer);
         setupGameUi();
         hideLoadingPopup();
-        if (game.getScore(game.getCurrentPlayer()) == 0)
-            showLevelInfoPopup();
     }
     private void matchCompleted(){
         initializeTurn();
-        showEndMatchPopup();
+        showEndMatchPopup(0);
 
     }
 
@@ -1296,24 +1439,34 @@ public class MatchGameActivity extends AppCompatActivity implements
         else if (getIntent().hasExtra(GAME_BASE_FILE_NAME) && gameBaseNeedsDownload)
             loadGameState(getIntent().getStringExtra(GAME_BASE_FILE_NAME));
 
-        if (!matchHasLoaded) {
-            if (match.getData() != null) {
-                game = new ArithmosGame(match.getData());
-                if (match.getStatus() == TurnBasedMatch.MATCH_STATUS_ACTIVE) {
-                    initializeTurn();
-                    showStartTurnPopup();
-                }
-                else if (match.getStatus() == TurnBasedMatch.MATCH_STATUS_COMPLETE)
-                    matchCompleted();
-            } else {
-                levelXmlId = getIntent().getIntExtra(LEVEL_XML_RES_ID, R.xml.game_level_crazy_eights_6x6);
-                initializeMatchGame();
-                initializeTurn();
-            }
-        }
-
         if (retryFinishTurn)
             finishTurn();
+        else {
+            if (!matchHasLoaded) {
+                if (match.getData() != null) {
+                    game = new ArithmosGame(match.getData());
+                } else {
+                    levelXmlId = getIntent().getIntExtra(LEVEL_XML_RES_ID, R.xml.game_level_crazy_eights_6x6);
+                    initializeMatchGame();
+                    initializeTurn();
+                }
+            }
+
+            Log.d(LOG_TAG, "Turn starting. Playcount = " + playCount);
+            if (match.getStatus() == TurnBasedMatch.MATCH_STATUS_COMPLETE) {
+                matchCompleted();
+            } else {
+                if (playCount == 0) {
+                    initializeTurn();
+                    showStartTurnPopup();
+                } else if (playCount >= 3 || (game.getGoalType() == ArithmosLevel.GOAL_301 && playCount >= 1)) {
+                    initializeTurn();
+                    showEndTurnPopup();
+                } else {
+                    initializeTurn();
+                }
+            }
+        }
     }
 
     @Override

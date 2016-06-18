@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Level challenge_name="EASY_123"
+    challenge_level="4"
+    gridsize="5"
+    goal_type="301">
+    <GridBaseNumbers>1, 2, 2, 3, 3</GridBaseNumbers>
+    <GridSpecialNumbers>4, 5, 8, 12, 10, 15</GridSpecialNumbers>
+    <StarLevels>2000, 4000, 6000</StarLevels>
+    <!-- 56 total bonus locations -->
+    <Bonus name="balloons">20</Bonus>
+    <Bonus name="red_jewel">10</Bonus>
+    <Bonus name="lock*">5</Bonus>
+    <Bonus name="bomb">5</Bonus>
+</Level>

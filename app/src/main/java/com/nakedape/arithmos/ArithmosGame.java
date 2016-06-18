@@ -348,13 +348,12 @@ public class ArithmosGame {
     private void initializeGoalList(int size){
         int displayLength = 6;
         upcomingGoals = new ArrayList<>(displayLength);
-        goalList = new ArrayList<>(size - displayLength);
-        Random r = new Random();
+        goalList = new ArrayList<>(Math.max(size - displayLength, 0));
         for (int i = 0; i < size; i++){
             if (i < displayLength)
-                upcomingGoals.add(String.valueOf(goalNumbers[r.nextInt(goalNumbers.length)]));
+                upcomingGoals.add(String.valueOf(goalNumbers[i % goalNumbers.length]));
             else
-                goalList.add(String.valueOf(goalNumbers[r.nextInt(goalNumbers.length)]));
+                goalList.add(String.valueOf(goalNumbers[i % goalNumbers.length]));
         }
     }
     public int get301Total() {
@@ -369,8 +368,27 @@ public class ArithmosGame {
         else
             p2_301Total += value;
     }
-    public void skipGoalNumber(){
-        removeTopFromGoalList();
+    public GameResult skipGoalNumber(){
+        GameResult result = new GameResult(GameResult.SUCCESS);
+        if (!removeTopFromGoalList()) result.isGameOver = true;
+        // Update counters for operation limits and reset when appropriate
+        HashMap<String, Integer> opLimitCounts;
+        if (currentPlayer.equals(PLAYER1))
+            opLimitCounts = p1OpLimitCounts;
+        else
+            opLimitCounts = p2OpLimitCounts;
+        for (String op : ArithmosGame.OPERATIONS){
+            if (opLimitCounts.containsKey(op)){
+                int count = opLimitCounts.get(op);
+                if (--count == 0){
+                    opLimitCounts.remove(op);
+                    replaceOperation(op);
+                    result.opsReplaced.add(op);
+                } else
+                    opLimitCounts.put(op, count);
+            }
+        }
+        return result;
     }
 
     // Game info
@@ -394,20 +412,24 @@ public class ArithmosGame {
     }
     public void removeOperation(String operation){
         if (currentPlayer.equals(PLAYER1)) {
-            String[] temp = new String[p1AvailableOperations.length - 1];
-            for (int i = 0, j = 0; i < p1AvailableOperations.length; i++) {
-                if (!p1AvailableOperations[i].equals(operation))
-                    temp[j++] = p1AvailableOperations[i];
+            if (!p1OpLimitCounts.containsKey(operation)) {
+                String[] temp = new String[p1AvailableOperations.length - 1];
+                for (int i = 0, j = 0; i < p1AvailableOperations.length; i++) {
+                    if (!p1AvailableOperations[i].equals(operation))
+                        temp[j++] = p1AvailableOperations[i];
+                }
+                p1AvailableOperations = temp;
             }
-            p1AvailableOperations = temp;
             p1OpLimitCounts.put(operation, 3);
         } else {
-            String[] temp = new String[p1AvailableOperations.length - 1];
-            for (int i = 0, j = 0; i < p1AvailableOperations.length; i++) {
-                if (!p1AvailableOperations[i].equals(operation))
-                    temp[j++] = p1AvailableOperations[i];
+            if (!p2OpLimitCounts.containsKey(operation)) {
+                String[] temp = new String[p1AvailableOperations.length - 1];
+                for (int i = 0, j = 0; i < p1AvailableOperations.length; i++) {
+                    if (!p1AvailableOperations[i].equals(operation))
+                        temp[j++] = p1AvailableOperations[i];
+                }
+                p1AvailableOperations = temp;
             }
-            p1AvailableOperations = temp;
             p1OpLimitCounts.put(operation, 3);
         }
     }
@@ -526,6 +548,16 @@ public class ArithmosGame {
         else
             return p2Runs.size();
     }
+    public int getOpLimitCount(String operation){
+        if (currentPlayer.equals(PLAYER1)) {
+            if (p1OpLimitCounts.containsKey(operation))
+                return p1OpLimitCounts.get(operation);
+        } else {
+            if (p2OpLimitCounts.containsKey(operation))
+                return p2OpLimitCounts.get(operation);
+        }
+        return 0;
+    }
 
     // Run checking
     public GameResult checkSelection(ArrayList<int[]> run, ArrayList<String> operations){
@@ -544,7 +576,7 @@ public class ArithmosGame {
         if (meetsGoal(exp, true)){
             result.result = GameResult.SUCCESS;
 
-            // Find bonuses
+            // Find bonuses in selection
             ArrayList<String> bonusNames = new ArrayList<>(1);
             for (int[] a : run)
                 if (isBonus(a)) {
@@ -553,6 +585,17 @@ public class ArithmosGame {
                     bonusNames.add(bonusName);
                     incrementBonusCount(bonusName);
                 }
+
+            // Find trapped bonuses
+            ArrayList<int[]> bonusList = findTrappedBonuses(run);
+            for (int[] b : bonusList){
+                if (isBonus(b) && !isOpLockBonus(b) && !isBombBonus(b) && !result.bonusLocations.contains(b)) {
+                    result.bonusLocations.add(b);
+                    String bonusName = getPiece(b[0], b[1]);
+                    bonusNames.add(bonusName);
+                    incrementBonusCount(bonusName);
+                }
+            }
 
             // Update game board
             String[] baseExp = new String[run.size()];
@@ -689,6 +732,17 @@ public class ArithmosGame {
                             incrementBonusCount(bonusName);
                         }
 
+                    // Find trapped bonuses
+                    ArrayList<int[]> bonusList = findTrappedBonuses(run);
+                    for (int[] b : bonusList){
+                        if (isBonus(b) && !isOpLockBonus(b) && !isBombBonus(b) && !result.bonusLocations.contains(b)) {
+                            result.bonusLocations.add(b);
+                            String bonusName = getPiece(b[0], b[1]);
+                            bonusNames.add(bonusName);
+                            incrementBonusCount(bonusName);
+                        }
+                    }
+
                     //Update game board
                     for (int i = 0; i < run.size(); i++) {
                         int[] l = run.get(i);
@@ -764,10 +818,67 @@ public class ArithmosGame {
         // If this statement is reached, all possible combinations of OPERATIONS failed
         return result;
     }
+    private ArrayList<int[]> findTrappedBonuses(ArrayList<int[]> run){
+        ArrayList<int[]> bonusLocations = new ArrayList<>(run.size());
+        for (int[] a : run){
+            int r = a[0], c = a[1];
+            if (isPiecePlayed(r + 2, c) && isBonus(r + 1, c)) {
+                int[] bonus = new int[] {r + 1, c};
+                if (!bonusLocations.contains(bonus)) {
+                    bonusLocations.add(bonus);
+                }
+            }
+            if (isPiecePlayed(r - 2, c) && isBonus(r - 1, c)){
+                int[] bonus = new int[] {r - 1, c};
+                if (!bonusLocations.contains(bonus)) {
+                    bonusLocations.add(bonus);
+                }
+            }
+            if (isPiecePlayed(r, c + 2) && isBonus(r, c + 1)){
+                int[] bonus = new int[] {r, c + 1};
+                if (!bonusLocations.contains(bonus)) {
+                    bonusLocations.add(bonus);
+                }
+            }
+            if (isPiecePlayed(r, c - 2) && isBonus(r, c - 1)){
+                int[] bonus = new int[] {r, c - 1};
+                if (!bonusLocations.contains(bonus)) {
+                    bonusLocations.add(bonus);
+                }
+            }
+            if (isPiecePlayed(r - 2, c - 2) && isBonus(r - 1, c - 1)){
+                int[] bonus = new int[] {r - 1, c - 1};
+                if (!bonusLocations.contains(bonus)) {
+                    bonusLocations.add(bonus);
+                }
+            }
+            if (isPiecePlayed(r + 2, c - 2) && isBonus(r + 1, c - 1)){
+                int[] bonus = new int[] {r + 1, c - 1};
+                if (!bonusLocations.contains(bonus)) {
+                    bonusLocations.add(bonus);
+                }
+            }
+            if (isPiecePlayed(r - 2, c + 2) && isBonus(r - 1, c + 1)){
+                int[] bonus = new int[] {r - 1, c + 1};
+                if (!bonusLocations.contains(bonus)) {
+                    bonusLocations.add(bonus);
+                }
+            }
+            if (isPiecePlayed(r + 2, c + 2) && isBonus(r + 1, c + 1)){
+                int[] bonus = new int[] {r + 1, c + 1};
+                if (!bonusLocations.contains(bonus)) {
+                    bonusLocations.add(bonus);
+                }
+            }
+        }
+
+        return bonusLocations;
+    }
     private boolean meetsGoal(String exp, boolean removeFromList){
         double value;
         if (evalLtoR) value = evalLeftToRight(exp);
         else value = eval(exp);
+        if (value != (int) value) return false;
         switch (goalType){
             case ArithmosLevel.GOAL_MULT_NUM:
             case ArithmosLevel.GOAL_SINGLE_NUM:
@@ -953,19 +1064,28 @@ public class ArithmosGame {
                     break;
             }
         }
-        score *= (int)Math.pow(2, mult_divCount);
+        score *= Math.max(1, (int)Math.pow(2, (expression.length - 5) / 2));
         for (String s : bonuses){
             switch (s){
                 case ArithmosLevel.BONUS_LOCK_SUB:
                 case ArithmosLevel.BONUS_LOCK_ADD:
-                    score *= 5;
+                    score *= 3;
                     break;
                 case ArithmosLevel.BONUS_LOCK_DIV:
                 case ArithmosLevel.BONUS_LOCK_MULT:
-                    score *= 10;
+                    score *= 5;
                     break;
                 case ArithmosLevel.BONUS_BALLOONS:
                     score += 200;
+                    break;
+                case ArithmosLevel.BONUS_APPLE:
+                    score += 50;
+                    break;
+                case ArithmosLevel.BONUS_BANANAS:
+                    score += 100;
+                    break;
+                case ArithmosLevel.BONUS_CHERRIES:
+                    score += 150;
                     break;
             }
         }
@@ -999,20 +1119,36 @@ public class ArithmosGame {
         gameBoard[row][col] = value + SEPARATOR + UNDEF;
     }
     public boolean isPiecePlayed(int[] location){
-        String[] a = gameBoard[location[0]][location[1]].split(SEPARATOR);
-        return !a[1].equals(UNDEF);
+        return isPiecePlayed(location[0], location[1]);
+    }
+    public boolean isPiecePlayed(int r, int c){
+        if (r >= 0 && r < gameBoard.length && c >= 0 && c < gameBoard[r].length){
+            String[] a = gameBoard[r][c].split(SEPARATOR);
+            return !a[1].equals(UNDEF);
+        } else
+            return false;
     }
     public boolean isBonus(int[] location){
-        String s = gameBoard[location[0]][location[1]];
-        return s.contains(BONUS);
+        return isBonus(location[0], location[1]);
     }
     public boolean isBonus(int r, int c){
-        if (gameBoard[r][c] == null) return false;
+        if (r < 0 || r >= gameBoard.length || c < 0 || c >= gameBoard[r].length)
+            return false;
+        else if (gameBoard[r][c] == null) return false;
         else return gameBoard[r][c].contains(BONUS);
     }
     public boolean isOpLockBonus(int[] location){
         String s = gameBoard[location[0]][location[1]];
         return s.contains(ArithmosLevel.BONUS_OP_LOCK);
+    }
+    public boolean isBombBonus(int[] location){
+        return isBombBonus(location[0], location[1]);
+    }
+    public boolean isBombBonus(int r, int c){
+        if (r < 0 || r >= gameBoard.length || c < 0 || c >= gameBoard[r].length)
+            return false;
+        else if (gameBoard[r][c] == null) return false;
+        else return gameBoard[r][c].contains(ArithmosLevel.BONUS_BOMB);
     }
     public String getLockedOperation(int[] location){
         String[] s = gameBoard[location[0]][location[1]].split(SEPARATOR);

@@ -123,17 +123,35 @@ public class MainActivity extends AppCompatActivity implements
                 signInClicked(v);
             }
         });
-        //
+
         ListView activityList = (ListView)rootLayout.findViewById(R.id.activity_listview);
         View header = getLayoutInflater().inflate(R.layout.activity_button_bar, null);
         activityList.addHeaderView(header);
-        gameBase = new ArithmosGameBase();
         activityListAdapter = new ActivityListAdapter(R.layout.activity_list_item);
         activityList.setAdapter(activityListAdapter);
 
         ListView specialList = (ListView)rootLayout.findViewById(R.id.special_store_listview);
         View header2 = getLayoutInflater().inflate(R.layout.add_jewels_button_bar, null);
         specialList.addHeaderView(header2);
+
+        // Load cached data if it exists
+        gameBase = new ArithmosGameBase();
+        loadCachedGame();
+
+        File matchCacheFile = new File(getCacheDir(), MatchGameActivity.matchCacheFileName);
+        if (matchCacheFile.exists()){
+            loadCachedMatch();
+        } else {
+            File levelCacheFile = new File(getCacheDir(), GameActivity.levelCacheFileName);
+            if (levelCacheFile.exists()) {
+                Intent intent = new Intent(this, GameActivity.class);
+                prefs = getSharedPreferences(GAME_PREFS, MODE_PRIVATE);
+                String gameFileName = prefs.getString(GAME_FILE_NAME, null);
+                if (gameFileName != null)
+                    intent.putExtra(GameActivity.GAME_BASE_FILE_NAME, gameFileName);
+                startActivityForResult(intent, REQUEST_LEVEL_PLAYED);
+            }
+        }
 
     }
 
@@ -147,6 +165,7 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     protected void onResume() {
         super.onResume();
+        loadCachedGame();
         if (mAutoStartSignInFlow && !mGoogleApiClient.isConnected() && activityListAdapter.getCount() == 0) {
             rootLayout.findViewById(R.id.progress_bar).setVisibility(View.VISIBLE);
         }
@@ -432,6 +451,7 @@ public class MainActivity extends AppCompatActivity implements
                 case GameActivityItem.INCOMPLETE_LEVEL:
                 case GameActivityItem.COMPLETED_LEVEL:
                     gameBase.removeActivityItem(item);
+                    cacheGame();
                     saveGameState();
                     break;
             }
@@ -960,6 +980,56 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
+    private void cacheGame(){
+        if (gameCacheFile == null)
+            gameCacheFile = new File(getCacheDir(), gameCacheFileName);
+        FileOutputStream outputStream;
+        try {
+            outputStream = new FileOutputStream(gameCacheFile);
+            byte[] data = gameBase.getByteData();
+            outputStream.write(data, 0, data.length);
+            outputStream.close();
+            Log.d(LOG_TAG, "Game base cached");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private boolean loadCachedGame(){
+        gameCacheFile = new File(getCacheDir(), gameCacheFileName);
+        if (gameCacheFile.exists()){
+            FileInputStream inputStream;
+            try {
+                inputStream = new FileInputStream(gameCacheFile);
+                byte[] data = new byte[inputStream.available()];
+                if (inputStream.read(data) > 0) {
+                    gameBase.loadByteData(data);
+                    gameBase.setSaved(false);
+                    // Update jewel count and challenges
+                    TextView jewelText = (TextView)rootLayout.findViewById(R.id.jewel_count);
+                    int prevCount = jewelText.getTag() == null ? 0 : (int)jewelText.getTag();
+                    Animations.CountTo(getResources(), R.string.number_after_x, jewelText, prevCount, gameBase.getJewelCount());
+                    jewelText.setTag(gameBase.getJewelCount());
+                    // Update challenge list if it has already been displayed
+                    if (challengeListAdapter != null) challengeListAdapter.notifyDataSetChanged();
+                    // Update recent activity
+                    if (activityListAdapter != null) {
+                        activityListAdapter.addItems(gameBase.getActivityItems());
+                        activityListAdapter.sort();
+                    }
+                    isGameBaseRefreshing = false;
+                    Log.d(LOG_TAG, "Game base loaded from cache");
+                    return true;
+                }
+                inputStream.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        return false;
+    }
+
     private void saveGameState(){
         if (gameBase.needsSaving() && mGoogleApiClient.isConnected()){
             retrySaveGameBase = false;
@@ -976,6 +1046,7 @@ public class MainActivity extends AppCompatActivity implements
                 public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
                     String desc = "Arithmos Game Data";
                     writeSnapshot(openSnapshotResult.getSnapshot(), gameBase.getByteData(), desc);
+                    gameBase.setSaved(true);
                     Log.d(LOG_TAG, "Game state saved");
                 }
             });
@@ -993,7 +1064,8 @@ public class MainActivity extends AppCompatActivity implements
                 public void onResult(@NonNull Snapshots.LoadSnapshotsResult loadSnapshotsResult) {
                     for (SnapshotMetadata s : loadSnapshotsResult.getSnapshots()) {
                         if (s.getUniqueName().contains(GAME_FILE_PREFIX)) {
-                            loadGameState(s);
+                            if (s.getLastModifiedTimestamp() > gameBase.timeStamp())
+                                loadGameState(s);
                         }
                         Log.d(LOG_TAG, s.getUniqueName());
                     }
@@ -1018,7 +1090,9 @@ public class MainActivity extends AppCompatActivity implements
                         gameBase.loadByteData(openSnapshotResult.getSnapshot().getSnapshotContents().readFully());
                         // Update jewel count and challenges
                         TextView jewelText = (TextView)rootLayout.findViewById(R.id.jewel_count);
-                        Animations.CountTo(getResources(), R.string.number_after_x, jewelText, 0, gameBase.getJewelCount());
+                        int prevCount = jewelText.getTag() == null ? 0 : (int)jewelText.getTag();
+                        Animations.CountTo(getResources(), R.string.number_after_x, jewelText, prevCount, gameBase.getJewelCount());
+                        jewelText.setTag(gameBase.getJewelCount());
                         // Update challenge list if it has already been displayed
                         if (challengeListAdapter != null) challengeListAdapter.notifyDataSetChanged();
                         // Update recent activity
@@ -1027,6 +1101,7 @@ public class MainActivity extends AppCompatActivity implements
                         gameBaseNeedsRefresh = false;
                         isGameBaseRefreshing = false;
                         consumePurchases();
+                        cacheGame();
                         Log.d(LOG_TAG, "Game refreshed");
                     } catch (IOException | NullPointerException | ClassCastException e) {
                         e.printStackTrace();
@@ -1054,7 +1129,9 @@ public class MainActivity extends AppCompatActivity implements
     private static final String GAME_PREFS = "GAME_PREFS";
     private static final String GAME_FILE_NAME = "GAME_FILE_NAME";
     private static final String GAME_FILE_PREFIX = "ArithmosGame_";
+    public static final String gameCacheFileName = "arithmos_game_cache";
     private ArithmosGameBase gameBase;
+    private File gameCacheFile;
     private boolean retrySaveGameBase = false, retryGameReset = false;
     private boolean gameBaseNeedsRefresh = true, isGameBaseRefreshing = false;
     private ChallengeListAdapter challengeListAdapter;
@@ -1411,6 +1488,7 @@ public class MainActivity extends AppCompatActivity implements
                         countView.setText(getString(R.string.number_after_x, gameBase.getSpecialCount(names[position])));
                         TextView jewelText = (TextView)rootLayout.findViewById(R.id.jewel_count);
                         Animations.CountTo(getResources(), R.string.number_after_x, jewelText, prevCount, gameBase.getJewelCount());
+                        cacheGame();
                         saveGameState();
                     }
                 }
@@ -1739,6 +1817,7 @@ public class MainActivity extends AppCompatActivity implements
                 public void onConsumeFinished(Purchase purchase, IabResult result) {
                     if (result.isSuccess()) {
                         processConsumedPurchase(purchase.getSku());
+                        cacheGame();
                         saveGameState();
                     }
                 }
@@ -1749,7 +1828,8 @@ public class MainActivity extends AppCompatActivity implements
     private void consumePurchases(){
         iabHelper = new IabHelper(this, getString(R.string.base64EncodedPublicKey));
         final ArrayList<String> skuList = new ArrayList<>();
-        skuList.add(SKU_1000_JEWELS);iabHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
+        skuList.add(SKU_1000_JEWELS);
+        iabHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
             public void onIabSetupFinished(IabResult result) {
                 if (!result.isSuccess()) {
                     // Oh noes, there was a problem.
@@ -1775,6 +1855,7 @@ public class MainActivity extends AppCompatActivity implements
                                                         processConsumedPurchase(purchases.get(i).getSku());
                                                     }
                                                 }
+                                                cacheGame();
                                                 saveGameState();
                                             }
                                         });
@@ -2151,6 +2232,8 @@ public class MainActivity extends AppCompatActivity implements
     // Turn based matches
     private static int RC_SELECT_PLAYERS = 9002;
     private int matchLevelXmlId;
+    private String matchId;
+    private boolean retryTakeMatchTurn = false;
     private void startMatchClick(int levelXmlId){
         matchLevelXmlId = levelXmlId;
         Intent intent =
@@ -2239,8 +2322,14 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void takeMatchTurn(String matchId){
-        showLoadingPopup(R.string.loading, 0);
-        Games.TurnBasedMultiplayer.loadMatch(mGoogleApiClient, matchId).setResultCallback(new MatchLoadedCallback());
+        if (rootLayout.findViewById(R.id.loading_popup) == null)showLoadingPopup(R.string.loading, 0);
+        if (mGoogleApiClient.isConnected()) {
+            Games.TurnBasedMultiplayer.loadMatch(mGoogleApiClient, matchId).setResultCallback(new MatchLoadedCallback());
+        } else if (!mGoogleApiClient.isConnecting()){
+            this.matchId = matchId;
+            retryTakeMatchTurn = true;
+            mGoogleApiClient.connect();
+        }
     }
 
     private void declineInvite(String id){
@@ -2255,6 +2344,27 @@ public class MainActivity extends AppCompatActivity implements
         Games.TurnBasedMultiplayer.rematch(mGoogleApiClient, id).setResultCallback(new MatchInitiatedCallback());
     }
 
+    private void loadCachedMatch(){
+        File matchCacheFile = new File(getCacheDir(), MatchGameActivity.matchCacheFileName);
+        if (matchCacheFile.exists()) {
+            FileInputStream fis;
+            ObjectInputStream ois;
+            try {
+                fis = new FileInputStream(matchCacheFile);
+                ois = new ObjectInputStream(fis);
+                MatchGameActivity.MatchCacheData data = (MatchGameActivity.MatchCacheData) ois.readObject();
+                takeMatchTurn(data.matchId);
+
+                ois.close();
+                fis.close();
+                Log.d(LOG_TAG, "Match loaded from cache");
+            } catch (Exception e) {
+                e.printStackTrace();
+                matchCacheFile.delete();
+            }
+        }
+    }
+
     public class MatchInitiatedCallback implements ResultCallback<TurnBasedMultiplayer.InitiateMatchResult> {
 
         @Override
@@ -2267,22 +2377,27 @@ public class MainActivity extends AppCompatActivity implements
                 return;
             }
 
+            // Initialize match
             TurnBasedMatch match = result.getMatch();
-
-            // If this player is not the first player in this match, continue.
-            if (match.getData() != null) {
-
-            }
-
-            Intent intent = new Intent(context, MatchGameActivity.class);
-            intent.putExtra(MatchGameActivity.LEVEL_XML_RES_ID, matchLevelXmlId);
-            SharedPreferences prefs = getSharedPreferences(GAME_PREFS, MODE_PRIVATE);
-            String gameFileName = prefs.getString(GAME_FILE_NAME, null);
-            if (gameFileName != null)
-                intent.putExtra(GameActivity.GAME_BASE_FILE_NAME, gameFileName);
-            intent.putExtra(MatchGameActivity.CREATE_MATCH, true);
-            intent.putExtra(MatchGameActivity.MATCH, match);
-            startActivityForResult(intent, REQUEST_TAKE_MATCH_TURN);
+            ArithmosLevel level = new ArithmosLevel(context, matchLevelXmlId);
+            ArrayList<String> playerIds = match.getParticipantIds();
+            ArithmosGame game = new ArithmosGame(level, playerIds.get(0), playerIds.get(1));
+            game.setCurrentPlayer(match.getCreatorId());
+            Games.TurnBasedMultiplayer.takeTurn(mGoogleApiClient, match.getMatchId(), game.getSaveGameData(), match.getCreatorId()).setResultCallback(new ResultCallback<TurnBasedMultiplayer.UpdateMatchResult>() {
+                @Override
+                public void onResult(@NonNull TurnBasedMultiplayer.UpdateMatchResult updateMatchResult) {
+                    hideLoadingPopup();
+                    Intent intent = new Intent(context, MatchGameActivity.class);
+                    intent.putExtra(MatchGameActivity.LEVEL_XML_RES_ID, matchLevelXmlId);
+                    SharedPreferences prefs = getSharedPreferences(GAME_PREFS, MODE_PRIVATE);
+                    String gameFileName = prefs.getString(GAME_FILE_NAME, null);
+                    if (gameFileName != null)
+                        intent.putExtra(GameActivity.GAME_BASE_FILE_NAME, gameFileName);
+                    intent.putExtra(MatchGameActivity.CREATE_MATCH, true);
+                    intent.putExtra(MatchGameActivity.MATCH, updateMatchResult.getMatch());
+                    startActivityForResult(intent, REQUEST_TAKE_MATCH_TURN);
+                }
+            });
 
             // Otherwise, this is the first player. Initialize the game state.
 
@@ -2292,13 +2407,13 @@ public class MainActivity extends AppCompatActivity implements
     public class MatchLoadedCallback implements ResultCallback<TurnBasedMultiplayer.LoadMatchResult>{
         @Override
         public void onResult(@NonNull TurnBasedMultiplayer.LoadMatchResult loadMatchResult) {
+            retryTakeMatchTurn = false;
             Status status = loadMatchResult.getStatus();
             if (!status.isSuccess()) {
                 Log.d(LOG_TAG, status.getStatusMessage());
 
                 return;
             }
-
             TurnBasedMatch match = loadMatchResult.getMatch();
 
                 hideLoadingPopup();
@@ -2437,6 +2552,9 @@ public class MainActivity extends AppCompatActivity implements
         // Retry game reset
         if (retryGameReset)
             resetGame();
+
+        if (retryTakeMatchTurn)
+            takeMatchTurn(matchId);
 
         refreshMatchList();
         refreshSavedGames();

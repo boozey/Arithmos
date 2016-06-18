@@ -24,6 +24,7 @@ import android.view.animation.AccelerateInterpolator;
 import android.view.animation.AnticipateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 
@@ -49,7 +50,7 @@ public class GameBoard extends View {
     public void setOnAchievementListener(OnAchievementListener listener) { onAchievementListener = listener; }
 
     public interface OnGameOverListener {
-        void OnGameOver(ArithmosGame.GameResult result);
+        void OnGameOver(ArithmosGame.GameResult result, int animationDelay);
     }
     private OnGameOverListener onGameOverListener;
     public void setOnGameOverListener(OnGameOverListener listener) { onGameOverListener = listener; }
@@ -84,9 +85,11 @@ public class GameBoard extends View {
     private static final int SELECTION_TOUCH = 909;
     private static final int OP_POPUP_TOUCH = 910;
     private int TouchMode = SELECTION_TOUCH;
+    private Context context;
 
     public GameBoard(Context context, AttributeSet attrs){
         super(context, attrs);
+        this.context = context;
         thisView = this;
 
         selectionPath = new Path();
@@ -118,6 +121,15 @@ public class GameBoard extends View {
                 return handleOpPopupTouch(event);
         }
         return false;
+    }
+    @Override
+    protected void onMeasure (int widthMeasureSpec, int heightMeasureSpec) {
+        int reqWidth = MeasureSpec.getSize(widthMeasureSpec), reqHeight = MeasureSpec.getSize(heightMeasureSpec);
+        if (reqWidth >= reqHeight) {
+            setMeasuredDimension(reqHeight * 4/3, reqHeight);
+            return;
+        }
+        setMeasuredDimension(reqWidth, reqHeight);
     }
     @Override
     protected void onSizeChanged (int w, int h, int oldw, int oldh){
@@ -337,7 +349,7 @@ public class GameBoard extends View {
     // [row][col]
     private RectF[][] tileDimensions;
     private float pieceW, pieceH;
-    private float horzMargin, vertMargin;
+    private float horzMargin = 16, vertMargin = 16;
     private Bitmap gameBoardBitmap;
     private ArrayList<BonusTile> bonuses;
     private ArithmosGame.GameResult lastGameResult;
@@ -351,11 +363,9 @@ public class GameBoard extends View {
             tileDimensions = new RectF[board.length][board[0].length];
 
             // Determine margins
-            horzMargin = 16;
-            vertMargin = 16;
 
             // Determine tile sizes
-            float width = (float)(w - 2 * horzMargin) / tileDimensions[0].length, height = (float)(h - 2 * vertMargin) / tileDimensions.length;
+            float width = (w - 2 * horzMargin) / tileDimensions[0].length, height = (h - 2 * vertMargin) / tileDimensions.length;
             pieceW = width;
             pieceH = height;
             for (int r = 0; r < tileDimensions.length; r++)
@@ -429,6 +439,18 @@ public class GameBoard extends View {
                             bonuses.add(new BonusTile(ArithmosLevel.BONUS_BOMB, new int[]{r, c},
                                     getBonusBitmap(ArithmosLevel.BONUS_BOMB, dimens), new RectF(dimens)));
                             break;
+                        case ArithmosLevel.BONUS_APPLE:
+                            bonuses.add(new BonusTile(ArithmosLevel.BONUS_APPLE, new int[]{r, c},
+                                    getBonusBitmap(ArithmosLevel.BONUS_APPLE, dimens), new RectF(dimens)));
+                            break;
+                        case ArithmosLevel.BONUS_BANANAS:
+                            bonuses.add(new BonusTile(ArithmosLevel.BONUS_BANANAS, new int[]{r, c},
+                                    getBonusBitmap(ArithmosLevel.BONUS_BANANAS, dimens), new RectF(dimens)));
+                            break;
+                        case ArithmosLevel.BONUS_CHERRIES:
+                            bonuses.add(new BonusTile(ArithmosLevel.BONUS_CHERRIES, new int[]{r, c},
+                                    getBonusBitmap(ArithmosLevel.BONUS_CHERRIES, dimens), new RectF(dimens)));
+                            break;
                         default:
                             canvas.drawText(tileText, dimens.centerX(), dimens.centerY() + txtSize / 2, txtPaint);
                     }
@@ -436,6 +458,7 @@ public class GameBoard extends View {
             }
 
         // Draw runs that have already been played
+        selectionPaint.setColor(ResourcesCompat.getColor(getResources(), R.color.run_color1, null));
         for (ArrayList<int[]> run : game.getP1Runs()){
             int[] start = run.get(0), end = run.get(run.size() - 1);
             RectF startRect = tileDimensions[start[0]][start[1]], endRect = tileDimensions[end[0]][end[1]];
@@ -446,7 +469,6 @@ public class GameBoard extends View {
         }
 
         selectionPaint.setColor(ResourcesCompat.getColor(getResources(), R.color.run_color2, null));
-
         for (ArrayList<int[]> run : game.getP2Runs()){
             int[] start = run.get(0), end = run.get(run.size() - 1);
             RectF startRect = tileDimensions[start[0]][start[1]], endRect = tileDimensions[end[0]][end[1]];
@@ -487,6 +509,15 @@ public class GameBoard extends View {
                 break;
             case ArithmosLevel.BONUS_BOMB:
                 bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_bomb);
+                break;
+            case ArithmosLevel.BONUS_APPLE:
+                bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_apple);
+                break;
+            case ArithmosLevel.BONUS_BANANAS:
+                bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_bananas);
+                break;
+            case ArithmosLevel.BONUS_CHERRIES:
+                bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_cherries);
                 break;
             default:
                 bitmap = Bitmap.createBitmap((int)dimens.width(), (int)dimens.height(), Bitmap.Config.ARGB_8888);
@@ -536,11 +567,24 @@ public class GameBoard extends View {
         if (onPlayCompleted != null)
             onPlayCompleted.OnPlayCompleted(lastGameResult);
         if (lastGameResult.isGameOver && onGameOverListener != null)
-            onGameOverListener.OnGameOver(lastGameResult);
+            onGameOverListener.OnGameOver(lastGameResult, animDelay);
+    }
+    public void useSkipSpecial(){
+        lastGameResult = game.skipGoalNumber();
+        if (onCancelBombListener != null)
+            for (String op : lastGameResult.opsReplaced) {
+                onCancelBombListener.OnCancelBomb(op);
+                setupOpButtons();
+            }
+        if (onPlayCompleted != null)
+            onPlayCompleted.OnPlayCompleted(lastGameResult);
+        if (lastGameResult.isGameOver && onGameOverListener != null)
+            onGameOverListener.OnGameOver(lastGameResult, animDelay);
     }
 
 
     // Bonuses
+    int animDelay = 0;
     private class BonusTile{
         private String type;
         public String getType() { return type; }
@@ -599,6 +643,11 @@ public class GameBoard extends View {
                 case ArithmosLevel.BONUS_LOCK_DIV:
                     bonuses.remove(bonusTile);
                     break;
+                case ArithmosLevel.BONUS_APPLE:
+                case ArithmosLevel.BONUS_BANANAS:
+                case ArithmosLevel.BONUS_CHERRIES:
+                    playFruitAnimation(bonusTile);
+                    break;
             }
         }
     }
@@ -630,6 +679,8 @@ public class GameBoard extends View {
 
                 AnimatorSet set = new AnimatorSet();
                 set.playTogether(floatUp, expand);
+                set.setStartDelay(animDelay);
+                animDelay += 75;
                 set.setDuration(2000);
                 set.addListener(new Animator.AnimatorListener() {
                     @Override
@@ -640,6 +691,7 @@ public class GameBoard extends View {
                     @Override
                     public void onAnimationEnd(Animator animation) {
                         bonuses.remove(balloonTile);
+                        animDelay -= 75;
                     }
 
                     @Override
@@ -683,6 +735,8 @@ public class GameBoard extends View {
 
                 AnimatorSet set = new AnimatorSet();
                 set.playTogether(accelUp, flingRight);
+                set.setStartDelay(animDelay);
+                animDelay += 75;
                 set.setDuration(500);
                 set.addListener(new Animator.AnimatorListener() {
                     @Override
@@ -692,6 +746,7 @@ public class GameBoard extends View {
 
                     @Override
                     public void onAnimationEnd(Animator animation) {
+                        animDelay -= 75;
                         bonuses.remove(jewelTile);
                         if (onJewelListener != null) onJewelListener.OnJewel();
                     }
@@ -718,6 +773,8 @@ public class GameBoard extends View {
             public void run() {
                 ValueAnimator expand = ValueAnimator.ofFloat(2f, 0.1f);
                 expand.setInterpolator(new DecelerateInterpolator());
+                expand.setStartDelay(animDelay);
+                animDelay += 75;
                 expand.setDuration(750);
                 expand.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                     @Override
@@ -736,6 +793,7 @@ public class GameBoard extends View {
 
                     @Override
                     public void onAnimationEnd(Animator animation) {
+                        animDelay -= 75;
                         if (lastGameResult.result == ArithmosGame.GameResult.SUCCESS && onBombListener != null) onBombListener.OnBomb(game.getPiece(bombTile.getRow(), bombTile.getCol()));
                         bonuses.remove(bombTile);
                     }
@@ -751,6 +809,54 @@ public class GameBoard extends View {
                     }
                 });
                 expand.start();
+            }
+        });
+    }
+    private void playFruitAnimation(final BonusTile fruitTile){
+        Log.d(LOG_TAG, fruitTile.getType() + " animation");
+        thisView.post(new Runnable() {
+            @Override
+            public void run() {
+                ValueAnimator fallDown = ValueAnimator.ofFloat(fruitTile.rectF.top, getHeight());
+                fallDown.setInterpolator(new AnticipateInterpolator());
+                fallDown.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                    @Override
+                    public void onAnimationUpdate(ValueAnimator animation) {
+                        fruitTile.rectF.offsetTo(fruitTile.rectF.left, (float) animation.getAnimatedValue());
+                        invalidate();
+                    }
+                });
+
+                AnimatorSet set = new AnimatorSet();
+                set.play(fallDown);
+                set.setStartDelay(animDelay);
+                animDelay += 75;
+                set.setDuration(500);
+                set.addListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        animDelay -= 75;
+                        bonuses.remove(fruitTile);
+                        if (onJewelListener != null) onJewelListener.OnJewel();
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+
+                    }
+                });
+                set.start();
+
             }
         });
     }
@@ -827,21 +933,32 @@ public class GameBoard extends View {
                     invalidate();
                     return true;
                 case MotionEvent.ACTION_UP:
-                    if (fillSelection(getTileLocation(x, y))) {
+                    if (game.availableOperations().length == 0){
+                        Toast.makeText(thisView.getContext(), R.string.no_ops_available, Toast.LENGTH_SHORT).show();
+                        selectionPath.rewind();
+                        return true;
+                    }
+                    else if (fillSelection(getTileLocation(x, y))) {
                         // Over 7 tiles (4 numbers)
                         if (selectedPieces.size() > 7 || game.getGoalType() == ArithmosLevel.GOAL_301) {
                             opIndex = 1;
                             TouchMode = OP_POPUP_TOUCH;
                             showOpPopup = true;
-                            opList = new ArrayList<String>(3);
-                            if (opIndex < selectedPieces.size() && game.isOpLockBonus(selectedPieces.get(opIndex))) {
+                            opList = new ArrayList<>(3);
+                            // Add locked operations at the start of the run
+                            while (opIndex < selectedPieces.size() && game.isOpLockBonus(selectedPieces.get(opIndex))) {
                                 opList.add(game.getLockedOperation(selectedPieces.get(opIndex)));
                                 opIndex += 2;
                             }
+                            // Show popup if there is room to choose more operations
                             if (opIndex < selectedPieces.size()) {
                                 int[] l = selectedPieces.get(opIndex);
                                 RectF r = tileDimensions[l[0]][l[1]];
                                 positionOpPopup(r.centerX(), r.centerY());
+                            }
+                            // Otherwise check the selection
+                            else {
+                                processManualSelection();
                             }
                         } else {
                             // Play processing animation
@@ -1120,7 +1237,7 @@ public class GameBoard extends View {
 
     private void setupOpButtons(){
         // Setup operation popup sizes
-        float diam = Math.min(pieceW, pieceH);
+        float diam = Math.max(20, Math.min(Math.min(pieceW, pieceH), Math.min(getWidth(), getHeight()) / 10));
         opButtonBitmaps = new Bitmap[game.availableOperations().length];
         for (int i = 0; i < game.availableOperations().length; i++){
             opButtonBitmaps[i] = getOpButtonBitmap(ArithmosGame.getOperationDisplayString(game.availableOperations()[i]), (int)(1.5 * diam));
@@ -1185,7 +1302,7 @@ public class GameBoard extends View {
                 });
             }
         } else { // Vertical or diagonal selection
-            if (tileRect.left < w * opButtonsRects.length) { // Close to left, popup should go right
+            if (tileRect.right < w * opButtonsRects.length) { // Close to left, popup should go right
                 expandHorz.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                     @Override
                     public void onAnimationUpdate(ValueAnimator animation) {
@@ -1235,16 +1352,12 @@ public class GameBoard extends View {
                         RectF r = tileDimensions[l[0]][l[1]];
                         positionOpPopup(r.centerX(), r.centerY());
                     } else {
-                        lastGameResult = game.checkSelection(selectedPieces, opList);
+                        processManualSelection();
                         if (lastGameResult.result == ArithmosGame.GameResult.SUCCESS){
-                            playCompleted();
                             // Call achievement listener
                             if (onAchievementListener != null)
                                 onAchievementListener.OnAchievement(getResources().getString(R.string.achievement_arithmetic_master));
                         }
-                        showOpPopup = false;
-                        TouchMode = SELECTION_TOUCH;
-                        selectionPath.rewind();
                     }
                 } else {
                     showOpPopup = false;
@@ -1264,5 +1377,14 @@ public class GameBoard extends View {
             }
         }
         return false;
+    }
+    private void processManualSelection(){
+        lastGameResult = game.checkSelection(selectedPieces, opList);
+        if (lastGameResult.result == ArithmosGame.GameResult.SUCCESS){
+            playCompleted();
+        }
+        showOpPopup = false;
+        TouchMode = SELECTION_TOUCH;
+        selectionPath.rewind();
     }
 }

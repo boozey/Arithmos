@@ -98,6 +98,7 @@
     <!-- Level info strings -->
     <string name="no_time_limit">No time limit</string>
     <string name="time_limit_x">Time limit: %s</string>
+    <string name="start">Start</string>
 
     <!-- Save game prompt -->
     <string name="quit_no_save_prompt">Forfeit this level?</string>
@@ -118,15 +119,17 @@
         <item quantity="one">You still have %d move remaining</item>
         <item quantity="other">You still have %d moves remaining</item>
     </plurals>
-    <string name="submit_turn">Submit turn</string>
+    <string name="submit_turn">Submit</string>
     <string name="forfeit_match">Forfeit match</string>
     <string name="end_turn">Turn finished</string>
     <string name="message_hint">Message</string>
     <string name="match_finished">Match complete</string>
     <string name="finish_match">Finish</string>
     <string name="you_won">You won!</string>
-    <string name="you_lost">You lost</string>
+    <string name="you_lost">You lost!</string>
     <string name="tie">It\'s a tie!</string>
+    <string name="score_slash_301">%1$s/%2$s</string>
+    <string name="good_luck">Good luck!</string>
 
 
 
@@ -149,17 +152,32 @@
 
 
 
-    <!-- Game Challenge and Level Strings -->
+    <!-- Game, Challenge, and Level Strings -->
     <string name="level_locked">Locked</string>
     <string name="challenge_name_crazy_eights">Crazy Eights</string>
-    <string name="challenge_name_easy_as_123">Easy as 123</string>
-    <string name="challenge_name_lucky_7">Lucky Number 7</string>
+    <string name="challenge_name_easy_as_123">Easy as ABC</string>
+    <string name="challenge_name_lucky_7">Lucky 7</string>
 
+    <string name="level_4x4">4x4</string>
+    <string name="level_4x4_301">4x4 301</string>
+    <string name="level_4x4_timed">4x4 Timed</string>
+    <string name="level_5x5">5x5</string>
+    <string name="level_5x5_301">5x5 301</string>
+    <string name="level_5x5_timed">5x5 Timed</string>
     <string name="level_6x6">6x6</string>
+    <string name="level_6x6_301">6x6 301</string>
+    <string name="level_6x6_timed">6x6 Timed</string>
+    <string name="level_7x7">7x7</string>
+    <string name="level_7x7_301">7x7 301</string>
+    <string name="level_7x7_timed">7x7 Timed</string>
     <string name="level_8x8">8x8</string>
+    <string name="level_8x8_301">8x8 301</string>
+    <string name="level_8x8_timed">8x8 Timed</string>
     <string name="level_10x10">10x10</string>
     <string name="level_301">301</string>
     <string name="level_timed">Time challenge</string>
+
+    <string name="no_ops_available">No operations available. Use a skip special.</string>
 
 
 

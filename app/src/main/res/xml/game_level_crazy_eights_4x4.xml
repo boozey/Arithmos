@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Level challenge_name="CRAZY_EIGHTS"
+    challenge_level="0"
+    gridsize="4">
+    <GridBaseNumbers>1, 2, 3, 4, 5, 6, 8, 8, 8, 8</GridBaseNumbers>
+    <GridSpecialNumbers>7, 16, 64, 48</GridSpecialNumbers>
+    <GoalNumbers>8, 16, 24, 32, 48</GoalNumbers>
+    <!-- 33 Bonus locations -->
+    <Run>5, bonus_balloons, 6, bonus_lock+, 2</Run> <!-- 32 -->
+    <Run>5, bonus_lock*, 5, bonus_balloons, 1</Run> <!-- 24 -->
+    <Run>64, ?, 8</Run> <!-- 8 -->
+    <Run>48, ?, 3</Run> <!-- 16 -->
+    <Run>8, ?, 6</Run> <!-- 48 -->
+    <Run>48, ?, 2</Run> <!-- 24 -->
+    <Run>2, ?, 4</Run> <!-- 8 -->
+    <StarLevels>2000, 3000, 5000</StarLevels>
+    <Bonus name="apple">19</Bonus>
+    <Bonus name="balloons">5</Bonus>
+    <Bonus name="red_jewel">5</Bonus>
+</Level>

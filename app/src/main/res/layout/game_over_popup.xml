@@ -3,32 +3,28 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:id="@+id/game_over_popup">
-    <LinearLayout
+    <LinearLayout android:id="@+id/pop_up_foreground"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:padding="24dp"
-        android:layout_margin="16dp"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="36dp"
         android:orientation="vertical"
-        android:gravity="center_horizontal"
         android:background="@drawable/rounded_corner_primary">
-        <TextView android:id="@+id/title_textview"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="36sp"
-            android:textColor="@color/text_primary_light"
-            android:text="@string/congratulations"/>
 
         <TextView android:id="@id/score_textview"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="34dp"
+            android:layout_gravity="center_horizontal"
             android:drawableStart="@drawable/ic_zero_stars_80dp"
             android:drawablePadding="12dp"
             android:gravity="center_vertical"
             android:textColor="@color/text_primary_light"
-            android:textSize="32sp"
-            android:text="2500"/>
+            android:textSize="@dimen/game_popup_xlarge_text_size"
+            android:text="5,000"/>
 
         <TextView android:id="@+id/level_textview1"
             android:layout_width="wrap_content"
@@ -48,49 +44,102 @@
             android:text="Level 1"
             android:visibility="gone"/>
 
-        <LinearLayout android:id="@+id/bonus_layout1"
+        <RelativeLayout android:id="@+id/bonus_layout1"
             android:layout_width="wrap_content"
             android:layout_marginStart="24dp"
             android:layout_marginEnd="24dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:orientation="horizontal">
+            android:layout_gravity="center">
             <TextView android:id="@+id/jewel_count"
                 android:layout_width="wrap_content"
+                android:layout_marginEnd="16dp"
                 android:layout_height="wrap_content"
-                android:drawableStart="@drawable/ic_red_jewel_32dp"
+                android:drawableStart="@drawable/ic_red_jewel"
                 android:gravity="center_vertical"
                 android:textColor="@color/text_primary_light"
                 android:text="X 0"/>
 
             <TextView android:id="@+id/balloon_count"
                 android:layout_width="wrap_content"
-                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
                 android:layout_height="wrap_content"
-                android:drawableStart="@drawable/ic_balloon_32dp"
+                android:drawableStart="@drawable/ic_balloons"
                 android:gravity="center_vertical"
                 android:textColor="@color/text_primary_light"
+                android:layout_toEndOf="@id/jewel_count"
+                android:visibility="gone"
                 android:text="X 0"/>
 
             <TextView android:id="@+id/lock_count"
                 android:layout_width="wrap_content"
-                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
                 android:layout_height="wrap_content"
+                android:layout_toEndOf="@id/balloon_count"
                 android:drawableStart="@drawable/ic_lock_image"
                 android:gravity="center_vertical"
                 android:textColor="@color/text_primary_light"
+                android:visibility="gone"
                 android:text="X 0"/>
-        </LinearLayout>
 
+            <TextView android:id="@+id/apple_count"
+                android:layout_width="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/jewel_count"
+                android:drawableStart="@drawable/ic_apple"
+                android:gravity="center_vertical"
+                android:textColor="@color/text_primary_light"
+                android:visibility="gone"
+                android:text="X 0"/>
+            <TextView android:id="@+id/banana_count"
+                android:layout_width="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/jewel_count"
+                android:layout_toEndOf="@id/apple_count"
+                android:drawableStart="@drawable/ic_bananas"
+                android:gravity="center_vertical"
+                android:textColor="@color/text_primary_light"
+                android:visibility="gone"
+                android:text="X 0"/>
+            <TextView android:id="@+id/cherry_count"
+                android:layout_width="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/jewel_count"
+                android:layout_toEndOf="@id/banana_count"
+                android:drawableStart="@drawable/ic_cherries"
+                android:gravity="center_vertical"
+                android:textColor="@color/text_primary_light"
+                android:visibility="gone"
+                android:text="X 0"/>
+        </RelativeLayout>
 
-
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:background="@drawable/rounded_corner_primary_accent"
-            android:textColor="@color/text_primary_light"
-            android:text="@string/exit_button_text"
-            android:onClick="ExitButtonClick"/>
     </LinearLayout>
+
+    <TextView android:id="@+id/title_textview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/rounded_corner_primary_accent"
+        android:padding="16dp"
+        android:layout_centerHorizontal="true"
+        android:layout_above="@id/pop_up_foreground"
+        android:layout_marginBottom="-36dp"
+        android:elevation="8dp"
+        android:textColor="@color/text_primary_light"
+        android:textSize="@dimen/game_popup_large_text_size"
+        android:text="@string/you_lost"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="30dp"
+        android:layout_below="@id/pop_up_foreground"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="-20dp"
+        android:layout_marginEnd="-8dp"
+        android:background="@drawable/rounded_corner_primary_accent"
+        android:textColor="@color/text_primary_light"
+        android:text="@string/exit_button_text"
+        android:onClick="ExitButtonClick"/>
 </RelativeLayout>
