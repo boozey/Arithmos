@@ -1325,6 +1325,15 @@ public class MatchGameActivity extends AppCompatActivity implements
         Animations.slideUp(numberList, 200, 0, rootLayout.getHeight() / 3).start();
     }
 
+    public void OperationButtonClick(View v){
+        v.setSelected(!v.isSelected());
+        if (v.isSelected()){
+            gameBoard.setOperationPickMode(GameBoard.MANUAL_PICK);
+        } else {
+            gameBoard.setOperationPickMode(GameBoard.AUTO_PICK);
+        }
+    }
+
     // Turn  match
     private TurnBasedMatch match;
     private boolean forfeit = false;

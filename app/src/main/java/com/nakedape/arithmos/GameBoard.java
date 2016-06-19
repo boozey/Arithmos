@@ -895,6 +895,91 @@ public class GameBoard extends View {
     }
 
 
+    // Score popup
+    private boolean playScoreAnimation = false;
+    private Paint scorePaint;
+    private String score = "";
+    private float[] scorePos = {0, 0};
+
+    private void playScoreAnimation(){
+        playScoreAnimation = true;
+        // Determine approx center row and col of selection
+        int col = selectedPieces.get(selectedPieces.size() / 2)[1];
+        int row = selectedPieces.get(selectedPieces.size() / 2)[0];
+
+        // Update score
+        score = String.valueOf(game.getLastScore());
+
+        // Determine length of score text;
+        float txtLength = 0;
+        float[] lengths = new float[score.length()];
+        scorePaint.getTextWidths(score, lengths);
+        for (float x : lengths) txtLength += x;
+
+        // Set initial position
+        scorePos = new float[] {Math.max(txtLength / 2, Math.min(col * pieceW, getWidth() - txtLength / 2)), getHeight()};
+        scorePaint.setAlpha(0);
+
+        ValueAnimator fadeIn = ValueAnimator.ofInt(0, 255);
+        fadeIn.setDuration(200);
+        fadeIn.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                scorePaint.setAlpha((int) animation.getAnimatedValue());
+            }
+        });
+
+        ValueAnimator popUp = ValueAnimator.ofFloat(Math.max(scorePaint.getTextSize(), Math.min(row * pieceH, getHeight())) + 3 * scorePaint.getTextSize(), Math.max(scorePaint.getTextSize(), Math.min(row * pieceH, getHeight())));
+        popUp.setDuration(200);
+        popUp.setInterpolator(new OvershootInterpolator());
+        popUp.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                scorePos[1] = (float) animation.getAnimatedValue();
+                invalidate();
+            }
+        });
+
+        ValueAnimator fadeOut = ValueAnimator.ofInt(255, 0);
+        fadeOut.setStartDelay(200);
+        fadeOut.setDuration(150);
+        fadeOut.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                scorePaint.setAlpha((int) animation.getAnimatedValue());
+                invalidate();
+            }
+        });
+
+        AnimatorSet set = new AnimatorSet();
+        set.play(fadeIn).with(popUp);
+        set.play(fadeOut).after(popUp);
+        set.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                playScoreAnimation = false;
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+
+            }
+        });
+        set.start();
+
+    }
+
+
     // Selection
     private Path selectionPath;
     private Paint selectionPaint;
@@ -904,6 +989,8 @@ public class GameBoard extends View {
     private ArrayList<int[]> operationAnimationPositions;
     private ArrayList<String> operationAnimationValues;
     private RectF rectF;
+    public static int AUTO_PICK = 911, MANUAL_PICK = 912;
+    private int opPickMode = AUTO_PICK;
 
     private boolean handleSelectionTouch(MotionEvent event){
         if (!isProcessing) {
@@ -940,7 +1027,7 @@ public class GameBoard extends View {
                     }
                     else if (fillSelection(getTileLocation(x, y))) {
                         // Over 7 tiles (4 numbers)
-                        if (selectedPieces.size() > 7 || game.getGoalType() == ArithmosLevel.GOAL_301) {
+                        if (opPickMode == MANUAL_PICK || selectedPieces.size() > 7 || game.getGoalType() == ArithmosLevel.GOAL_301) {
                             opIndex = 1;
                             TouchMode = OP_POPUP_TOUCH;
                             showOpPopup = true;
@@ -1141,90 +1228,8 @@ public class GameBoard extends View {
             canvas.drawPath(selectionPath, selectionPaint);
         }
     }
-
-
-    // Score popup
-    private boolean playScoreAnimation = false;
-    private Paint scorePaint;
-    private String score = "";
-    private float[] scorePos = {0, 0};
-
-    private void playScoreAnimation(){
-        playScoreAnimation = true;
-        // Determine approx center row and col of selection
-        int col = selectedPieces.get(selectedPieces.size() / 2)[1];
-        int row = selectedPieces.get(selectedPieces.size() / 2)[0];
-
-        // Update score
-        score = String.valueOf(game.getLastScore());
-
-        // Determine length of score text;
-        float txtLength = 0;
-        float[] lengths = new float[score.length()];
-        scorePaint.getTextWidths(score, lengths);
-        for (float x : lengths) txtLength += x;
-
-        // Set initial position
-        scorePos = new float[] {Math.max(txtLength / 2, Math.min(col * pieceW, getWidth() - txtLength / 2)), getHeight()};
-        scorePaint.setAlpha(0);
-
-        ValueAnimator fadeIn = ValueAnimator.ofInt(0, 255);
-        fadeIn.setDuration(200);
-        fadeIn.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                scorePaint.setAlpha((int) animation.getAnimatedValue());
-            }
-        });
-
-        ValueAnimator popUp = ValueAnimator.ofFloat(Math.max(scorePaint.getTextSize(), Math.min(row * pieceH, getHeight())) + 3 * scorePaint.getTextSize(), Math.max(scorePaint.getTextSize(), Math.min(row * pieceH, getHeight())));
-        popUp.setDuration(200);
-        popUp.setInterpolator(new OvershootInterpolator());
-        popUp.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                scorePos[1] = (float) animation.getAnimatedValue();
-                invalidate();
-            }
-        });
-
-        ValueAnimator fadeOut = ValueAnimator.ofInt(255, 0);
-        fadeOut.setStartDelay(200);
-        fadeOut.setDuration(150);
-        fadeOut.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                scorePaint.setAlpha((int) animation.getAnimatedValue());
-                invalidate();
-            }
-        });
-
-        AnimatorSet set = new AnimatorSet();
-        set.play(fadeIn).with(popUp);
-        set.play(fadeOut).after(popUp);
-        set.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animation) {
-
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                playScoreAnimation = false;
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animation) {
-
-            }
-
-            @Override
-            public void onAnimationRepeat(Animator animation) {
-
-            }
-        });
-        set.start();
-
+    public void setOperationPickMode(int mode){
+        opPickMode = mode;
     }
 
 

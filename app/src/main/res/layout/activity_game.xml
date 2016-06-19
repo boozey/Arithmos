@@ -78,6 +78,12 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical"
                 android:gravity="center_horizontal">
+                <ImageButton
+                    android:layout_width="@dimen/slash_icon_size"
+                    android:layout_height="@dimen/slash_icon_size"
+                    android:layout_margin="4dp"
+                    android:background="@drawable/operations_button_background"
+                    android:onClick="OperationButtonClick"/>
                 <ListView android:id="@+id/upcoming_goal_listview"
                     android:layout_width="@dimen/goal_list_width"
                     android:layout_height="wrap_content"
