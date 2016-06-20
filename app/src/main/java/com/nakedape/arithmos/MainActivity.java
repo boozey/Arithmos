@@ -13,6 +13,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.AppCompatCheckBox;
 import android.support.v7.widget.AppCompatImageButton;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -92,7 +93,7 @@ public class MainActivity extends AppCompatActivity implements
     public static int REQUEST_LEVEL_PLAYED = 300;
     public static int REQUEST_TAKE_MATCH_TURN = 301;
 
-    private static final String ACTIVITY_PREFS = "activity_prefs";
+    public static final String GENERAL_PREFS = "GENERAL_PREFS";
 
     private Context context;
     private RelativeLayout rootLayout;
@@ -101,7 +102,7 @@ public class MainActivity extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        SharedPreferences prefs = getSharedPreferences(ACTIVITY_PREFS, MODE_PRIVATE);
+        SharedPreferences prefs = getSharedPreferences(GENERAL_PREFS, MODE_PRIVATE);
         mAutoStartSignInFlow = prefs.getBoolean(AUTO_SIGN_IN, true);
 
         // Create the Google Api Client with access to the Play Games services
@@ -123,6 +124,8 @@ public class MainActivity extends AppCompatActivity implements
                 signInClicked(v);
             }
         });
+
+        if (!mAutoStartSignInFlow) rootLayout.findViewById(R.id.achievements_button).setVisibility(View.GONE);
 
         ListView activityList = (ListView)rootLayout.findViewById(R.id.activity_listview);
         View header = getLayoutInflater().inflate(R.layout.activity_button_bar, null);
@@ -253,13 +256,18 @@ public class MainActivity extends AppCompatActivity implements
             mResolvingConnectionFailure = false;
             if (resultCode == RESULT_OK) {
                 mGoogleApiClient.connect();
-            } else {
+            } else if (resultCode == RESULT_CANCELED){
+                hideLoadingPopup();
+                showUsePlayGamesPrompt();
+            }
+            else {
                 // Bring up an error dialog to alert the user that sign-in
                 // failed. The R.string.signin_failure should reference an error
                 // string in your strings.xml file that tells the user they
                 // could not be signed in, such as "Unable to sign in."
                 BaseGameUtils.showActivityResultError(this,
-                        requestCode, resultCode, R.string.gamehelper_sign_in_failed);
+                        requestCode, resultCode, R.string.sign_in_failed);
+                hideLoadingPopup();
             }
         }
 
@@ -372,6 +380,16 @@ public class MainActivity extends AppCompatActivity implements
             });
         }
 
+        public void removeGoogleItems(){
+            saves.clear();
+            saves.add(emptyItem);
+            matches.clear();
+            matches.add(emptyItem);
+            items.clear();
+            items.addAll(history);
+            notifyDataSetChanged();
+        }
+
         public void addItems(ArrayList<GameActivityItem> newItems){
             for (GameActivityItem item : newItems){
                 if (items.contains(item)) items.remove(item);
@@ -398,8 +416,14 @@ public class MainActivity extends AppCompatActivity implements
                         break;
                 }
             }
-            if (getCount() > 1)
+            if (items.size() > 1)
+                items.remove(emptyItem);
+            if (saves.size() > 1)
+                saves.remove(emptyItem);
+            if (history.size() > 1)
                 history.remove(emptyItem);
+            if (matches.size() > 1)
+                matches.remove(emptyItem);
             notifyDataSetChanged();
         }
 
@@ -429,8 +453,14 @@ public class MainActivity extends AppCompatActivity implements
                     matches.add(item);
                     break;
             }
-            if (getCount() > 1)
-                removeItem(emptyItem);
+            if (items.size() > 1)
+                items.remove(emptyItem);
+            if (saves.size() > 1)
+                saves.remove(emptyItem);
+            if (history.size() > 1)
+                history.remove(emptyItem);
+            if (matches.size() > 1)
+                matches.remove(emptyItem);
             notifyDataSetChanged();
         }
 
@@ -1050,14 +1080,14 @@ public class MainActivity extends AppCompatActivity implements
                     Log.d(LOG_TAG, "Game state saved");
                 }
             });
-        } else {
+        } else if (mAutoStartSignInFlow){
             retrySaveGameBase = true;
             mGoogleApiClient.connect();
         }
     }
 
     private void refreshGameState(){
-        if (!isGameBaseRefreshing) {
+        if (!isGameBaseRefreshing && mGoogleApiClient.isConnected()) {
             isGameBaseRefreshing = true;
             Games.Snapshots.load(mGoogleApiClient, false).setResultCallback(new ResultCallback<Snapshots.LoadSnapshotsResult>() {
                 @Override
@@ -1081,7 +1111,7 @@ public class MainActivity extends AppCompatActivity implements
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString(GAME_FILE_NAME, gameFileName);
         editor.apply();
-        if (gameFileName != null && gameBaseNeedsRefresh) {
+        if (gameFileName != null && gameBaseNeedsRefresh && mGoogleApiClient.isConnected()) {
             Games.Snapshots.open(mGoogleApiClient, gameFileName, false).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
                 @Override
                 public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
@@ -1247,21 +1277,27 @@ public class MainActivity extends AppCompatActivity implements
                         playLevel(ArithmosGameBase.getLevelXmlIds(getGroup(groupPosition))[childPosition]);
                     }
                 });
-                button2.setVisibility(View.VISIBLE);
-                button2.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        ArithmosLevel level = new ArithmosLevel(context, ArithmosGameBase.getLevelXmlIds(getGroup(groupPosition))[childPosition]);
-                        showLeaderboard(level.getLeaderboardId());
-                    }
-                });
-                matchButton.setVisibility(View.VISIBLE);
-                matchButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        startMatchClick(ArithmosGameBase.getLevelXmlIds(getGroup(groupPosition))[childPosition]);
-                    }
-                });
+                if (mAutoStartSignInFlow) {
+                    button2.setVisibility(View.VISIBLE);
+                    button2.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            ArithmosLevel level = new ArithmosLevel(context, ArithmosGameBase.getLevelXmlIds(getGroup(groupPosition))[childPosition]);
+                            showLeaderboard(level.getLeaderboardId());
+                        }
+                    });
+
+                    matchButton.setVisibility(View.VISIBLE);
+                    matchButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            startMatchClick(ArithmosGameBase.getLevelXmlIds(getGroup(groupPosition))[childPosition]);
+                        }
+                    });
+                } else {
+                    button2.setVisibility(View.GONE);
+                    matchButton.setVisibility(View.GONE);
+                }
             }
             return convertView;
         }
@@ -2121,119 +2157,12 @@ public class MainActivity extends AppCompatActivity implements
     }
 
 
-    // New game methods
-    public void NewGameButtonClick(View v) {
-        Animations.shrinkOut(v, 100).start();
-        ShowCreateGamePopup();
-    }
-
-    private void ShowCreateGamePopup() {
-        final View layout = getLayoutInflater().inflate(R.layout.popup_game_config, null);
-        // Prepare popup window
-        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        layout.setLayoutParams(params);
-
-        RelativeLayout window = (RelativeLayout) layout.findViewById(R.id.window_layout);
-        window.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                return true;
-            }
-        });
-
-        final Spinner gridSizes = (Spinner) layout.findViewById(R.id.grid_size_spinner);
-        ArrayAdapter adapter = ArrayAdapter.createFromResource(this, R.array.gridSizes, R.layout.game_options_spinner_item);
-        adapter.setDropDownViewResource(R.layout.game_options_spinner_dropdown_item);
-        gridSizes.setAdapter(adapter);
-        gridSizes.setSelection(1);
-
-        final Spinner goalModes = (Spinner) layout.findViewById(R.id.goal_mode_spinner);
-        adapter = ArrayAdapter.createFromResource(this, R.array.goalModes, R.layout.game_options_spinner_item);
-        adapter.setDropDownViewResource(R.layout.game_options_spinner_dropdown_item);
-        goalModes.setAdapter(adapter);
-        final CheckBox allowBonus = (CheckBox) layout.findViewById(R.id.allow_bonus_checkbox);
-        final CheckBox allowAutoComplete = (CheckBox) layout.findViewById(R.id.allow_autocomplete_checkbox);
-        Button playButton = (Button) layout.findViewById(R.id.play_button);
-        playButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                rootLayout.removeView(layout);
-                String gridSize = (String) gridSizes.getSelectedItem();
-                String goalMode = (String) goalModes.getSelectedItem();
-                CreateGame(gridSize, goalMode, allowBonus.isChecked(), allowAutoComplete.isChecked());
-            }
-        });
-
-        // Click handler to close popup
-        layout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Animate
-                AnimatorSet set = Animations.shrinkOut(layout, 200);
-                set.addListener(new Animator.AnimatorListener() {
-                    @Override
-                    public void onAnimationStart(Animator animation) {
-
-                    }
-
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        rootLayout.removeView(layout);
-                        Animations.popIn(rootLayout.findViewById(R.id.challenges_button), 200, 0).start();
-                    }
-
-                    @Override
-                    public void onAnimationCancel(Animator animation) {
-
-                    }
-
-                    @Override
-                    public void onAnimationRepeat(Animator animation) {
-
-                    }
-                });
-                set.start();
-            }
-        });
-
-
-        rootLayout.addView(layout);
-        Animations.popIn(layout, 200, 0).start();
-    }
-
-    private void CreateGame(String gridSize, String goalMode, boolean allowBonus, boolean allowAutocomplete) {
-        Bundle options = new Bundle();
-
-        // Specify grid size
-        if (gridSize.equals(getString(R.string.grid_10x10))) {
-            options.putInt(GameActivity.GRID_SIZE, 10);
-        } else if (gridSize.equals(getString(R.string.grid_8x8))) {
-            options.putInt(GameActivity.GRID_SIZE, 8);
-        } else if (gridSize.equals(getString(R.string.grid_6x6))) {
-            options.putInt(GameActivity.GRID_SIZE, 6);
-        }
-
-        // Specify goal mode
-        if (goalMode.equals(getString(R.string.single_number))) {
-            options.putInt(GameActivity.GOAL_MODE, ArithmosLevel.GOAL_SINGLE_NUM);
-        } else if (goalMode.equals(getString(R.string.random_number))) {
-            options.putInt(GameActivity.GOAL_MODE, ArithmosLevel.GOAL_MULT_NUM);
-        } else if (goalMode.equals(getString(R.string.multiples))) {
-            options.putInt(GameActivity.GOAL_MODE, ArithmosLevel.GOAL_MULTIPLES);
-        } else if (goalMode.equals(getString(R.string.three01))) {
-            options.putInt(GameActivity.GOAL_MODE, ArithmosLevel.GOAL_301);
-        }
-
-        Intent intent = new Intent(this, GameActivity.class);
-        startActivity(intent);
-    }
-
 
     // Turn based matches
     private static int RC_SELECT_PLAYERS = 9002;
     private int matchLevelXmlId;
     private String matchId;
-    private boolean retryTakeMatchTurn = false;
+    private boolean retryTakeMatchTurn = false, retryAcceptInvitation = false;
     private void startMatchClick(int levelXmlId){
         matchLevelXmlId = levelXmlId;
         Intent intent =
@@ -2250,97 +2179,116 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void refreshMatchList(){
-        int[] statusTypes = new int[]{TurnBasedMatch.MATCH_TURN_STATUS_INVITED, TurnBasedMatch.MATCH_TURN_STATUS_MY_TURN,
-                                    TurnBasedMatch.MATCH_TURN_STATUS_THEIR_TURN, TurnBasedMatch.MATCH_TURN_STATUS_COMPLETE};
-        Games.TurnBasedMultiplayer.loadMatchesByStatus(mGoogleApiClient, statusTypes).setResultCallback(new ResultCallback<TurnBasedMultiplayer.LoadMatchesResult>() {
-            @Override
-            public void onResult(@NonNull TurnBasedMultiplayer.LoadMatchesResult loadMatchesResult) {
-                for (Invitation i : loadMatchesResult.getMatches().getInvitations()){
-                    GameActivityItem item = new GameActivityItem(GameActivityItem.MATCH_INVITATION);
-                    item.challengeName = i.getInviter().getDisplayName();
-                    item.timeStamp = i.getCreationTimestamp();
-                    item.uniqueName = i.getInvitationId();
-                    item.imageUri = i.getInviter().getIconImageUri();
-                    activityListAdapter.addItem(item);
-                }
-
-                for (TurnBasedMatch match : loadMatchesResult.getMatches().getMyTurnMatches()){
-                    GameActivityItem item = new GameActivityItem(GameActivityItem.MATCH_MY_TURN);
-                    Participant lastParticipant = match.getParticipant(match.getLastUpdaterId());
-                    item.challengeName = lastParticipant.getDisplayName();
-                    item.timeStamp = match.getLastUpdatedTimestamp();
-                    item.uniqueName = match.getMatchId();
-                    item.imageUri = lastParticipant.getIconImageUri();
-                    activityListAdapter.addItem(item);
-                }
-
-                for (TurnBasedMatch match : loadMatchesResult.getMatches().getTheirTurnMatches()) {
-                    GameActivityItem item = new GameActivityItem(GameActivityItem.MATCH_THEIR_TURN);
-                    Participant nextParticipant = match.getParticipant(match.getPendingParticipantId());
-                    item.challengeName = nextParticipant.getDisplayName();
-                    item.timeStamp = match.getLastUpdatedTimestamp();
-                    item.uniqueName = match.getMatchId();
-                    item.imageUri = nextParticipant.getIconImageUri();
-                    activityListAdapter.addItem(item);
-                }
-
-
-                for (TurnBasedMatch match : loadMatchesResult.getMatches().getCompletedMatches()) {
-                    GameActivityItem item = new GameActivityItem(GameActivityItem.MATCH_COMPLETE);
-                    Participant origParticipant = match.getParticipant(match.getCreatorId());
-                    item.challengeName = origParticipant.getDisplayName();
-                    item.timeStamp = match.getLastUpdatedTimestamp();
-                    item.uniqueName = match.getMatchId();
-                    item.imageUri = origParticipant.getIconImageUri();
-                    if (match.canRematch()){
-                        item.canRematch = match.canRematch();
-                        item.rematchId = match.getRematchId();
+        if (mGoogleApiClient.isConnected()) {
+            int[] statusTypes = new int[]{TurnBasedMatch.MATCH_TURN_STATUS_INVITED, TurnBasedMatch.MATCH_TURN_STATUS_MY_TURN,
+                    TurnBasedMatch.MATCH_TURN_STATUS_THEIR_TURN, TurnBasedMatch.MATCH_TURN_STATUS_COMPLETE};
+            Games.TurnBasedMultiplayer.loadMatchesByStatus(mGoogleApiClient, statusTypes).setResultCallback(new ResultCallback<TurnBasedMultiplayer.LoadMatchesResult>() {
+                @Override
+                public void onResult(@NonNull TurnBasedMultiplayer.LoadMatchesResult loadMatchesResult) {
+                    for (Invitation i : loadMatchesResult.getMatches().getInvitations()) {
+                        GameActivityItem item = new GameActivityItem(GameActivityItem.MATCH_INVITATION);
+                        item.challengeName = i.getInviter().getDisplayName();
+                        item.timeStamp = i.getCreationTimestamp();
+                        item.uniqueName = i.getInvitationId();
+                        item.imageUri = i.getInviter().getIconImageUri();
+                        activityListAdapter.addItem(item);
                     }
-                    ParticipantResult result = match.getParticipant(match.getParticipantId(Games.Players.getCurrentPlayerId(mGoogleApiClient))).getResult();
-                    if (result != null)
-                        item.matchResult = result.getResult();
-                    activityListAdapter.addItem(item);
-                }
 
-                activityListAdapter.sort();
-                loadMatchesResult.release();
-                rootLayout.findViewById(R.id.progress_bar).setVisibility(View.GONE);
-                Log.d(LOG_TAG, "Matches loaded");
-            }
-        });
+                    for (TurnBasedMatch match : loadMatchesResult.getMatches().getMyTurnMatches()) {
+                        GameActivityItem item = new GameActivityItem(GameActivityItem.MATCH_MY_TURN);
+                        Participant lastParticipant = match.getParticipant(match.getLastUpdaterId());
+                        item.challengeName = lastParticipant.getDisplayName();
+                        item.timeStamp = match.getLastUpdatedTimestamp();
+                        item.uniqueName = match.getMatchId();
+                        item.imageUri = lastParticipant.getIconImageUri();
+                        activityListAdapter.addItem(item);
+                    }
+
+                    for (TurnBasedMatch match : loadMatchesResult.getMatches().getTheirTurnMatches()) {
+                        GameActivityItem item = new GameActivityItem(GameActivityItem.MATCH_THEIR_TURN);
+                        Participant nextParticipant = match.getParticipant(match.getPendingParticipantId());
+                        item.challengeName = nextParticipant.getDisplayName();
+                        item.timeStamp = match.getLastUpdatedTimestamp();
+                        item.uniqueName = match.getMatchId();
+                        item.imageUri = nextParticipant.getIconImageUri();
+                        activityListAdapter.addItem(item);
+                    }
+
+
+                    for (TurnBasedMatch match : loadMatchesResult.getMatches().getCompletedMatches()) {
+                        GameActivityItem item = new GameActivityItem(GameActivityItem.MATCH_COMPLETE);
+                        Participant origParticipant = match.getParticipant(match.getCreatorId());
+                        item.challengeName = origParticipant.getDisplayName();
+                        item.timeStamp = match.getLastUpdatedTimestamp();
+                        item.uniqueName = match.getMatchId();
+                        item.imageUri = origParticipant.getIconImageUri();
+                        if (match.canRematch()) {
+                            item.canRematch = match.canRematch();
+                            item.rematchId = match.getRematchId();
+                        }
+                        ParticipantResult result = match.getParticipant(match.getParticipantId(Games.Players.getCurrentPlayerId(mGoogleApiClient))).getResult();
+                        if (result != null)
+                            item.matchResult = result.getResult();
+                        activityListAdapter.addItem(item);
+                    }
+
+                    activityListAdapter.sort();
+                    loadMatchesResult.release();
+                    rootLayout.findViewById(R.id.progress_bar).setVisibility(View.GONE);
+                    Log.d(LOG_TAG, "Matches loaded");
+                }
+            });
+        }
     }
 
     private void acceptInvitation(final String matchId){
-        final View popup = Utils.progressPopup(context, getString(R.string.accept_invitation_progress));
-        Animations.slideUp(popup, 150, 0, rootLayout.getHeight() / 3).start();
-        Games.TurnBasedMultiplayer.acceptInvitation(mGoogleApiClient, matchId).setResultCallback(new ResultCallback<TurnBasedMultiplayer.InitiateMatchResult>() {
-            @Override
-            public void onResult(@NonNull TurnBasedMultiplayer.InitiateMatchResult initiateMatchResult) {
-                takeMatchTurn(matchId);
-            }
-        });
+        if (mGoogleApiClient.isConnected()) {
+            retryAcceptInvitation = false;
+            final View popup = Utils.progressPopup(context, getString(R.string.accept_invitation_progress));
+            Animations.slideUp(popup, 150, 0, rootLayout.getHeight() / 3).start();
+            Games.TurnBasedMultiplayer.acceptInvitation(mGoogleApiClient, matchId).setResultCallback(new ResultCallback<TurnBasedMultiplayer.InitiateMatchResult>() {
+                @Override
+                public void onResult(@NonNull TurnBasedMultiplayer.InitiateMatchResult initiateMatchResult) {
+                    takeMatchTurn(matchId);
+                }
+            });
+        } else if (mAutoStartSignInFlow){
+            retryAcceptInvitation = true;
+            this.matchId = matchId;
+            mGoogleApiClient.connect();
+        } else {
+            Toast.makeText(context, R.string.not_signed_in, Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void takeMatchTurn(String matchId){
-        if (rootLayout.findViewById(R.id.loading_popup) == null)showLoadingPopup(R.string.loading, 0);
         if (mGoogleApiClient.isConnected()) {
+            showLoadingPopup(R.string.loading, 0);
             Games.TurnBasedMultiplayer.loadMatch(mGoogleApiClient, matchId).setResultCallback(new MatchLoadedCallback());
-        } else if (!mGoogleApiClient.isConnecting()){
+        } else if (mAutoStartSignInFlow){
+            showLoadingPopup(R.string.loading, 0);
             this.matchId = matchId;
             retryTakeMatchTurn = true;
             mGoogleApiClient.connect();
+        } else {
+            Toast.makeText(context, R.string.not_signed_in, Toast.LENGTH_SHORT).show();
         }
     }
 
     private void declineInvite(String id){
-        Games.TurnBasedMultiplayer.declineInvitation(mGoogleApiClient, id);
+        if (mGoogleApiClient.isConnected()) {
+            Games.TurnBasedMultiplayer.declineInvitation(mGoogleApiClient, id);
+        }
     }
 
     private void dismissMatch(String id){
-        Games.TurnBasedMultiplayer.dismissMatch(mGoogleApiClient, id);
+        if (mGoogleApiClient.isConnected()) {
+            Games.TurnBasedMultiplayer.dismissMatch(mGoogleApiClient, id);
+        }
     }
 
     private void rematch(String id){
+        if (mGoogleApiClient.isConnected())
         Games.TurnBasedMultiplayer.rematch(mGoogleApiClient, id).setResultCallback(new MatchInitiatedCallback());
     }
 
@@ -2523,17 +2471,19 @@ public class MainActivity extends AppCompatActivity implements
     private GoogleApiClient mGoogleApiClient;
 
     private static int RC_SIGN_IN = 9001;
+    private static String SHOW_USE_GOOGLE_PLAY_PROMPT = "SHOW_USE_GOOGLE_PLAY_PROMPT";
 
     private boolean mResolvingConnectionFailure = false;
     private boolean mAutoStartSignInFlow = true;
     private boolean mSignInClicked = false;
-    private static final String AUTO_SIGN_IN = "auto_sign_in";
+    public static final String AUTO_SIGN_IN = "auto_sign_in";
 
     @Override
     public void onConnected(Bundle connectionHint) {
         // show sign-out button, hide the sign-in button
         rootLayout.findViewById(R.id.sign_in_button).setVisibility(View.GONE);
         rootLayout.findViewById(R.id.sign_out_button).setVisibility(View.VISIBLE);
+        showGoogleUi();
         updatePlayerInfo();
 
         Games.TurnBasedMultiplayer.registerMatchUpdateListener(mGoogleApiClient, this);
@@ -2555,6 +2505,9 @@ public class MainActivity extends AppCompatActivity implements
 
         if (retryTakeMatchTurn)
             takeMatchTurn(matchId);
+
+        if (retryAcceptInvitation)
+            acceptInvitation(matchId);
 
         refreshMatchList();
         refreshSavedGames();
@@ -2587,7 +2540,7 @@ public class MainActivity extends AppCompatActivity implements
             }
         }
 
-        findViewById(R.id.sign_out_button).setVisibility(View.VISIBLE);
+        rootLayout.findViewById(R.id.sign_out_button).setVisibility(View.VISIBLE);
     }
 
     @Override
@@ -2612,11 +2565,12 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     public void signInClicked(View v) {
+        Log.d(LOG_TAG, "Sign-in clicked");
             // start the asynchronous sign in flow
             mSignInClicked = true;
             mAutoStartSignInFlow = true;
             mGoogleApiClient.connect();
-            SharedPreferences prefs = getSharedPreferences(ACTIVITY_PREFS, MODE_PRIVATE);
+            SharedPreferences prefs = getSharedPreferences(GENERAL_PREFS, MODE_PRIVATE);
             SharedPreferences.Editor editor = prefs.edit();
             editor.putBoolean(AUTO_SIGN_IN, true);
             editor.apply();
@@ -2625,16 +2579,150 @@ public class MainActivity extends AppCompatActivity implements
     public void signOutClicked(View v){
         // sign out.
         mSignInClicked = false;
-        SharedPreferences prefs = getSharedPreferences(ACTIVITY_PREFS, MODE_PRIVATE);
+        SharedPreferences prefs = getSharedPreferences(GENERAL_PREFS, MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
         editor.putBoolean(AUTO_SIGN_IN, false);
         editor.apply();
         mAutoStartSignInFlow = false;
         if (mGoogleApiClient.isConnected()) Games.signOut(mGoogleApiClient);
 
+        hideGoogleUi();
+
         // show sign-in button, hide the sign-out button
         rootLayout.findViewById(R.id.sign_in_button).setVisibility(View.VISIBLE);
         rootLayout.findViewById(R.id.sign_out_button).setVisibility(View.GONE);
+    }
+
+    private void hideGoogleUi(){
+        if (challengeListAdapter != null)
+            challengeListAdapter.notifyDataSetChanged();
+
+        rootLayout.findViewById(R.id.achievements_button).setVisibility(View.GONE);
+        rootLayout.findViewById(R.id.player_image).setVisibility(View.GONE);
+        rootLayout.findViewById(R.id.player_name_textview).setVisibility(View.GONE);
+        rootLayout.findViewById(R.id.player_full_name_textview).setVisibility(View.GONE);
+        rootLayout.findViewById(R.id.player_xp_textview).setVisibility(View.GONE);
+        rootLayout.findViewById(R.id.player_title_textview).setVisibility(View.GONE);
+
+        if (activityListAdapter != null)
+            activityListAdapter.removeGoogleItems();
+    }
+
+    private void showGoogleUi(){
+        rootLayout.findViewById(R.id.achievements_button).setVisibility(View.VISIBLE);
+
+        if (challengeListAdapter != null)
+            challengeListAdapter.notifyDataSetChanged();
+
+        rootLayout.findViewById(R.id.achievements_button).setVisibility(View.VISIBLE);
+        rootLayout.findViewById(R.id.player_image).setVisibility(View.VISIBLE);
+        rootLayout.findViewById(R.id.player_name_textview).setVisibility(View.VISIBLE);
+        rootLayout.findViewById(R.id.player_full_name_textview).setVisibility(View.VISIBLE);
+        rootLayout.findViewById(R.id.player_xp_textview).setVisibility(View.VISIBLE);
+        rootLayout.findViewById(R.id.player_title_textview).setVisibility(View.VISIBLE);
+    }
+
+    private void showUsePlayGamesPrompt(){
+        final SharedPreferences prefs = getSharedPreferences(GENERAL_PREFS, MODE_PRIVATE);
+        if (prefs.getBoolean(SHOW_USE_GOOGLE_PLAY_PROMPT, true)) {
+            final View layout = getLayoutInflater().inflate(R.layout.generic_popup, null);
+
+            // Prepare popup window
+            RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            layout.setLayoutParams(params);
+            layout.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    return true;
+                }
+            });
+
+            TextView msgView = (TextView) layout.findViewById(R.id.textView);
+            msgView.setText(R.string.use_google_play_prompt);
+
+            final AppCompatCheckBox checkBox = (AppCompatCheckBox) layout.findViewById(R.id.checkBox);
+            checkBox.setVisibility(View.VISIBLE);
+            checkBox.setText(R.string.dont_show_again);
+
+
+            Button button1 = (Button) layout.findViewById(R.id.button1);
+            button1.setText(R.string.yes);
+            button1.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    SharedPreferences.Editor editor = prefs.edit();
+                    editor.putBoolean(AUTO_SIGN_IN, true);
+                    editor.putBoolean(SHOW_USE_GOOGLE_PLAY_PROMPT, !checkBox.isChecked());
+                    editor.apply();
+                    mSignInClicked = true;
+                    mAutoStartSignInFlow = true;
+                    mGoogleApiClient.connect();
+                    AnimatorSet set = Animations.slideOutDown(layout, 200, 0, rootLayout.getHeight() / 3);
+                    set.addListener(new Animator.AnimatorListener() {
+                        @Override
+                        public void onAnimationStart(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            rootLayout.removeView(layout);
+                        }
+
+                        @Override
+                        public void onAnimationCancel(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationRepeat(Animator animation) {
+
+                        }
+                    });
+                    set.start();
+                }
+            });
+
+            Button button2 = (Button) layout.findViewById(R.id.button2);
+            button2.setText(R.string.no);
+            button2.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    SharedPreferences.Editor editor = prefs.edit();
+                    editor.putBoolean(AUTO_SIGN_IN, false);
+                    editor.putBoolean(SHOW_USE_GOOGLE_PLAY_PROMPT, !checkBox.isChecked());
+                    editor.apply();
+                    rootLayout.findViewById(R.id.sign_out_button).setVisibility(View.GONE);
+                    rootLayout.findViewById(R.id.sign_in_button).setVisibility(View.VISIBLE);
+                    AnimatorSet set = Animations.slideOutDown(layout, 200, 0, rootLayout.getHeight() / 3);
+                    set.addListener(new Animator.AnimatorListener() {
+                        @Override
+                        public void onAnimationStart(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            rootLayout.removeView(layout);
+                        }
+
+                        @Override
+                        public void onAnimationCancel(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationRepeat(Animator animation) {
+
+                        }
+                    });
+                    set.start();
+                }
+            });
+
+            rootLayout.addView(layout);
+            Animations.slideUp(layout, 200, 0, rootLayout.getHeight() / 3).start();
+        }
     }
 
     private void updatePlayerInfo(){
@@ -2684,11 +2772,12 @@ public class MainActivity extends AppCompatActivity implements
 
 
     // Utility Methods
-
     private void showLoadingPopup(int resId, int delay){
-        View loadingPopup = Utils.progressPopup(context, resId);
-        rootLayout.addView(loadingPopup);
-        Animations.slideUp(loadingPopup, 100, delay, rootLayout.getHeight() / 3).start();
+        if (rootLayout.findViewById(R.id.loading_popup) == null) {
+            View loadingPopup = Utils.progressPopup(context, resId);
+            rootLayout.addView(loadingPopup);
+            Animations.slideUp(loadingPopup, 100, delay, rootLayout.getHeight() / 3).start();
+        }
     }
 
     private void hideLoadingPopup(){

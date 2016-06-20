@@ -62,8 +62,6 @@ public class GameActivity extends AppCompatActivity implements
     // Intent Extra tags
     public static final String LEVEL_XML_RES_ID = "level_xml_res_id";
     public static final String SAVED_GAME = "saved_game";
-    public static final String GRID_SIZE ="grid_size";
-    public static final String GOAL_MODE = "goal_mode";
     public static final String GAME_BASE_FILE_NAME = "game_base_file_name";
 
     // Saving/recreating the activity state
@@ -80,11 +78,14 @@ public class GameActivity extends AppCompatActivity implements
     private int prevScore = 0, jewelCount = 0;
     private long elapsedMillis = 0;
     private boolean stopTimer = false;
-    private SharedPreferences activityPrefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        SharedPreferences generalPrefs = getSharedPreferences(MainActivity.GENERAL_PREFS, MODE_PRIVATE);
+        useGooglePlay = generalPrefs.getBoolean(MainActivity.AUTO_SIGN_IN, true);
+        if (!useGooglePlay) Log.d(LOG_TAG, "Google Play Services disabled");
 
         // Create the Google Api Client with access to the Play Games services
         mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -122,7 +123,6 @@ public class GameActivity extends AppCompatActivity implements
                 return true;
             }
         });
-        activityPrefs = getSharedPreferences(ACTIVITY_PREFS, MODE_PRIVATE);
 
         // Restore activity state or initialize
         if (savedInstanceState != null) {
@@ -156,7 +156,8 @@ public class GameActivity extends AppCompatActivity implements
     @Override
     protected void onStart() {
         super.onStart();
-        mGoogleApiClient.connect();
+        if (useGooglePlay)
+            mGoogleApiClient.connect();
     }
 
     @Override
@@ -206,7 +207,7 @@ public class GameActivity extends AppCompatActivity implements
                     return true;
                 }
                 else if (rootLayout.findViewById(R.id.generic_popup) == null) {
-                    if (game.hasTimeLimit()) {
+                    if (game.hasTimeLimit() || !useGooglePlay) {
                         showQuitPrompt();
                         return true;
                     }
@@ -500,6 +501,7 @@ public class GameActivity extends AppCompatActivity implements
                     game = new ArithmosGame(data);
                     hasBeenPlayed = true;
                     setupGameUi();
+                    if (game.isGameOver()) showGameOverPopup(0);
                     Log.d(LOG_TAG, "Level loaded from cache");
                     return true;
                 }
@@ -555,12 +557,8 @@ public class GameActivity extends AppCompatActivity implements
 
     private void saveGameState(){
         stopTimer = true;
-        if (gameBase.needsSaving()) {
-            if (rootLayout.findViewById(R.id.loading_popup) == null) {
-                View loadingPopup = Utils.progressPopup(context, R.string.saving_game_message);
-                rootLayout.addView(loadingPopup);
-                Animations.slideUp(loadingPopup, 200, 0, rootLayout.getHeight() / 3).start();
-            }
+        if (useGooglePlay && gameBase.needsSaving()) {
+            showLoadingPopup();
             if (mGoogleApiClient.isConnected() && getIntent().hasExtra(GAME_BASE_FILE_NAME)) {
                 retrySaveGameState = false;
                 String gameFileName = getIntent().getStringExtra(GAME_BASE_FILE_NAME);
@@ -722,11 +720,7 @@ public class GameActivity extends AppCompatActivity implements
         Animations.slideUp(layout, 200, 0, rootLayout.getHeight() / 3).start();
     }
     private void SaveLevel() {
-        if (rootLayout.findViewById(R.id.loading_popup) == null) {
-            View loadingPopup = Utils.progressPopup(context, R.string.saving_game_message);
-            rootLayout.addView(loadingPopup);
-            Animations.slideUp(loadingPopup, 200, 0, rootLayout.getHeight() / 3).start();
-        }
+        showLoadingPopup();
         if (snapShotFileName == null) {
             String unique = new BigInteger(281, new Random()).toString(13);
             snapShotFileName = "ArithmosLevel_" + unique;
@@ -778,7 +772,7 @@ public class GameActivity extends AppCompatActivity implements
     }
 
     private void finishLevelComplete(){
-        if (jewelCount > 0)
+        if (jewelCount > 0 && mGoogleApiClient.isConnected())
             Games.Achievements.increment(mGoogleApiClient, getString(R.string.achievement_collector), jewelCount);
         Intent data = new Intent();
         if (snapShotFileName != null) {
@@ -790,12 +784,12 @@ public class GameActivity extends AppCompatActivity implements
     }
 
     private void finishLevelIncomplete(){
-        if (jewelCount > 0)
+        if (jewelCount > 0 && mGoogleApiClient.isConnected())
             Games.Achievements.increment(mGoogleApiClient, getString(R.string.achievement_collector), jewelCount);
         Intent data = new Intent();
         if (hasBeenPlayed) {
             // Record level score
-            if (game.getLeaderboardId() != null)
+            if (game.getLeaderboardId() != null && mGoogleApiClient.isConnected())
                 Games.Leaderboards.submitScore(mGoogleApiClient, game.getLeaderboardId(), game.getScore(game.getCurrentPlayer()));
 
             if (snapShotFileName != null) {
@@ -827,7 +821,7 @@ public class GameActivity extends AppCompatActivity implements
     }
 
     private void recordAchievements(){
-        if (game.isGameOver()) {
+        if (mGoogleApiClient.isConnected() && game.isGameOver()) {
             // Record level score
             if (game.getLeaderboardId() != null)
                 Games.Leaderboards.submitScore(mGoogleApiClient, game.getLeaderboardId(), game.getScore(game.getCurrentPlayer()));
@@ -1033,6 +1027,11 @@ public class GameActivity extends AppCompatActivity implements
         stopTimer = true;
         recordActivityTurnFinished(result);
         recordAchievements();
+        showGameOverPopup(animDelay);
+    }
+
+    private void showGameOverPopup(int animDelay){
+
         final View layout = getLayoutInflater().inflate(R.layout.game_over_popup, null);
 
         // Prepare info to display
@@ -1050,11 +1049,6 @@ public class GameActivity extends AppCompatActivity implements
                 levelView2.setVisibility(View.VISIBLE);
                 levelView2.setText(getString(R.string.unlock_level_x_x, getString(nameId[0]), getString(nameId[1])));
             }
-        }
-
-        if (result.result == ArithmosGame.GameResult.TIME_UP){
-            TextView titleText = (TextView)layout.findViewById(R.id.title_textview);
-            titleText.setText(R.string.times_up);
         }
 
         TextView scoreView = (TextView)layout.findViewById(R.id.score_textview);
@@ -1109,17 +1103,13 @@ public class GameActivity extends AppCompatActivity implements
             }
         });
 
-        int delay = 0;
-        if (result.result == ArithmosGame.GameResult.FORFEIT || result.result == ArithmosGame.GameResult.TIME_UP){
-            if (gameBoard.showComputerRun()) delay = 3000;
-        }
         rootLayout.addView(layout);
-        Animations.slideUp(layout, 200, delay + animStartDelay + animDelay, rootLayout.getHeight() / 3).start();
+        Animations.slideUp(layout, 200, animStartDelay + animDelay, rootLayout.getHeight() / 3).start();
     }
 
     @Override
     public void OnAchievement(String label){
-        Games.Achievements.unlock(mGoogleApiClient, label);
+        if (mGoogleApiClient.isConnected()) Games.Achievements.unlock(mGoogleApiClient, label);
     }
 
     @Override
@@ -1394,11 +1384,13 @@ public class GameActivity extends AppCompatActivity implements
     }
 
     public void OperationButtonClick(View v){
-        v.setSelected(!v.isSelected());
-        if (v.isSelected()){
-            gameBoard.setOperationPickMode(GameBoard.MANUAL_PICK);
-        } else {
-            gameBoard.setOperationPickMode(GameBoard.AUTO_PICK);
+        if (game.getGoalType() != ArithmosLevel.GOAL_301) {
+            v.setSelected(!v.isSelected());
+            if (v.isSelected()) {
+                gameBoard.setOperationPickMode(GameBoard.MANUAL_PICK);
+            } else {
+                gameBoard.setOperationPickMode(GameBoard.AUTO_PICK);
+            }
         }
     }
 
@@ -1410,6 +1402,7 @@ public class GameActivity extends AppCompatActivity implements
     private boolean mResolvingConnectionFailure = false;
     private boolean mAutoStartSignInFlow = true;
     private boolean mSignInClicked = false;
+    private boolean useGooglePlay = true;
 
     @Override
     public void onConnected(Bundle connectionHint) {
@@ -1468,9 +1461,48 @@ public class GameActivity extends AppCompatActivity implements
                 // string in your strings.xml file that tells the user they
                 // could not be signed in, such as "Unable to sign in."
                 BaseGameUtils.showActivityResultError(this,
-                        requestCode, resultCode, R.string.gamehelper_sign_in_failed);
+                        requestCode, resultCode, R.string.sign_in_failed);
+                hideLoadingPopup();
             }
         }
 
+    }
+
+    // Utility methods
+    private void showLoadingPopup(){
+        if (rootLayout.findViewById(R.id.loading_popup) == null) {
+            View loadingPopup = Utils.progressPopup(context, R.string.saving_game_message);
+            rootLayout.addView(loadingPopup);
+            Animations.slideUp(loadingPopup, 200, 0, rootLayout.getHeight() / 3).start();
+        }
+    }
+
+    private void hideLoadingPopup(){
+        final View popup = rootLayout.findViewById(R.id.loading_popup);
+        if (popup != null){
+            AnimatorSet set = Animations.slideOutDown(popup, 150, 0, rootLayout.getHeight() / 3);
+            set.addListener(new Animator.AnimatorListener() {
+                @Override
+                public void onAnimationStart(Animator animation) {
+
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    rootLayout.removeView(popup);
+                }
+
+                @Override
+                public void onAnimationCancel(Animator animation) {
+
+                }
+
+                @Override
+                public void onAnimationRepeat(Animator animation) {
+
+                }
+            });
+            set.start();
+        }
     }
 }

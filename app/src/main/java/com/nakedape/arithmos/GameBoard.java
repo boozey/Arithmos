@@ -125,10 +125,10 @@ public class GameBoard extends View {
     @Override
     protected void onMeasure (int widthMeasureSpec, int heightMeasureSpec) {
         int reqWidth = MeasureSpec.getSize(widthMeasureSpec), reqHeight = MeasureSpec.getSize(heightMeasureSpec);
-        if (reqWidth >= reqHeight) {
-            setMeasuredDimension(reqHeight * 4/3, reqHeight);
+        /*if (reqWidth >= reqHeight) {
+            setMeasuredDimension(reqHeight * 3/2, reqHeight);
             return;
-        }
+        }*/
         setMeasuredDimension(reqWidth, reqHeight);
     }
     @Override

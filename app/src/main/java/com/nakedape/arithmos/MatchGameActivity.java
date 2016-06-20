@@ -1326,11 +1326,13 @@ public class MatchGameActivity extends AppCompatActivity implements
     }
 
     public void OperationButtonClick(View v){
-        v.setSelected(!v.isSelected());
-        if (v.isSelected()){
-            gameBoard.setOperationPickMode(GameBoard.MANUAL_PICK);
-        } else {
-            gameBoard.setOperationPickMode(GameBoard.AUTO_PICK);
+        if (game.getGoalType() != ArithmosLevel.GOAL_301) {
+            v.setSelected(!v.isSelected());
+            if (v.isSelected()) {
+                gameBoard.setOperationPickMode(GameBoard.MANUAL_PICK);
+            } else {
+                gameBoard.setOperationPickMode(GameBoard.AUTO_PICK);
+            }
         }
     }
 

@@ -16,6 +16,7 @@
     <string name="done">Done</string>
     <string name="loading">Loading &#8230;</string>
     <string name="percent">%d%%</string>
+    <string name="dont_show_again">Don\'t show this again</string>
 
 
 
@@ -28,9 +29,14 @@
     <string name="achievemtns_button_text">Achievements</string>
     <string name="match_button_text">Start match</string>
     <string name="sign_out">Sign out</string>
+    <string name="sign_out_underlined"><u>Sign out</u></string>
     <string name="reset_game_message">Reset challenge progress, activity history, and saved games.  Jewels and specials will be saved.</string>
     <string name="reset_game_progress_message">Resetting game &#8230;</string>
     <string name="more_jewels_text">Get more jewels</string>
+    <string name="use_google_play_prompt">Many features of this game require the use of Google Play Games.  Without signing in
+        you will not be able to play match games, track achievements, view leaderboards, or sync your game across devices.
+        \nAttempt to sign-in again?</string>
+    <string name="not_signed_in">Please sign in to Google Play</string>
 
     <!-- Activity List Item Strings -->
     <string name="empty_activity_item">No recent activity</string>

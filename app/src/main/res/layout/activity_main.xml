@@ -54,6 +54,7 @@
                 android:textColor="@color/text_primary_light"
                 android:text="9,000,000 XP"
                 android:visibility="gone"/>
+
         <TextView android:id="@+id/player_title_textview"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -61,6 +62,15 @@
             android:textColor="@color/text_primary_light"
             android:text="Level Title"
             android:visibility="gone"/>
+
+            <TextView android:id="@+id/sign_out_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="2dp"
+                android:textColor="@color/text_primary_light"
+                android:text="@string/sign_out_underlined"
+                android:visibility="gone"
+                android:onClick="signOutClicked"/>
 
         <TextView android:id="@+id/jewel_count"
             android:layout_width="wrap_content"
@@ -72,6 +82,12 @@
             android:textSize="20sp"
             android:text="x 0"/>
         </LinearLayout>
+
+        <com.google.android.gms.common.SignInButton
+            android:id="@+id/sign_in_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"/>
     </RelativeLayout>
 
     <LinearLayout android:id="@+id/button_bar_layout"
@@ -174,23 +190,6 @@
         android:layout_marginTop="4dp"
         android:layout_below="@id/button_bar_layout"
         android:visibility="gone"/>
-    <com.google.android.gms.common.SignInButton
-        android:id="@+id/sign_in_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"/>
-    <Button
-        android:id="@+id/sign_out_button"
-        android:layout_width="wrap_content"
-        android:layout_height="35dp"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:textColor="@color/text_primary_light"
-        android:background="@drawable/rounded_corner_primary"
-        android:text="@string/sign_out"
-        android:visibility="gone"
-        android:onClick="signOutClicked"/>
 
 
 </RelativeLayout>
