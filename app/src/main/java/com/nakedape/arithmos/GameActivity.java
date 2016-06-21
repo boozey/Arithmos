@@ -640,7 +640,7 @@ public class GameActivity extends AppCompatActivity implements
                 saveLevel = false;
                 ArithmosGame.GameResult result = new ArithmosGame.GameResult(ArithmosGame.GameResult.FORFEIT);
                 result.isGameOver = true;
-                OnGameOver(result, 0);
+                OnGameOver(result);
                 Animations.slideOutDown(layout, 200, 0, rootLayout.getHeight() / 3).start();
             }
         });
@@ -736,7 +736,7 @@ public class GameActivity extends AppCompatActivity implements
                 saveLevel = false;
                 ArithmosGame.GameResult result = new ArithmosGame.GameResult(ArithmosGame.GameResult.FORFEIT);
                 result.isGameOver = true;
-                OnGameOver(result, 0);
+                OnGameOver(result);
                 Animations.slideOutDown(layout, 200, 0, rootLayout.getHeight() / 3).start();
             }
         });
@@ -901,7 +901,7 @@ public class GameActivity extends AppCompatActivity implements
                             Log.d(LOG_TAG, "endMillis = " + endMillis);
                             ArithmosGame.GameResult result = new ArithmosGame.GameResult(ArithmosGame.GameResult.TIME_UP);
                             result.isGameOver = true;
-                            OnGameOver(result, 0);
+                            OnGameOver(result);
                         }
                     });
             }
@@ -977,9 +977,9 @@ public class GameActivity extends AppCompatActivity implements
             layout.findViewById(R.id.star3).setVisibility(View.VISIBLE);
 
         rootLayout.addView(layout);
-        Animations.slideUp(layout, 200, animStartDelay, rootLayout.getHeight() / 3).start();
+        Animations.slideUp(layout, 200, gameBoard.getAnimDelay() + animStartDelay, rootLayout.getHeight() / 3).start();
+        AnimatorSet set = Animations.explodeFade(layout, 200, gameBoard.getAnimDelay() + animStartDelay + 1200);
         animStartDelay += 1200;
-        AnimatorSet set = Animations.explodeFade(layout, 200, 1200);
         set.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
@@ -1014,11 +1014,11 @@ public class GameActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void OnGameOver(ArithmosGame.GameResult result, int animDelay){
+    public void OnGameOver(ArithmosGame.GameResult result){
         stopTimer = true;
         recordActivityTurnFinished(result);
         recordAchievements();
-        showGameOverPopup(animDelay);
+        showGameOverPopup(animStartDelay + gameBoard.getAnimDelay() + 200);
     }
 
     private void showGameOverPopup(int animDelay){
@@ -1147,8 +1147,8 @@ public class GameActivity extends AppCompatActivity implements
         }
 
         rootLayout.addView(layout);
-        Animations.slideUp(layout, 200, animStartDelay, rootLayout.getHeight() / 3).start();
-        AnimatorSet set = Animations.explodeFade(layout, animStartDelay + 200, 1200);
+        Animations.slideUp(layout, 200, animStartDelay + gameBoard.getAnimDelay(), rootLayout.getHeight() / 3).start();
+        AnimatorSet set = Animations.explodeFade(layout, animStartDelay + 200 + gameBoard.getAnimDelay(), 1200);
         animStartDelay += 1400;
         set.addListener(new Animator.AnimatorListener() {
             @Override

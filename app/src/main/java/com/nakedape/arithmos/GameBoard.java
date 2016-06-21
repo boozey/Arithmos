@@ -50,7 +50,7 @@ public class GameBoard extends View {
     public void setOnAchievementListener(OnAchievementListener listener) { onAchievementListener = listener; }
 
     public interface OnGameOverListener {
-        void OnGameOver(ArithmosGame.GameResult result, int animationDelay);
+        void OnGameOver(ArithmosGame.GameResult result);
     }
     private OnGameOverListener onGameOverListener;
     public void setOnGameOverListener(OnGameOverListener listener) { onGameOverListener = listener; }
@@ -567,7 +567,7 @@ public class GameBoard extends View {
         if (onPlayCompleted != null)
             onPlayCompleted.OnPlayCompleted(lastGameResult);
         if (lastGameResult.isGameOver && onGameOverListener != null)
-            onGameOverListener.OnGameOver(lastGameResult, animDelay);
+            onGameOverListener.OnGameOver(lastGameResult);
     }
     public void useSkipSpecial(){
         lastGameResult = game.skipGoalNumber();
@@ -579,12 +579,13 @@ public class GameBoard extends View {
         if (onPlayCompleted != null)
             onPlayCompleted.OnPlayCompleted(lastGameResult);
         if (lastGameResult.isGameOver && onGameOverListener != null)
-            onGameOverListener.OnGameOver(lastGameResult, animDelay);
+            onGameOverListener.OnGameOver(lastGameResult);
     }
 
 
     // Bonuses
     int animDelay = 0;
+    public int getAnimDelay(){ return animDelay;}
     private class BonusTile{
         private String type;
         public String getType() { return type; }

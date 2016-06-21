@@ -700,7 +700,7 @@ public class MatchGameActivity extends AppCompatActivity implements
             public void onClick(View v) {
                 ArithmosGame.GameResult result = new ArithmosGame.GameResult(ArithmosGame.GameResult.FORFEIT);
                 result.isGameOver = true;
-                OnGameOver(result, 0);
+                OnGameOver(result);
                 Animations.slideOutDown(layout, 150, 0, rootLayout.getHeight() / 3).start();
             }
         });
@@ -1045,10 +1045,10 @@ public class MatchGameActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void OnGameOver(ArithmosGame.GameResult result, int animDelay){
+    public void OnGameOver(ArithmosGame.GameResult result){
         if (result.result == ArithmosGame.GameResult.FORFEIT)
             forfeit = true;
-        showEndMatchPopup(animDelay);
+        showEndMatchPopup(animStartDelay + gameBoard.getAnimDelay() + 200);
     }
 
     @Override
@@ -1100,8 +1100,8 @@ public class MatchGameActivity extends AppCompatActivity implements
         }
 
         rootLayout.addView(layout);
-        Animations.slideUp(layout, 200, animStartDelay, rootLayout.getHeight() / 3).start();
-        AnimatorSet set = Animations.explodeFade(layout, 200, 1200 + animStartDelay);
+        Animations.slideUp(layout, 200, animStartDelay + gameBoard.getAnimDelay(), rootLayout.getHeight() / 3).start();
+        AnimatorSet set = Animations.explodeFade(layout, 1200, 200 + animStartDelay + gameBoard.getAnimDelay());
         animStartDelay += 1400;
         set.addListener(new Animator.AnimatorListener() {
             @Override
