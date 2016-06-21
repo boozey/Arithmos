@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -16,6 +17,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.DragEvent;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -26,7 +28,9 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -272,15 +276,17 @@ public class GameActivity extends AppCompatActivity implements
         if (game.getGoalType() == ArithmosLevel.GOAL_301){
             TextView three01 = (TextView)rootLayout.findViewById(R.id.three01_textview);
             three01.setVisibility(View.VISIBLE);
-            String value = String.valueOf(game.get301Total()), finalValue = "";
-            for (int i = 0; i < value.length(); i++){
-                finalValue += value.charAt(i) + "\n";
-            }
-            three01.setText(finalValue.trim());
+            String value = String.valueOf(game.get301Total());
+            if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+                String finalValue = "";
+                for (int i = 0; i < value.length(); i++) {
+                    finalValue += value.charAt(i) + "\n";
+                }
+                three01.setText(finalValue.trim());
+            } else
+                three01.setText(value);
         } else {
-            final ListView goalList = (ListView) rootLayout.findViewById(R.id.upcoming_goal_listview);
-            goalList.setAdapter(new ArrayAdapter<>(context, R.layout.goal_list_item, game.getUpcomingGoals()));
-            goalList.setVisibility(View.VISIBLE);
+            refreshGoalList();
         }
 
         if (game.hasTimeLimit()){
@@ -319,6 +325,25 @@ public class GameActivity extends AppCompatActivity implements
                     rootLayout.findViewById(R.id.slash_div).setVisibility(View.GONE);
                     break;
             }
+        }
+    }
+
+    private void refreshGoalList(){
+        LinearLayout goalView = (LinearLayout)rootLayout.findViewById(R.id.upcoming_goal_linearlayout);
+        goalView.removeAllViews();
+        for (int i = 0; i < game.getUpcomingGoals().size(); i++){
+            String x = game.getUpcomingGoals().get(i);
+            TextView xView = new TextView(context);
+            xView.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.goal_text_size));
+            xView.setTag(x);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE
+                    && i < game.getUpcomingGoals().size() - 1) {
+                params.setMarginEnd(12);
+            }
+            xView.setLayoutParams(params);
+            xView.setText(x);
+            goalView.addView(xView);
         }
     }
 
@@ -894,15 +919,18 @@ public class GameActivity extends AppCompatActivity implements
             prevScore += result.score;
             if (game.getGoalType() == ArithmosLevel.GOAL_301) {
                 TextView three01 = (TextView) rootLayout.findViewById(R.id.three01_textview);
-                String value = String.valueOf(game.get301Total()), finalValue = "";
-                for (int i = 0; i < value.length(); i++){
-                    finalValue += value.charAt(i) + "\n";
-                }
-                three01.setText(finalValue.trim());
+                String value = String.valueOf(game.get301Total());
+                if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+                    String finalValue = "";
+                    for (int i = 0; i < value.length(); i++) {
+                        finalValue += value.charAt(i) + "\n";
+                    }
+                    three01.setText(finalValue.trim());
+                } else
+                    three01.setText(value);
             } else {
-                ListView upcomingGoalsList = (ListView)rootLayout.findViewById(R.id.upcoming_goal_listview);
-                ArrayAdapter<String> adapter = (ArrayAdapter<String>)upcomingGoalsList.getAdapter();
-                adapter.notifyDataSetChanged();
+                // Update goal list
+                refreshGoalList();
             }
 
             // If an evaluate left to right special was use, record and reset
@@ -920,43 +948,6 @@ public class GameActivity extends AppCompatActivity implements
         if (game.isEvalLeftToRight()) {
             calc.setBackground(null);
             game.setEvalLeftToRight(false);
-        }
-    }
-    private void animateNewGoalNumber(){
-        // Animate new goal if it is a type that changes
-        if (game.getGoalType() == ArithmosLevel.GOAL_MULT_NUM) {
-            final ListView upcomingGoalsList = (ListView)rootLayout.findViewById(R.id.upcoming_goal_listview);
-            TextView currentGoal = (TextView)upcomingGoalsList.getChildAt(0).findViewById(R.id.textView1);
-            AnimatorSet set = Animations.explodeFade(currentGoal, 200, 0);
-            set.addListener(new Animator.AnimatorListener() {
-                @Override
-                public void onAnimationStart(Animator animation) {
-
-                }
-
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    // Highlight new goal
-                    TextView nextGoal = (TextView)upcomingGoalsList.getChildAt(0).findViewById(R.id.textView1);
-                    nextGoal.setAlpha(1f);
-                    nextGoal.setScaleX(1f);
-                    nextGoal.setScaleY(1f);
-                    nextGoal.setTextColor(Color.RED);
-                    ArrayAdapter<String> adapter = (ArrayAdapter<String>)upcomingGoalsList.getAdapter();
-                    adapter.notifyDataSetChanged();
-                }
-
-                @Override
-                public void onAnimationCancel(Animator animation) {
-
-                }
-
-                @Override
-                public void onAnimationRepeat(Animator animation) {
-
-                }
-            });
-            set.start();
         }
     }
 

@@ -55,7 +55,7 @@ public class ArithmosGame {
     transient private int p1Points, p2Points, lastScore = 0;
     transient private ArrayList<ArrayList<int[]>> p1Runs, p2Runs;
     transient private ArrayList<int[]> computerFoundRun;
-    transient private int lastValue;
+    transient private int lastValue = 0;
     transient private String leaderboardId;
     transient private String challengeName;
     transient private int challengeLevel;
@@ -558,6 +558,9 @@ public class ArithmosGame {
         }
         return 0;
     }
+    public int getLastValue(){
+        return lastValue;
+    }
 
     // Run checking
     public GameResult checkSelection(ArrayList<int[]> run, ArrayList<String> operations){
@@ -568,6 +571,7 @@ public class ArithmosGame {
         int i = 0;
         for (int[] tile : run){
             String[] a = gameBoard[tile[0]][tile[1]].split(SEPARATOR);
+            if (a[1].equals(currentPlayer)) return result;
             if (tile[0] % 2 == 0 && tile[1] % 2 == 0)
                 exp += a[0] + " ";
             else
@@ -695,7 +699,7 @@ public class ArithmosGame {
                 int[] a = run.get(i);
                 String[] s = gameBoard[a[0]][a[1]].split(SEPARATOR);
                 // return false if tile has already been used
-                if (!s[1].equals(UNDEF)) return result;
+                if (s[1].equals(getCurrentPlayer())) return result;
                 baseExp[i] = s[0];
                 // Fill position with operation
                 if (j < counters.length) {
@@ -886,7 +890,8 @@ public class ArithmosGame {
                 else {
                     boolean meets = upcomingGoals.contains(String.valueOf((int)value));
                     if (meets && removeFromList) {
-                           removeFromGoalList((int)value);
+                        removeFromGoalList((int)value);
+                        lastValue = (int)value;
                     }
                     return meets;
                 }
@@ -898,9 +903,11 @@ public class ArithmosGame {
                 if (value < 0) return false;
                 if (get301Total() + (int)value < 301){
                     addTo301Total((int)value);
+                    lastValue = (int)value;
                     return true;
                 } else if (get301Total() + value == 301){
                     addTo301Total((int)value);
+                    lastValue = (int)value;
                     reached301 = true;
                     return true;
                 } else
@@ -1127,6 +1134,17 @@ public class ArithmosGame {
             return !a[1].equals(UNDEF);
         } else
             return false;
+    }
+    public boolean isPieceOwnerByCurrentPlayer(int r, int c){
+        String[] strings = gameBoard[r][c].split(SEPARATOR);
+        String owner = strings[1];
+        return owner.equals(currentPlayer);
+    }
+    public boolean isPieceOwned(int r, int c, String player){
+        String[] strings = gameBoard[r][c].split(SEPARATOR);
+        String owner = strings[1];
+        return owner.equals(player);
+
     }
     public boolean isBonus(int[] location){
         return isBonus(location[0], location[1]);
