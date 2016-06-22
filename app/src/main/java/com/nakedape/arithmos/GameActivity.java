@@ -17,7 +17,6 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.DragEvent;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -28,7 +27,6 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -66,7 +64,6 @@ public class GameActivity extends AppCompatActivity implements
     // Intent Extra tags
     public static final String LEVEL_XML_RES_ID = "level_xml_res_id";
     public static final String SAVED_GAME = "saved_game";
-    public static final String GAME_BASE_FILE_NAME = "game_base_file_name";
 
     // Saving/recreating the activity state
     private static final String JEWEL_COUNT = "JEWEL_COUNT";
@@ -79,7 +76,7 @@ public class GameActivity extends AppCompatActivity implements
     private ArithmosGame game;
     private GameBoard gameBoard;
     private TextView scoreTextView;
-    private int prevScore = 0, jewelCount = 0;
+    private int prevScore = 0;
     private long elapsedMillis = 0;
     private boolean stopTimer = false;
 
@@ -115,12 +112,7 @@ public class GameActivity extends AppCompatActivity implements
         scoreTextView = (TextView)findViewById(R.id.score_textview);
 
         // Restore activity state or initialize
-        if (savedInstanceState != null) {
-            jewelCount = savedInstanceState.getInt(JEWEL_COUNT, 0);
-            elapsedMillis = savedInstanceState.getLong(ELAPSED_TIME, 0);
-        }
-        if (loadCachedGame())
-            gameBaseNeedsDownload = false;
+        loadCachedGame();
 
         if (loadCachedLevel()) {
             if (game.hasTimeLimit()) {
@@ -134,7 +126,7 @@ public class GameActivity extends AppCompatActivity implements
         }
         else {
             if (getIntent().hasExtra(SAVED_GAME)){
-                snapShotFileName = getIntent().getStringExtra(SAVED_GAME);
+                levelSnapShotName = getIntent().getStringExtra(SAVED_GAME);
                 loadSavedGame = true;
             }
             else if (getIntent().hasExtra(LEVEL_XML_RES_ID)) {
@@ -159,7 +151,6 @@ public class GameActivity extends AppCompatActivity implements
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
         // Save the user's current game state
-        savedInstanceState.putInt(JEWEL_COUNT, jewelCount);
         savedInstanceState.putLong(ELAPSED_TIME, elapsedMillis);
         stopTimer = true;
 
@@ -202,7 +193,7 @@ public class GameActivity extends AppCompatActivity implements
                         return true;
                     }
                     else if (hasBeenPlayed) {
-                        showSaveGamePrompt();
+                        showSaveLevelPrompt();
                         return true;
                     }
                     else {
@@ -245,9 +236,8 @@ public class GameActivity extends AppCompatActivity implements
     // Game saving and loading
     private ArithmosGameBase gameBase;
     private File levelCache, gameCache;
-    private String snapShotFileName;
-    private boolean loadSavedGame = false, retrySaveGame = false,
-            retrySaveGameState = false, saveLevel = false,
+    private String levelSnapShotName;
+    private boolean loadSavedGame = false, saveLevel = false,
             gameBaseNeedsDownload = true, hasBeenPlayed = false;
     private Bitmap thumbNail;
 
@@ -259,7 +249,11 @@ public class GameActivity extends AppCompatActivity implements
         scoreTextView.setVisibility(View.VISIBLE);
         prevScore = game.getScore(game.getCurrentPlayer());
 
+        TextView jewelText = (TextView)rootLayout.findViewById(R.id.jewel_count);
+        jewelText.setText(String.valueOf(gameBase.getJewelCount() + game.getJewelCount()));
+
         if (game.getGoalType() == ArithmosLevel.GOAL_301){
+            rootLayout.findViewById(R.id.upcoming_goal_linearlayout).setVisibility(View.GONE);
             TextView three01 = (TextView)rootLayout.findViewById(R.id.three01_textview);
             three01.setVisibility(View.VISIBLE);
             String value = String.valueOf(game.get301Total());
@@ -272,6 +266,7 @@ public class GameActivity extends AppCompatActivity implements
             } else
                 three01.setText(value);
         } else {
+            rootLayout.findViewById(R.id.three01_textview).setVisibility(View.GONE);
             rootLayout.findViewById(R.id.upcoming_goal_linearlayout).setVisibility(View.VISIBLE);
             refreshGoalList();
         }
@@ -324,26 +319,40 @@ public class GameActivity extends AppCompatActivity implements
     private void refreshGoalList(){
         LinearLayout goalView = (LinearLayout)rootLayout.findViewById(R.id.upcoming_goal_linearlayout);
         goalView.removeAllViews();
-        int cols = getResources().getInteger(R.integer.number_item_cols);
-        LinearLayout linearLayout = new LinearLayout(context);
-        linearLayout.setOrientation(LinearLayout.HORIZONTAL);
-        goalView.addView(linearLayout);
-        for (int i = 0, c = 0; i < game.getUpcomingGoals().size(); i++){
-            String x = game.getUpcomingGoals().get(i);
-            TextView xView = (TextView)getLayoutInflater().inflate(R.layout.goal_list_item, null);
-            xView.setMinWidth(xView.getHeight());
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            params.setMargins(4, 4, 4, 4);
-            xView.setLayoutParams(params);
-            xView.setTag(x);
-            xView.setText(x);
-            linearLayout.addView(xView);
-            if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                if (++c % cols == 0) {
-                    linearLayout = new LinearLayout(context);
-                    linearLayout.setOrientation(LinearLayout.HORIZONTAL);
-                    goalView.addView(linearLayout);
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            int cols = getResources().getInteger(R.integer.number_item_cols);
+            LinearLayout linearLayout = new LinearLayout(context);
+            linearLayout.setOrientation(LinearLayout.HORIZONTAL);
+            goalView.addView(linearLayout);
+            for (int i = 0, c = 0; i < game.getUpcomingGoals().size(); i++) {
+                String x = game.getUpcomingGoals().get(i);
+                TextView xView = (TextView) getLayoutInflater().inflate(R.layout.goal_list_item, null);
+                xView.setMinWidth(xView.getHeight());
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                params.setMargins(4, 4, 4, 4);
+                xView.setLayoutParams(params);
+                xView.setTag(x);
+                xView.setText(x);
+                linearLayout.addView(xView);
+                if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                    if (++c % cols == 0) {
+                        linearLayout = new LinearLayout(context);
+                        linearLayout.setOrientation(LinearLayout.HORIZONTAL);
+                        goalView.addView(linearLayout);
+                    }
                 }
+            }
+        } else {
+            for (int i = 0; i < game.getUpcomingGoals().size(); i++) {
+                String x = game.getUpcomingGoals().get(i);
+                TextView xView = (TextView) getLayoutInflater().inflate(R.layout.goal_list_item, null);
+                xView.setMinWidth(xView.getHeight());
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                params.setMargins(4, 4, 4, 4);
+                xView.setLayoutParams(params);
+                xView.setTag(x);
+                xView.setText(x);
+                goalView.addView(xView);
             }
         }
     }
@@ -481,6 +490,37 @@ public class GameActivity extends AppCompatActivity implements
         set.start();
     }
 
+    private void loadNextLevel(){
+        animStartDelay = 0;
+        AnimatorSet set = Animations.fadeOut(gameBoard, 300, 0);
+        set.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                String challenge = game.getChallengeName();
+                int level = game.getChallengeLevel();
+                LoadGameLevel(ArithmosGameBase.getNextLevelXmlId(challenge, level));
+                cacheLevel();
+                cacheGame();
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+
+            }
+        });
+        set.start();
+    }
+
     private void showLevelInfoPopup(ArithmosLevel level){
         final View layout = getLayoutInflater().inflate(R.layout.level_info_popup, null);
 
@@ -577,10 +617,7 @@ public class GameActivity extends AppCompatActivity implements
                 if (inputStream.read(data) > 0) {
                     gameBase.loadByteData(data);
                     gameBase.setSaved(false);
-                    gameBaseNeedsDownload = false;
                     setupSpecials();
-                    TextView jewelText = (TextView)rootLayout.findViewById(R.id.jewel_count);
-                    Animations.CountTo(jewelText, 0, gameBase.getJewelCount());
                     Log.d(LOG_TAG, "Game state loaded from cache");
                     return true;
                 }
@@ -617,6 +654,7 @@ public class GameActivity extends AppCompatActivity implements
                 if (inputStream.read(data) > 0){
                     game = new ArithmosGame(data);
                     hasBeenPlayed = true;
+                    elapsedMillis = game.getElapasedTime();
                     setupGameUi();
                     if (game.isGameOver()) showGameOverPopup(0);
                     Log.d(LOG_TAG, "Level loaded from cache");
@@ -634,7 +672,7 @@ public class GameActivity extends AppCompatActivity implements
         final View loadingPopup = Utils.progressPopup(context, R.string.loading_saved_game_message);
         rootLayout.addView(loadingPopup);
         Animations.slideUp(loadingPopup, 200, 0, rootLayout.getHeight() / 3).start();
-        Games.Snapshots.open(mGoogleApiClient, snapShotFileName, false).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
+        Games.Snapshots.open(mGoogleApiClient, levelSnapShotName, false).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
             @Override
             public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
                 try {
@@ -650,36 +688,41 @@ public class GameActivity extends AppCompatActivity implements
 
     }
 
-    private void loadGameState(String gameFileName){
-        if (gameBaseNeedsDownload)
+    private void loadGameState(){
+        if (gameBaseNeedsDownload) {
+            SharedPreferences gamePrefs = getSharedPreferences(MainActivity.GAME_PREFS, MODE_PRIVATE);
+            String gameFileName = gamePrefs.getString(MainActivity.GAME_FILE_NAME, null);
+            if (gameFileName != null)
             Games.Snapshots.open(mGoogleApiClient, gameFileName, false).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
                 @Override
                 public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
                     try {
-                        if (gameBaseNeedsDownload) {
+                        if (openSnapshotResult.getSnapshot().getMetadata().getLastModifiedTimestamp() > gameBase.timeStamp()) {
                             gameBase.loadByteData(openSnapshotResult.getSnapshot().getSnapshotContents().readFully());
+                            Log.d(LOG_TAG, "Game base updated from Google");
                             setupSpecials();
                             TextView jewelText = (TextView) rootLayout.findViewById(R.id.jewel_count);
                             Animations.CountTo(jewelText, 0, gameBase.getJewelCount());
-                            gameBaseNeedsDownload = false;
+                        } else {
+                            Log.d(LOG_TAG, "Game base downloaded but not updated");
                         }
+                        gameBaseNeedsDownload = false;
 
                     } catch (IOException | NullPointerException e) {
                         e.printStackTrace();
                     }
                 }
             });
-
+        }
     }
 
-    private void saveGameState(){
-        stopTimer = true;
-        if (useGooglePlay && gameBase.needsSaving()) {
-            showLoadingPopup();
-            if (mGoogleApiClient.isConnected() && getIntent().hasExtra(GAME_BASE_FILE_NAME)) {
-                retrySaveGameState = false;
-                String gameFileName = getIntent().getStringExtra(GAME_BASE_FILE_NAME);
-                Games.Snapshots.open(mGoogleApiClient, gameFileName, true).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
+    private void saveGameAsync(){
+        if (useGooglePlay) {
+            if (mGoogleApiClient.isConnected()) {
+                SharedPreferences prefs = getSharedPreferences(MainActivity.GAME_PREFS, MODE_PRIVATE);
+                String gameFileName = prefs.getString(MainActivity.GAME_FILE_NAME, null);
+                if (gameFileName != null)
+                        Games.Snapshots.open(mGoogleApiClient, gameFileName, true).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
                     @Override
                     public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
                         String desc = "Arithmos Game Data";
@@ -688,40 +731,15 @@ public class GameActivity extends AppCompatActivity implements
                             public void onResult(@NonNull Snapshots.CommitSnapshotResult commitSnapshotResult) {
                                 gameBase.setSaved(true);
                                 Log.i(LOG_TAG, "Game state saved");
-                                if (saveLevel) {
-                                    finishLevelIncomplete();
-                                } else
-                                    finishLevelComplete();
                             }
                         });
                     }
                 });
-            } else if (!mGoogleApiClient.isConnected()){
+            } else if (!mGoogleApiClient.isConnected() && useGooglePlay && connectAttempts++ < maxAttempts){
                 Log.d(LOG_TAG, "SaveGameState() GoogleAPIClient not connected, retying");
-                retrySaveGameState = true;
                 mGoogleApiClient.connect();
+                saveGameAsync();
             }
-        }
-        else
-            finishLevelComplete();
-    }
-
-    private void saveGameStateAsync(){
-        if (mGoogleApiClient.isConnected() && getIntent().hasExtra(GAME_BASE_FILE_NAME)) {
-            retrySaveGameState = false;
-            String gameFileName = getIntent().getStringExtra(GAME_BASE_FILE_NAME);
-            Games.Snapshots.open(mGoogleApiClient, gameFileName, true).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
-                @Override
-                public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
-                    String desc = "Arithmos Game Data";
-                    writeSnapshot(openSnapshotResult.getSnapshot(), gameBase.getByteData(), desc, null);
-                }
-            });
-            Log.d(LOG_TAG, "Save game state async succeeded");
-        } else if (!mGoogleApiClient.isConnected() && useGooglePlay){
-            Log.d(LOG_TAG, "SaveGameState() GoogleAPIClient not connected, retying");
-            mGoogleApiClient.connect();
-            saveGameStateAsync();
         }
     }
 
@@ -808,7 +826,8 @@ public class GameActivity extends AppCompatActivity implements
         }
     }
 
-    private void showSaveGamePrompt(){
+    private void showSaveLevelPrompt(){
+        saveGameAsync();
         captureScreenShot();
         final View layout = getLayoutInflater().inflate(R.layout.generic_popup, null);
 
@@ -833,7 +852,7 @@ public class GameActivity extends AppCompatActivity implements
             @Override
             public void onClick(View v) {
                 rootLayout.removeView(layout);
-                saveLevel = true;
+                recordAchievements();
                 Animations.slideOutDown(layout, 200, 0, rootLayout.getHeight() / 3).start();
                 SaveLevel();
             }
@@ -880,13 +899,12 @@ public class GameActivity extends AppCompatActivity implements
 
     private void SaveLevel() {
         showLoadingPopup();
-        if (snapShotFileName == null) {
+        if (levelSnapShotName == null) {
             String unique = new BigInteger(281, new Random()).toString(13);
-            snapShotFileName = "ArithmosLevel_" + unique;
+            levelSnapShotName = "ArithmosLevel_" + unique;
         }
         if (mGoogleApiClient.isConnected()) {
-            retrySaveGame = false;
-            Games.Snapshots.open(mGoogleApiClient, snapShotFileName, true).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
+            Games.Snapshots.open(mGoogleApiClient, levelSnapShotName, true).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
                 @Override
                 public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
                     String desc = getString(ArithmosGameBase.getChallengeDisplayNameResId(game.getChallengeName())) + " " +
@@ -895,17 +913,18 @@ public class GameActivity extends AppCompatActivity implements
                     writeSnapshot(openSnapshotResult.getSnapshot(), game.getSaveGameData(), desc, thumbNail).setResultCallback(new ResultCallback<Snapshots.CommitSnapshotResult>() {
                         @Override
                         public void onResult(@NonNull Snapshots.CommitSnapshotResult commitSnapshotResult) {
+                            //saveGameState();
+                            finishLevelIncomplete();
                             Log.d(LOG_TAG, "Level Snapshot Written");
-                            saveGameState();
                         }
                     });
                 }
             });
         }
-        else {
+        else if (connectAttempts++ < maxAttempts){
             Log.d(LOG_TAG, "SaveLevel() GoogleAPIClient not connected, retying");
-            retrySaveGame = true;
             mGoogleApiClient.connect();
+            SaveLevel();
         }
     }
 
@@ -932,11 +951,9 @@ public class GameActivity extends AppCompatActivity implements
     }
 
     private void finishLevelComplete(){
-        if (jewelCount > 0 && mGoogleApiClient.isConnected())
-            Games.Achievements.increment(mGoogleApiClient, getString(R.string.achievement_collector), jewelCount);
         Intent data = new Intent();
-        if (snapShotFileName != null) {
-            data.putExtra(SAVED_GAME, snapShotFileName);
+        if (levelSnapShotName != null) {
+            data.putExtra(SAVED_GAME, levelSnapShotName);
         }
         if (levelCache != null) levelCache.delete();
         setResult(Activity.RESULT_OK, data);
@@ -944,25 +961,13 @@ public class GameActivity extends AppCompatActivity implements
     }
 
     private void finishLevelIncomplete(){
-        if (jewelCount > 0 && mGoogleApiClient.isConnected())
-            Games.Achievements.increment(mGoogleApiClient, getString(R.string.achievement_collector), jewelCount);
         Intent data = new Intent();
-        if (hasBeenPlayed) {
-            // Record level score
-            if (game.getLeaderboardId() != null && mGoogleApiClient.isConnected())
-                Games.Leaderboards.submitScore(mGoogleApiClient, game.getLeaderboardId(), game.getScore(game.getCurrentPlayer()));
-
-            if (snapShotFileName != null) {
-                data.putExtra(SAVED_GAME, snapShotFileName);
+            if (levelSnapShotName != null) {
+                data.putExtra(SAVED_GAME, levelSnapShotName);
             }
-            if (levelCache != null) levelCache.delete();
-            setResult(Activity.RESULT_CANCELED, data);
-            finish();
-        } else {
-            if (levelCache != null) levelCache.delete();
-            setResult(Activity.RESULT_CANCELED, data);
-            finish();
-        }
+        if (levelCache != null) levelCache.delete();
+        setResult(Activity.RESULT_CANCELED, data);
+        finish();
     }
 
     private void recordActivityTurnFinished(ArithmosGame.GameResult result){
@@ -981,138 +986,50 @@ public class GameActivity extends AppCompatActivity implements
     }
 
     private void recordAchievements(){
+        // Recorded locally
         if (game.isGameOver()) {
             gameBase.recordStars(game.getChallengeName(), game.getChallengeLevel(), game.getNumStars());
-            cacheGame();
-            if (mGoogleApiClient.isConnected()) {
-                // Record level score
-                if (game.getLeaderboardId() != null)
-                    Games.Leaderboards.submitScore(mGoogleApiClient, game.getLeaderboardId(), game.getScore(game.getCurrentPlayer()));
-                if (game.getNumStars() == 3) {
-                    Games.Achievements.unlock(mGoogleApiClient, getString(R.string.achievement_level_master));
-                    Games.Achievements.reveal(mGoogleApiClient, getString(R.string.achievement_challenge_master));
-                    if (gameBase.isChallengeThreeStarred(game.getChallengeName()))
-                        Games.Achievements.unlock(mGoogleApiClient, getString(R.string.achievement_challenge_master));
-                }
-                if (game.getGoalType() == ArithmosLevel.GOAL_301 && game.getRunCount() <= 3)
-                    Games.Achievements.unlock(mGoogleApiClient, getString(R.string.achievement_301_in_3));
-                if (game.getNumTilesRemaining() == 0)
-                    Games.Achievements.unlock(mGoogleApiClient, getString(R.string.achievement_blackout));
-                if (gameBase.getJewelCount() >= 1000)
-                    Games.Achievements.unlock(mGoogleApiClient, getString(R.string.achievement_the_one_percent));
-
-                saveGameStateAsync();
-            }
         }
+        int jewelCount = game.getJewelCount();
+        game.resetJewelCount();
+        gameBase.recordJewels(jewelCount);
+        cacheGame();
+
+        // Recorded if using Google Play Games
+            if (mGoogleApiClient.isConnected()) {
+                saveGameAsync();
+                if (jewelCount > 0 && mGoogleApiClient.isConnected()) {
+                    Games.Achievements.increment(mGoogleApiClient, getString(R.string.achievement_collector), jewelCount);
+                }
+                if (game.isGameOver()) {
+                    // Record level score
+                    if (game.getLeaderboardId() != null)
+                        Games.Leaderboards.submitScore(mGoogleApiClient, game.getLeaderboardId(), game.getScore(game.getCurrentPlayer()));
+                    if (game.getNumStars() == 3) {
+                        Games.Achievements.unlock(mGoogleApiClient, getString(R.string.achievement_level_master));
+                        Games.Achievements.reveal(mGoogleApiClient, getString(R.string.achievement_challenge_master));
+                        if (gameBase.isChallengeThreeStarred(game.getChallengeName()))
+                            Games.Achievements.unlock(mGoogleApiClient, getString(R.string.achievement_challenge_master));
+                    }
+                    if (game.getGoalType() == ArithmosLevel.GOAL_301 && game.getRunCount() <= 3)
+                        Games.Achievements.unlock(mGoogleApiClient, getString(R.string.achievement_301_in_3));
+                    if (game.getNumTilesRemaining() == 0)
+                        Games.Achievements.unlock(mGoogleApiClient, getString(R.string.achievement_blackout));
+                    if (gameBase.getJewelCount() >= 1000)
+                        Games.Achievements.unlock(mGoogleApiClient, getString(R.string.achievement_the_one_percent));
+                }
+            } else if (useGooglePlay && connectAttempts++ < maxAttempts){
+                if (!mGoogleApiClient.isConnecting()) mGoogleApiClient.connect();
+                recordAchievements();
+            }
     }
 
-    private void showGameOverPopup(int animDelay){
-
-        final View layout = getLayoutInflater().inflate(R.layout.game_over_popup, null);
-
-        // Prepare info to display
-        if (game.isGameOver()) {
-            TextView titleText = (TextView)layout.findViewById(R.id.title_textview);
-            titleText.setText(R.string.you_won);
-            int numStars = gameBase.getNumStars(game.getChallengeName(), game.getChallengeLevel());
-            int[] nameId = gameBase.unlockNextLevel(game.getChallengeName(), game.getChallengeLevel());
-            TextView levelView1 = (TextView)layout.findViewById(R.id.level_textview1);
-            levelView1.setVisibility(View.VISIBLE);
-            levelView1.setText(getString(R.string.unlock_level_x_x, getString(nameId[0]), getString(nameId[1])));
-            if (numStars > 1) {
-                nameId = gameBase.unlockNextLevel(game.getChallengeName(), game.getChallengeLevel() + 1);
-                TextView levelView2 = (TextView)layout.findViewById(R.id.level_textview2);
-                levelView2.setVisibility(View.VISIBLE);
-                levelView2.setText(getString(R.string.unlock_level_x_x, getString(nameId[0]), getString(nameId[1])));
-            }
-        }
-
-        Button retryButton = (Button)layout.findViewById(R.id.retry_button);
-        retryButton.setVisibility(View.VISIBLE);
-        retryButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                AnimatorSet set = Animations.slideOutDown(findViewById(R.id.game_over_popup), 200, 0, rootLayout.getHeight() / 3);
-                set.addListener(new Animator.AnimatorListener() {
-                    @Override
-                    public void onAnimationStart(Animator animation) {
-
-                    }
-
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        rootLayout.removeView(layout);
-                        retryLevel();
-                    }
-
-                    @Override
-                    public void onAnimationCancel(Animator animation) {
-
-                    }
-
-                    @Override
-                    public void onAnimationRepeat(Animator animation) {
-
-                    }
-                });
-                set.start();
-            }
-        });
-
-        TextView scoreView = (TextView)layout.findViewById(R.id.score_textview);
-        if (game.getNumStars() == 1)
-            scoreView.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_one_star_80dp, 0, 0, 0);
-        else if (game.getNumStars() == 2)
-            scoreView.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_two_stars_80dp, 0, 0, 0);
-        else if (game.getNumStars() == 3)
-            scoreView.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_three_stars_80dp, 0, 0, 0);
-        Animations.CountTo(scoreView, 0, game.getScore(game.getCurrentPlayer()));
-
-        TextView jewelView = (TextView)layout.findViewById(R.id.jewel_count);
-        jewelView.setText(String.format(getString(R.string.number_after_x), game.getBonusCount(ArithmosLevel.BONUS_RED_JEWEL)));
-
-        if (game.getBonusCount(ArithmosLevel.BONUS_BALLOONS) > 0) {
-            TextView bonusView = (TextView) layout.findViewById(R.id.balloon_count);
-            bonusView.setVisibility(View.VISIBLE);
-            bonusView.setText(String.format(getString(R.string.number_after_x), game.getBonusCount(ArithmosLevel.BONUS_BALLOONS)));
-        }
-
-        if (game.getBonusCount(ArithmosLevel.BONUS_OP_LOCK) > 0) {
-            TextView bonusView = (TextView) layout.findViewById(R.id.lock_count);
-            bonusView.setVisibility(View.VISIBLE);
-            bonusView.setText(String.format(getString(R.string.number_after_x), game.getBonusCount(ArithmosLevel.BONUS_OP_LOCK)));
-        }
-
-        if (game.getBonusCount(ArithmosLevel.BONUS_APPLE) > 0) {
-            TextView bonusView = (TextView) layout.findViewById(R.id.apple_count);
-            bonusView.setVisibility(View.VISIBLE);
-            bonusView.setText(String.format(getString(R.string.number_after_x), game.getBonusCount(ArithmosLevel.BONUS_APPLE)));
-        }
-
-        if (game.getBonusCount(ArithmosLevel.BONUS_BANANAS) > 0) {
-            TextView bonusView = (TextView) layout.findViewById(R.id.banana_count);
-            bonusView.setVisibility(View.VISIBLE);
-            bonusView.setText(String.format(getString(R.string.number_after_x), game.getBonusCount(ArithmosLevel.BONUS_BANANAS)));
-        }
-
-        if (game.getBonusCount(ArithmosLevel.BONUS_CHERRIES) > 0) {
-            TextView bonusView = (TextView) layout.findViewById(R.id.cherry_count);
-            bonusView.setVisibility(View.VISIBLE);
-            bonusView.setText(String.format(getString(R.string.number_after_x), game.getBonusCount(ArithmosLevel.BONUS_CHERRIES)));
-        }
-
-        // Prepare touch
-        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        layout.setLayoutParams(params);
-        layout.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                return true;
-            }
-        });
-
-        rootLayout.addView(layout);
-        Animations.slideUp(layout, 200, animStartDelay + animDelay, rootLayout.getHeight() / 3).start();
+    public void ExitButtonClick(View v){
+        Animations.slideOutDown(findViewById(R.id.game_over_popup), 200, 0, rootLayout.getHeight() / 3).start();
+        if (game.isGameOver())
+            finishLevelComplete();
+        else
+            finishLevelIncomplete();
     }
 
     // Game events
@@ -1143,8 +1060,6 @@ public class GameActivity extends AppCompatActivity implements
                     rootLayout.post(new Runnable() {
                         @Override
                         public void run() {
-                            Log.d(LOG_TAG, "elapsedRealtime = " + SystemClock.elapsedRealtime());
-                            Log.d(LOG_TAG, "endMillis = " + endMillis);
                             ArithmosGame.GameResult result = new ArithmosGame.GameResult(ArithmosGame.GameResult.TIME_UP);
                             result.isGameOver = true;
                             OnGameOver(result);
@@ -1265,6 +1180,148 @@ public class GameActivity extends AppCompatActivity implements
         showGameOverPopup(animStartDelay + gameBoard.getAnimDelay() + 200);
     }
 
+    private void showGameOverPopup(int animDelay){
+
+        final View layout = getLayoutInflater().inflate(R.layout.game_over_popup, null);
+
+        // Prepare info to display
+        if (game.isGameOver()) {
+            TextView titleText = (TextView)layout.findViewById(R.id.title_textview);
+            titleText.setText(R.string.you_won);
+            int numStars = gameBase.getNumStars(game.getChallengeName(), game.getChallengeLevel());
+            int[] nameId = gameBase.unlockNextLevel(game.getChallengeName(), game.getChallengeLevel());
+            TextView levelView1 = (TextView)layout.findViewById(R.id.level_textview1);
+            levelView1.setVisibility(View.VISIBLE);
+            levelView1.setText(getString(R.string.unlock_level_x_x, getString(nameId[0]), getString(nameId[1])));
+            if (numStars > 1) {
+                nameId = gameBase.unlockNextLevel(game.getChallengeName(), game.getChallengeLevel() + 1);
+                TextView levelView2 = (TextView)layout.findViewById(R.id.level_textview2);
+                levelView2.setVisibility(View.VISIBLE);
+                levelView2.setText(getString(R.string.unlock_level_x_x, getString(nameId[0]), getString(nameId[1])));
+            }
+        }
+
+        if (gameBase.isNextLevelUnlocked(game.getChallengeName(), game.getChallengeLevel())) {
+            Button nextLevelButton = (Button) layout.findViewById(R.id.next_level_button);
+            nextLevelButton.setVisibility(View.VISIBLE);
+            nextLevelButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    AnimatorSet set = Animations.slideOutDown(findViewById(R.id.game_over_popup), 200, 0, rootLayout.getHeight() / 3);
+                    set.addListener(new Animator.AnimatorListener() {
+                        @Override
+                        public void onAnimationStart(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            rootLayout.removeView(layout);
+                            loadNextLevel();
+                        }
+
+                        @Override
+                        public void onAnimationCancel(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationRepeat(Animator animation) {
+
+                        }
+                    });
+                    set.start();
+                }
+            });
+        }
+
+        Button retryButton = (Button)layout.findViewById(R.id.retry_button);
+        retryButton.setVisibility(View.VISIBLE);
+        retryButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AnimatorSet set = Animations.slideOutDown(findViewById(R.id.game_over_popup), 200, 0, rootLayout.getHeight() / 3);
+                set.addListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        rootLayout.removeView(layout);
+                        retryLevel();
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+
+                    }
+                });
+                set.start();
+            }
+        });
+
+        TextView scoreView = (TextView)layout.findViewById(R.id.score_textview);
+        if (game.getNumStars() == 1)
+            scoreView.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_one_star_80dp, 0, 0, 0);
+        else if (game.getNumStars() == 2)
+            scoreView.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_two_stars_80dp, 0, 0, 0);
+        else if (game.getNumStars() == 3)
+            scoreView.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_three_stars_80dp, 0, 0, 0);
+        Animations.CountTo(scoreView, 0, game.getScore(game.getCurrentPlayer()));
+
+        TextView jewelView = (TextView)layout.findViewById(R.id.jewel_count);
+        jewelView.setText(String.format(getString(R.string.number_after_x), game.getBonusCount(ArithmosLevel.BONUS_RED_JEWEL)));
+
+        if (game.getBonusCount(ArithmosLevel.BONUS_BALLOONS) > 0) {
+            TextView bonusView = (TextView) layout.findViewById(R.id.balloon_count);
+            bonusView.setVisibility(View.VISIBLE);
+            bonusView.setText(String.format(getString(R.string.number_after_x), game.getBonusCount(ArithmosLevel.BONUS_BALLOONS)));
+        }
+
+        if (game.getBonusCount(ArithmosLevel.BONUS_OP_LOCK) > 0) {
+            TextView bonusView = (TextView) layout.findViewById(R.id.lock_count);
+            bonusView.setVisibility(View.VISIBLE);
+            bonusView.setText(String.format(getString(R.string.number_after_x), game.getBonusCount(ArithmosLevel.BONUS_OP_LOCK)));
+        }
+
+        if (game.getBonusCount(ArithmosLevel.BONUS_APPLE) > 0) {
+            TextView bonusView = (TextView) layout.findViewById(R.id.apple_count);
+            bonusView.setVisibility(View.VISIBLE);
+            bonusView.setText(String.format(getString(R.string.number_after_x), game.getBonusCount(ArithmosLevel.BONUS_APPLE)));
+        }
+
+        if (game.getBonusCount(ArithmosLevel.BONUS_BANANAS) > 0) {
+            TextView bonusView = (TextView) layout.findViewById(R.id.banana_count);
+            bonusView.setVisibility(View.VISIBLE);
+            bonusView.setText(String.format(getString(R.string.number_after_x), game.getBonusCount(ArithmosLevel.BONUS_BANANAS)));
+        }
+
+        if (game.getBonusCount(ArithmosLevel.BONUS_CHERRIES) > 0) {
+            TextView bonusView = (TextView) layout.findViewById(R.id.cherry_count);
+            bonusView.setVisibility(View.VISIBLE);
+            bonusView.setText(String.format(getString(R.string.number_after_x), game.getBonusCount(ArithmosLevel.BONUS_CHERRIES)));
+        }
+
+        // Prepare touch
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        layout.setLayoutParams(params);
+        layout.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                return true;
+            }
+        });
+
+        rootLayout.addView(layout);
+        Animations.slideUp(layout, 200, animStartDelay + animDelay, rootLayout.getHeight() / 3).start();
+    }
 
     @Override
     public void OnAchievement(String label){
@@ -1273,76 +1330,71 @@ public class GameActivity extends AppCompatActivity implements
 
     @Override
     public void OnJewel(){
-        gameBase.recordJewels(1);
-        jewelCount++;
         TextView jewelTextView = (TextView)rootLayout.findViewById(R.id.jewel_count);
-        String text = String.valueOf(gameBase.getJewelCount());
+        String text = String.valueOf(gameBase.getJewelCount() + game.getJewelCount());
         jewelTextView.setText(text);
-        cacheGame();
     }
 
     @Override
     public void OnBomb(String operation){
-        if (!game.isGameOver()) {
-            final View layout = getLayoutInflater().inflate(R.layout.bomb_popup, null);
+        final View layout = getLayoutInflater().inflate(R.layout.bomb_popup, null);
 
-            // Animate bomb popup
-            RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-            layout.setLayoutParams(params);
-            layout.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-                    return true;
-                }
-            });
-            ImageView imageView = (ImageView) layout.findViewById(R.id.image_view);
-            switch (operation) {
-                case ArithmosGame.ADD:
-                    Animations.popIn(rootLayout.findViewById(R.id.slash_add), 100, 0).start();
-                    imageView.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_slash_addition));
-                    break;
-                case ArithmosGame.SUBTRACT:
-                    Animations.popIn(rootLayout.findViewById(R.id.slash_sub), 100, 0).start();
-                    imageView.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_slash_subtraction));
-                    break;
-                case ArithmosGame.MULTIPLY:
-                    Animations.popIn(rootLayout.findViewById(R.id.slash_mult), 100, 0).start();
-                    imageView.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_slash_multiplication));
-                    break;
-                case ArithmosGame.DIVIDE:
-                    Animations.popIn(rootLayout.findViewById(R.id.slash_div), 100, 0).start();
-                    imageView.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_slash_division));
-                    break;
+        // Animate bomb popup
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        layout.setLayoutParams(params);
+        layout.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                return true;
+            }
+        });
+        ImageView imageView = (ImageView) layout.findViewById(R.id.image_view);
+        switch (operation){
+            case ArithmosGame.ADD:
+                Animations.popIn(rootLayout.findViewById(R.id.slash_add), 100, 0).start();
+                imageView.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_slash_addition));
+                break;
+            case ArithmosGame.SUBTRACT:
+                Animations.popIn(rootLayout.findViewById(R.id.slash_sub), 100, 0).start();
+                imageView.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_slash_subtraction));
+                break;
+            case ArithmosGame.MULTIPLY:
+                Animations.popIn(rootLayout.findViewById(R.id.slash_mult), 100, 0).start();
+                imageView.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_slash_multiplication));
+                break;
+            case ArithmosGame.DIVIDE:
+                Animations.popIn(rootLayout.findViewById(R.id.slash_div), 100, 0).start();
+                imageView.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_slash_division));
+                break;
+        }
+
+        rootLayout.addView(layout);
+        Animations.slideUp(layout, 200, animStartDelay + gameBoard.getAnimDelay(), rootLayout.getHeight() / 3).start();
+        AnimatorSet set = Animations.explodeFade(layout, animStartDelay + 200 + gameBoard.getAnimDelay(), 1200);
+        animStartDelay += 1400;
+        set.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+
             }
 
-            rootLayout.addView(layout);
-            Animations.slideUp(layout, 200, animStartDelay + gameBoard.getAnimDelay(), rootLayout.getHeight() / 3).start();
-            AnimatorSet set = Animations.explodeFade(layout, 200, animStartDelay + 1200 + gameBoard.getAnimDelay());
-            animStartDelay += 1400;
-            set.addListener(new Animator.AnimatorListener() {
-                @Override
-                public void onAnimationStart(Animator animation) {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                animStartDelay -= 1400;
+                rootLayout.removeView(layout);
+            }
 
-                }
+            @Override
+            public void onAnimationCancel(Animator animation) {
 
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    animStartDelay -= 1400;
-                    rootLayout.removeView(layout);
-                }
+            }
 
-                @Override
-                public void onAnimationCancel(Animator animation) {
+            @Override
+            public void onAnimationRepeat(Animator animation) {
 
-                }
-
-                @Override
-                public void onAnimationRepeat(Animator animation) {
-
-                }
-            });
-            set.start();
-        }
+            }
+        });
+        set.start();
     }
 
     @Override
@@ -1602,14 +1654,13 @@ public class GameActivity extends AppCompatActivity implements
     private boolean mAutoStartSignInFlow = true;
     private boolean mSignInClicked = false;
     private boolean useGooglePlay = true;
+    private int connectAttempts = 0, maxAttempts = 10;
 
     @Override
     public void onConnected(Bundle connectionHint) {
+        connectAttempts = 0;
         if (loadSavedGame) LoadSavedGame();
-        if (retrySaveGame) SaveLevel();
-        if (retrySaveGameState) saveGameState();
-        else if (getIntent().hasExtra(GAME_BASE_FILE_NAME) && gameBaseNeedsDownload)
-            loadGameState(getIntent().getStringExtra(GAME_BASE_FILE_NAME));
+        loadGameState();
     }
 
     @Override
@@ -1634,7 +1685,6 @@ public class GameActivity extends AppCompatActivity implements
                     mGoogleApiClient, connectionResult,
                     RC_SIGN_IN, getString(R.string.gamehelper_sign_in_failed))) {
                 mResolvingConnectionFailure = false;
-                retrySaveGame = false;
             }
         }
 

@@ -148,10 +148,6 @@ public class MainActivity extends AppCompatActivity implements
             File levelCacheFile = new File(getCacheDir(), GameActivity.levelCacheFileName);
             if (levelCacheFile.exists()) {
                 Intent intent = new Intent(this, GameActivity.class);
-                prefs = getSharedPreferences(GAME_PREFS, MODE_PRIVATE);
-                String gameFileName = prefs.getString(GAME_FILE_NAME, null);
-                if (gameFileName != null)
-                    intent.putExtra(GameActivity.GAME_BASE_FILE_NAME, gameFileName);
                 startActivityForResult(intent, REQUEST_LEVEL_PLAYED);
             }
         }
@@ -528,6 +524,7 @@ public class MainActivity extends AppCompatActivity implements
                     removeItem(item);
                     return;
                 }
+            notifyDataSetChanged();
         }
 
         @Override
@@ -923,10 +920,6 @@ public class MainActivity extends AppCompatActivity implements
     private void PlaySavedLevel(String uniqueName){
         Intent intent = new Intent(this, GameActivity.class);
         intent.putExtra(GameActivity.SAVED_GAME, uniqueName);
-        SharedPreferences prefs = getSharedPreferences(GAME_PREFS, MODE_PRIVATE);
-        String gameFileName = prefs.getString(GAME_FILE_NAME, null);
-        if (gameFileName != null)
-            intent.putExtra(GameActivity.GAME_BASE_FILE_NAME, gameFileName);
         startActivityForResult(intent, REQUEST_LEVEL_PLAYED);
     }
 
@@ -1021,6 +1014,7 @@ public class MainActivity extends AppCompatActivity implements
             byte[] data = gameBase.getByteData();
             outputStream.write(data, 0, data.length);
             outputStream.close();
+            gameBase.setSaved(false);
             Log.d(LOG_TAG, "Game base cached");
         } catch (Exception e) {
             e.printStackTrace();
@@ -1049,7 +1043,6 @@ public class MainActivity extends AppCompatActivity implements
                         activityListAdapter.addItems(gameBase.getActivityItems());
                         activityListAdapter.sort();
                     }
-                    isGameBaseRefreshing = false;
                     Log.d(LOG_TAG, "Game base loaded from cache");
                     return true;
                 }
@@ -1072,6 +1065,7 @@ public class MainActivity extends AppCompatActivity implements
                 SharedPreferences.Editor editor = prefs.edit();
                 editor.putString(GAME_FILE_NAME, gameFileName);
                 editor.apply();
+                Log.d(LOG_TAG, "New game base Google file created");
             }
             Games.Snapshots.open(mGoogleApiClient, gameFileName, true).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
                 @Override
@@ -1089,30 +1083,34 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void refreshGameState(){
-        if (!isGameBaseRefreshing && mGoogleApiClient.isConnected()) {
-            isGameBaseRefreshing = true;
+        Log.d(LOG_TAG, "Refresh Game State Called");
+        if (mGoogleApiClient.isConnected()) {
             Games.Snapshots.load(mGoogleApiClient, false).setResultCallback(new ResultCallback<Snapshots.LoadSnapshotsResult>() {
                 @Override
                 public void onResult(@NonNull Snapshots.LoadSnapshotsResult loadSnapshotsResult) {
+
+                    String gameFileName = null;
                     for (SnapshotMetadata s : loadSnapshotsResult.getSnapshots()) {
                         if (s.getUniqueName().contains(GAME_FILE_PREFIX)) {
+                            gameFileName = s.getUniqueName();
+                            SharedPreferences prefs = getSharedPreferences(GAME_PREFS, MODE_PRIVATE);
+                            SharedPreferences.Editor editor = prefs.edit();
+                            editor.putString(GAME_FILE_NAME, gameFileName);
+                            editor.apply();
                             if (s.getLastModifiedTimestamp() > gameBase.timeStamp())
-                                loadGameState(s);
+                                loadGameState(gameFileName);
+                            Log.d(LOG_TAG, "Game base downloaded");
                         }
-                        Log.d(LOG_TAG, s.getUniqueName());
                     }
                     loadSnapshotsResult.getSnapshots().release();
+                    if (gameFileName == null)
+                        saveGameState();
                 }
             });
         }
     }
 
-    private void loadGameState(SnapshotMetadata metadata){
-        String gameFileName = metadata.getUniqueName();
-        final SharedPreferences prefs = getSharedPreferences(GAME_PREFS, MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putString(GAME_FILE_NAME, gameFileName);
-        editor.apply();
+    private void loadGameState(String gameFileName){
         if (gameFileName != null && gameBaseNeedsRefresh && mGoogleApiClient.isConnected()) {
             Games.Snapshots.open(mGoogleApiClient, gameFileName, false).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
                 @Override
@@ -1134,11 +1132,11 @@ public class MainActivity extends AppCompatActivity implements
                         isGameBaseRefreshing = false;
                         consumePurchases();
                         cacheGame();
-                        Log.d(LOG_TAG, "Game refreshed");
+                        Log.d(LOG_TAG, "Game refreshed from Google");
                     } catch (IOException | NullPointerException | ClassCastException e) {
                         e.printStackTrace();
                         if (e instanceof NullPointerException) {
-                            SharedPreferences.Editor editor = prefs.edit();
+                            SharedPreferences.Editor editor = getSharedPreferences(GAME_PREFS, MODE_PRIVATE).edit();
                             editor.remove(GAME_FILE_NAME);
                             editor.apply();
                         }
@@ -1158,8 +1156,8 @@ public class MainActivity extends AppCompatActivity implements
 
 
     // Game, challenges, and levels
-    private static final String GAME_PREFS = "GAME_PREFS";
-    private static final String GAME_FILE_NAME = "GAME_FILE_NAME";
+    public static final String GAME_PREFS = "GAME_PREFS";
+    public static final String GAME_FILE_NAME = "GAME_FILE_NAME";
     private static final String GAME_FILE_PREFIX = "ArithmosGame_";
     public static final String gameCacheFileName = "arithmos_game_cache";
     private ArithmosGameBase gameBase;
@@ -1192,10 +1190,6 @@ public class MainActivity extends AppCompatActivity implements
     private void playLevel(int levelXmlId){
         Intent intent = new Intent(this, GameActivity.class);
         intent.putExtra(GameActivity.LEVEL_XML_RES_ID, levelXmlId);
-        SharedPreferences prefs = getSharedPreferences(GAME_PREFS, MODE_PRIVATE);
-        String gameFileName = prefs.getString(GAME_FILE_NAME, null);
-        if (gameFileName != null)
-            intent.putExtra(GameActivity.GAME_BASE_FILE_NAME, gameFileName);
         startActivityForResult(intent, REQUEST_LEVEL_PLAYED);
     }
 
@@ -1431,7 +1425,8 @@ public class MainActivity extends AppCompatActivity implements
                     for (SnapshotMetadata data : loadSnapshotsResult.getSnapshots()){
                         Games.Snapshots.delete(mGoogleApiClient, data);
                     }
-                    gameBase.resetGame();
+                    //gameBase.resetGame();
+                    gameBase = new ArithmosGameBase();
                     activityListAdapter.clearList();
                     cacheGame();
                     SharedPreferences.Editor editor = getSharedPreferences(GAME_PREFS, MODE_PRIVATE).edit();
@@ -2343,10 +2338,6 @@ public class MainActivity extends AppCompatActivity implements
                     hideLoadingPopup();
                     Intent intent = new Intent(context, MatchGameActivity.class);
                     intent.putExtra(MatchGameActivity.LEVEL_XML_RES_ID, matchLevelXmlId);
-                    SharedPreferences prefs = getSharedPreferences(GAME_PREFS, MODE_PRIVATE);
-                    String gameFileName = prefs.getString(GAME_FILE_NAME, null);
-                    if (gameFileName != null)
-                        intent.putExtra(GameActivity.GAME_BASE_FILE_NAME, gameFileName);
                     intent.putExtra(MatchGameActivity.CREATE_MATCH, true);
                     intent.putExtra(MatchGameActivity.MATCH, updateMatchResult.getMatch());
                     startActivityForResult(intent, REQUEST_TAKE_MATCH_TURN);
@@ -2373,10 +2364,6 @@ public class MainActivity extends AppCompatActivity implements
                 hideLoadingPopup();
                 Intent intent = new Intent(context, MatchGameActivity.class);
                 intent.putExtra(MatchGameActivity.MATCH, match);
-                SharedPreferences prefs = getSharedPreferences(GAME_PREFS, MODE_PRIVATE);
-                String gameFileName = prefs.getString(GAME_FILE_NAME, null);
-                if (gameFileName != null)
-                    intent.putExtra(GameActivity.GAME_BASE_FILE_NAME, gameFileName);
                 startActivityForResult(intent, REQUEST_TAKE_MATCH_TURN);
                 return;
         }
@@ -2772,6 +2759,7 @@ public class MainActivity extends AppCompatActivity implements
             refreshSavedGames();
             refreshMatchList();
             refreshAchievementList();
+            refreshGameState();
         } else if (!mGoogleApiClient.isConnecting())
             mGoogleApiClient.connect();
     }

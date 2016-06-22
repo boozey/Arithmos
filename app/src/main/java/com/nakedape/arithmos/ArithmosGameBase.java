@@ -88,16 +88,17 @@ public class ArithmosGameBase {
 
     public ArithmosGameBase(){
         unlockedLevels = new ArrayList<>();
-        unlockedLevels.add(EASY_123 + "0");
+        unlockedLevels.add(challenges[0] + "0");
         stars = new HashMap<>();
         jewelCount = 0;
         specials = new HashMap<>(1);
         specials.put(SPECIAL_SKIP, 1);
         activityItems = new ArrayList<>();
+        needsSaving = true;
     }
 
     public void setSaved(boolean state){
-        needsSaving = state;
+        needsSaving = !state;
     }
 
     public boolean needsSaving(){return needsSaving;}
@@ -135,6 +136,38 @@ public class ArithmosGameBase {
             }
         }
         return null;
+    }
+
+    public static int getNextLevelXmlId(String challengeName, int currentLevel){
+        int nextLevel = currentLevel + 1;
+        if (nextLevel < getLevelXmlIds(challengeName).length) {
+            return getLevelXmlIds(challengeName)[nextLevel];
+        } else {
+            switch (challengeName) {
+                case CRAZY_EIGHTS:
+                    return getNextLevelXmlId(EASY_123, -1);
+                case EASY_123:
+                    return getNextLevelXmlId(LUCKY_7, -1);
+                default:
+                    return getLevelXmlIds(challengeName)[0];
+            }
+        }
+    }
+
+    public boolean isNextLevelUnlocked(String challengeName, int currentLevel){
+        int nextLevel = currentLevel + 1;
+        if (nextLevel < getLevelXmlIds(challengeName).length) {
+            return unlockedLevels.contains(challengeName + String.valueOf(nextLevel));
+        } else {
+            switch (challengeName) {
+                case CRAZY_EIGHTS:
+                    return isNextLevelUnlocked(EASY_123, -1);
+                case EASY_123:
+                    return isNextLevelUnlocked(LUCKY_7, -1);
+                default:
+                    return false;
+            }
+        }
     }
 
     private void unlockAllLevels(){

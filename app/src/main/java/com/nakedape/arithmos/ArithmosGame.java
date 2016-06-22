@@ -68,6 +68,8 @@ public class ArithmosGame {
     transient private boolean evalLtoR = false;
     transient private HashMap<String, Integer> p1BonusCounts, p2BonusCounts;
     transient private String p1Message, p2Message;
+    transient private int jewelCount = 0;
+    transient private long elapsedTime = 0;
 
     public ArithmosGame(){}
     public ArithmosGame(int size, int goalMin, int goalMax, int goalType){
@@ -547,6 +549,11 @@ public class ArithmosGame {
     }
     public int getLastValue(){
         return lastValue;
+    }
+    public int getJewelCount() { return jewelCount;}
+    public void resetJewelCount() { jewelCount = 0;}
+    public long getElapasedTime(){
+        return elapsedTime;
     }
 
     // Run checking
@@ -1071,6 +1078,7 @@ public class ArithmosGame {
                     break;
                 case ArithmosLevel.BONUS_RED_JEWEL:
                     score += 25;
+                    jewelCount++;
                     break;
                 case ArithmosLevel.BONUS_BALLOONS:
                     score += 200;
@@ -1165,7 +1173,7 @@ public class ArithmosGame {
 
 
     // Serialization
-    transient private static final int serializationVersion = 3;
+    transient private static final int serializationVersion = 4;
 
     public byte[] getSaveGameData(){
         ByteArrayOutputStream bos = null;
@@ -1206,9 +1214,14 @@ public class ArithmosGame {
         out.writeObject(p2OpLimitCounts);
         out.writeObject(p1BonusCounts);
         out.writeObject(p2BonusCounts);
+        // Version 2
         out.writeObject(p1Message);
         out.writeObject(p2Message);
+        // Version 3
         out.writeLong(timeLimit);
+        // Version 4
+        out.writeLong(elapsedTime);
+        out.writeInt(jewelCount);
     }
     public void loadGameData(byte[] gameData){
         ByteArrayInputStream bis = new ByteArrayInputStream(gameData);
@@ -1253,6 +1266,10 @@ public class ArithmosGame {
         }
         if (version >= 3){
             timeLimit = in.readLong();
+        }
+        if (version >= 4){
+            elapsedTime = in.readLong();
+            jewelCount = in.readInt();
         }
     }
 

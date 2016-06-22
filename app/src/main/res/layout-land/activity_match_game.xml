@@ -131,15 +131,6 @@
                             android:layout_margin="4dp"
                             android:background="@drawable/operations_button_background"
                             android:onClick="OperationButtonClick"/>
-
-                        <TextView android:id="@+id/bomb_button"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_margin="2dp"
-                            android:gravity="bottom"
-                            android:textColor="@color/text_primary_dark"
-                            android:drawableStart="@drawable/ic_bomb"
-                            android:visibility="gone"/>
                         <TextView android:id="@+id/calc_button"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -148,6 +139,15 @@
                             android:textColor="@color/text_primary_dark"
                             android:drawableStart="@drawable/ic_calculator"
                             android:onClick="CalcButtonClick"
+                            android:visibility="gone"/>
+
+                        <TextView android:id="@+id/bomb_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="2dp"
+                            android:gravity="bottom"
+                            android:textColor="@color/text_primary_dark"
+                            android:drawableStart="@drawable/ic_bomb"
                             android:visibility="gone"/>
 
                         <TextView android:id="@+id/pencil_button"

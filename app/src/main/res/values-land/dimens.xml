@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="goal_text_size">36sp</dimen>
+    <integer name="number_item_cols">4</integer>
 </resources>

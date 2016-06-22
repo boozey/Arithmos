@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorSet;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -65,7 +66,6 @@ public class MatchGameActivity extends AppCompatActivity implements
     // Intent Extra tags
     public static final String LEVEL_XML_RES_ID = "level_xml_res_id";
     public static final String CREATE_MATCH = "create_match";
-    public static final String GAME_BASE_FILE_NAME = "game_base_file_name";
     public static final String MATCH = "match";
 
     // Saving/recreating the activity state
@@ -655,7 +655,10 @@ public class MatchGameActivity extends AppCompatActivity implements
         }
     }
 
-    private void loadGameState(String gameFileName){
+    private void loadGameState(){
+        SharedPreferences prefs = getSharedPreferences(MainActivity.GAME_PREFS, MODE_PRIVATE);
+        String gameFileName = prefs.getString(MainActivity.GAME_PREFS, null);
+        if (mGoogleApiClient.isConnected() && gameFileName != null)
         Games.Snapshots.open(mGoogleApiClient, gameFileName, false).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
             @Override
             public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
@@ -673,14 +676,21 @@ public class MatchGameActivity extends AppCompatActivity implements
                 }
             }
         });
+        else {
+            mGoogleApiClient.connect();
+            loadGameState();
+        }
+
 
     }
 
     private void saveGameState(){
         if (gameBase.needsSaving()) {
-            if (mGoogleApiClient.isConnected() && getIntent().hasExtra(GAME_BASE_FILE_NAME)) {
+            if (mGoogleApiClient.isConnected()) {
                 retrySaveGameState = false;
-                String gameFileName = getIntent().getStringExtra(GAME_BASE_FILE_NAME);
+                SharedPreferences prefs = getSharedPreferences(MainActivity.GAME_PREFS, MODE_PRIVATE);
+                String gameFileName = prefs.getString(MainActivity.GAME_FILE_NAME, null);
+                if (gameFileName != null)
                 Games.Snapshots.open(mGoogleApiClient, gameFileName, true).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
                     @Override
                     public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
@@ -1528,8 +1538,8 @@ public class MatchGameActivity extends AppCompatActivity implements
     @Override
     public void onConnected(Bundle connectionHint) {
         if (retrySaveGameState) saveGameState();
-        else if (getIntent().hasExtra(GAME_BASE_FILE_NAME) && gameBaseNeedsDownload)
-            loadGameState(getIntent().getStringExtra(GAME_BASE_FILE_NAME));
+        else if (gameBaseNeedsDownload)
+            loadGameState();
 
         if (retryFinishTurn)
             finishTurn();
