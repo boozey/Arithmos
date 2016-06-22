@@ -98,7 +98,7 @@ public class ArithmosGame {
         timeRemaining = timeLimit;
         setupBoard(level.getGridSize(), level.getGridNumbers(), level.getGridSpecialNumbers(), level.getBonuses(), level.getRuns());
         if (goalType == ArithmosLevel.GOAL_MULT_NUM)
-            initializeGoalList(level.getGoalListLength());
+            initializeGoalList(level.getGoalNumbers());
         p1AvailableOperations = OPERATIONS.clone();
         currentPlayer = PLAYER1;
         p1Runs = new ArrayList<>();
@@ -119,7 +119,7 @@ public class ArithmosGame {
         timeRemaining = timeLimit;
         setupBoard(level.getGridSize(), level.getGridNumbers(), level.getGridSpecialNumbers(), level.getBonuses(), level.getRuns());
         if (goalType == ArithmosLevel.GOAL_MULT_NUM)
-            initializeGoalList(level.getGoalListLength());
+            initializeGoalList(level.getGoalNumbers());
         p1AvailableOperations = OPERATIONS.clone();
         p2AvailableOperations = OPERATIONS.clone();
         currentPlayer = PLAYER1;
@@ -278,7 +278,7 @@ public class ArithmosGame {
         for (int i = 0; i < goalNumbers.length; i++){
             goalNumbers[i] = r.nextInt(goalMax - goalMin) + goalMin;
         }
-        initializeGoalList(8);
+        initializeGoalList(goalNumbers);
 
         int num;
         for (int i = 0; i < gameBoard.length; i++)
@@ -323,10 +323,6 @@ public class ArithmosGame {
     private boolean removeTopFromGoalList(){
         if (goalType == ArithmosLevel.GOAL_MULT_NUM) {
             upcomingGoals.remove(0);
-            if (goalList.size() > 0) {
-                upcomingGoals.add(goalList.get(0));
-                goalList.remove(0);
-            }
             return upcomingGoals.size() > 0;
         }
         return true;
@@ -334,10 +330,6 @@ public class ArithmosGame {
     private boolean removeFromGoalList(int value){
         if (upcomingGoals != null && upcomingGoals.size() > 0){
             upcomingGoals.remove(String.valueOf(value));
-            if (goalList.size() > 0) {
-                upcomingGoals.add(goalList.get(0));
-                goalList.remove(0);
-            }
             return upcomingGoals.size() > 0;
         }
         return true;
@@ -345,15 +337,10 @@ public class ArithmosGame {
     private int remainingGoalCount(){
         return upcomingGoals.size() + goalList.size();
     }
-    private void initializeGoalList(int size){
-        int displayLength = 6;
-        upcomingGoals = new ArrayList<>(displayLength);
-        goalList = new ArrayList<>(Math.max(size - displayLength, 0));
-        for (int i = 0; i < size; i++){
-            if (i < displayLength)
-                upcomingGoals.add(String.valueOf(goalNumbers[i % goalNumbers.length]));
-            else
-                goalList.add(String.valueOf(goalNumbers[i % goalNumbers.length]));
+    private void initializeGoalList(int[] goalNumbers){
+        upcomingGoals = new ArrayList<>(goalNumbers.length);
+        for (int x : goalNumbers){
+            upcomingGoals.add(String.valueOf(x));
         }
     }
     public int get301Total() {
@@ -1071,7 +1058,7 @@ public class ArithmosGame {
                     break;
             }
         }
-        score *= Math.max(1, (int)Math.pow(2, (expression.length - 5) / 2));
+        score *= Math.max(1, (expression.length - 1) / 2);
         for (String s : bonuses){
             switch (s){
                 case ArithmosLevel.BONUS_LOCK_SUB:
@@ -1081,6 +1068,9 @@ public class ArithmosGame {
                 case ArithmosLevel.BONUS_LOCK_DIV:
                 case ArithmosLevel.BONUS_LOCK_MULT:
                     score *= 5;
+                    break;
+                case ArithmosLevel.BONUS_RED_JEWEL:
+                    score += 25;
                     break;
                 case ArithmosLevel.BONUS_BALLOONS:
                     score += 200;

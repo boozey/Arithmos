@@ -106,20 +106,6 @@ public class MatchGameActivity extends AppCompatActivity implements
         gameBoard.setOnBombListener(this);
         gameBoard.setOnCancelBombListener(this);
         gameBase = new ArithmosGameBase();
-        rootLayout.findViewById(R.id.bomb_button).setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View v) {
-                BombLongClick(v);
-                return true;
-            }
-        });
-        rootLayout.findViewById(R.id.pencil_button).setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View v) {
-                PencilLongClick(v);
-                return true;
-            }
-        });
 
         // Load saved state and cached data
         if (savedInstanceState != null) {
@@ -345,50 +331,96 @@ public class MatchGameActivity extends AppCompatActivity implements
     private void refreshGoalList(){
         LinearLayout goalView = (LinearLayout)rootLayout.findViewById(R.id.upcoming_goal_linearlayout);
         goalView.removeAllViews();
-        for (int i = 0; i < game.getUpcomingGoals().size(); i++){
+        int cols = getResources().getInteger(R.integer.number_item_cols);
+        LinearLayout linearLayout = new LinearLayout(context);
+        linearLayout.setOrientation(LinearLayout.HORIZONTAL);
+        goalView.addView(linearLayout);
+        for (int i = 0, c = 0; i < game.getUpcomingGoals().size(); i++){
             String x = game.getUpcomingGoals().get(i);
-            TextView xView = new TextView(context);
-            xView.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.goal_text_size));
-            xView.setTag(x);
+            TextView xView = (TextView)getLayoutInflater().inflate(R.layout.goal_list_item, null);
+            xView.setMinWidth(xView.getHeight());
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE
-                    && i < game.getUpcomingGoals().size() - 1) {
-                params.setMarginEnd(12);
-            }
+            params.setMargins(4, 4, 4, 4);
             xView.setLayoutParams(params);
+            xView.setTag(x);
             xView.setText(x);
-            goalView.addView(xView);
+            linearLayout.addView(xView);
+            if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                if (++c % cols == 0) {
+                    linearLayout = new LinearLayout(context);
+                    linearLayout.setOrientation(LinearLayout.HORIZONTAL);
+                    goalView.addView(linearLayout);
+                }
+            }
         }
     }
 
     private void setupSpecials(){
         TextView bomb = (TextView)rootLayout.findViewById(R.id.bomb_button);
+        bomb.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                BombLongClick(v);
+                return true;
+            }
+        });
         int count = gameBase.getSpecialCount(ArithmosGameBase.SPECIAL_BOMB);
         if (count > 0)
-            Animations.popIn(bomb, 100, 100).start();
-        if (count > 1)
+            Animations.popIn(bomb, 200, 100).start();
+        if (count > 1) {
+            bomb.setCompoundDrawablePadding(-12);
             bomb.setText(String.valueOf(count));
+        }
 
         TextView calc = (TextView)rootLayout.findViewById(R.id.calc_button);
         count = gameBase.getSpecialCount(ArithmosGameBase.SPECIAL_OP_ORDER);
         if (count > 0)
-            Animations.popIn(calc, 100, 150).start();
-        if (count > 1)
+            Animations.popIn(calc, 200, 175).start();
+        if (count > 1) {
+            calc.setCompoundDrawablePadding(-12);
             calc.setText(String.valueOf(count));
+        }
 
         TextView pencil = (TextView)rootLayout.findViewById(R.id.pencil_button);
+        pencil.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                PencilLongClick(v);
+                return false;
+            }
+        });
         count = gameBase.getSpecialCount(ArithmosGameBase.SPECIAL_CHANGE);
         if (count > 0)
-            Animations.popIn(pencil, 100, 200).start();
-        if (count > 1)
+            Animations.popIn(pencil, 200, 250).start();
+        if (count > 1) {
+            pencil.setCompoundDrawablePadding(-12);
             pencil.setText(String.valueOf(count));
+        }
 
         TextView arrow = (TextView)rootLayout.findViewById(R.id.skip_button);
         count = gameBase.getSpecialCount(ArithmosGameBase.SPECIAL_SKIP);
         if (count > 0)
-            Animations.popIn(arrow, 100, 250).start();
-        if (count > 1)
+            Animations.popIn(arrow, 200, 325).start();
+        if (count > 1) {
+            arrow.setCompoundDrawablePadding(-12);
             arrow.setText(String.valueOf(count));
+        }
+
+        TextView zero = (TextView)rootLayout.findViewById(R.id.zero_button);
+        zero.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                ZeroButtonClick(v);
+                return false;
+            }
+        });
+        count = gameBase.getSpecialCount(ArithmosGameBase.SPECIAL_ZERO);
+        if (count > 0)
+            Animations.popIn(zero, 200, 325).start();
+        if (count > 1) {
+            zero.setCompoundDrawablePadding(-12);
+            zero.setText(String.valueOf(count));
+        }
     }
 
     private void showLevelInfoPopup(){
@@ -1340,6 +1372,44 @@ public class MatchGameActivity extends AppCompatActivity implements
                 gameBoard.setOperationPickMode(GameBoard.MANUAL_PICK);
             } else {
                 gameBoard.setOperationPickMode(GameBoard.AUTO_PICK);
+            }
+        }
+    }
+
+    public void ZeroButtonClick(View v){
+        gameBoard.setOnDragListener(new ZeroDragEventListener());
+        View.DragShadowBuilder myShadow = new DragShadowBuilder(v, ResourcesCompat.getDrawable(getResources(), R.drawable.ic_zero, null));
+        v.startDrag(null, myShadow, null, 0);
+    }
+
+    protected class ZeroDragEventListener implements View.OnDragListener {
+        public boolean onDrag(View v, DragEvent event) {
+            switch (event.getAction()){
+                case DragEvent.ACTION_DRAG_STARTED:
+                    return true;
+                case DragEvent.ACTION_DRAG_ENTERED:
+                    return true;
+                case DragEvent.ACTION_DRAG_LOCATION:
+                    return true;
+                case DragEvent.ACTION_DRAG_EXITED:
+                    return true;
+                case DragEvent.ACTION_DROP:
+                    if (gameBoard.isChangeableNumber(event.getX(), event.getY())){
+                        // Show number selection popup
+                        gameBoard.changeNumber(event.getX(), event.getY(), "0");
+                        TextView zeroView = (TextView)rootLayout.findViewById(R.id.zero_button);
+                        int count = gameBase.useSpecial(ArithmosGameBase.SPECIAL_ZERO);
+                        if (count < 1)
+                            zeroView.setVisibility(View.GONE);
+                        else if (count < 2)
+                            zeroView.setText("");
+                        else
+                            zeroView.setText(String.valueOf(count));
+                        cacheGame();
+                    }
+                    return true;
+                default:
+                    return false;
             }
         }
     }

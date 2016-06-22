@@ -13,6 +13,7 @@
 
     <!-- Game Activity Dimensions -->
     <dimen name="goal_list_width">44dp</dimen>
+    <dimen name="goal_list_item_size">42dp</dimen>
     <dimen name="special_icon_size">30dp</dimen>
     <dimen name="jewel_icon_size">20dp</dimen>
     <dimen name="star_icon_size">30dp</dimen>
@@ -23,6 +24,8 @@
     <dimen name="small_text_size">20sp</dimen>
     <dimen name="goal_text_size">26sp</dimen>
     <dimen name="three01_text_size">48sp</dimen>
+
+    <integer name="number_item_cols">4</integer>
 
     <!-- Popup dimensions -->
     <dimen name="game_popup_xlarge_text_size">42sp</dimen>

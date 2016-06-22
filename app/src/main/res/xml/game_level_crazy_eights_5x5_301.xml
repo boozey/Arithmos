@@ -9,7 +9,7 @@
     <Run>3, ?, 8, bonus_balloons, 6, ?, 12</Run>
     <Run>16, ?, 8, ?, 2, ?, 4</Run>
     <Run>5, bonus_lock/, 5, bonus_balloons, 64</Run>
-    <StarLevels>2000, 4000, 7000</StarLevels>
+    <StarLevels>3000, 4000, 6000</StarLevels>
     <Bonus name="apple">20</Bonus>
     <Bonus name="bananas">20</Bonus>
     <Bonus name="balloons">1</Bonus>

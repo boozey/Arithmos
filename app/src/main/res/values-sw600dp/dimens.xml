@@ -12,4 +12,6 @@
     <dimen name="small_text_size">30sp</dimen>
     <dimen name="goal_text_size">40sp</dimen>
     <dimen name="three01_text_size">80sp</dimen>
+
+    <integer name="number_item_cols">5</integer>
 </resources>

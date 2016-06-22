@@ -5,13 +5,16 @@
     time_limit="180">
     <GridBaseNumbers>1, 2, 3, 4, 5, 6, 8, 8, 8, 8</GridBaseNumbers>
     <GridSpecialNumbers>7, 16, 64, 48</GridSpecialNumbers>
-    <GoalNumbers count="8">2, 4, 8, 16, 24, 32, 48, 64</GoalNumbers>
-    <Run>3, ?, 8, bonus_balloons, 6, ?, 12</Run>
-    <Run>16, ?, 8, ?, 2, ?, 4</Run>
-    <Run>6, bonus_red_jewel, 6, bonus_lock-, 4</Run>
-    <StarLevels>1000, 2000, 3000</StarLevels>
+    <GoalNumbers>2, 4, 8, 16, 24, 32, 48</GoalNumbers>
+    <Run>3, ?, 8, bonus_balloons, 12, ?, 6</Run> <!-- 48 -->
+    <Run>16, ?, 8, ?, 2, ?, 4</Run> <!-- 16, 32 -->
+    <Run>6, bonus_red_jewel, 6, bonus_lock-, 4</Run> <!-- 32 -->
+    <Run>5, 4, 4</Run> <!-- 16 -->
+    <Run>12, bonus_balloons, 4</Run> <!-- 8, 16 -->
+    <Run>8, 4</Run> <!-- 2, 4, 32 -->
+    <StarLevels>3000, 4000, 6000</StarLevels>
     <Bonus name="apple">20</Bonus>
     <Bonus name="bananas">20</Bonus>
     <Bonus name="balloons">1</Bonus>
-    <Bonus name="red_jewel">10</Bonus>
+    <Bonus name="red_jewel">9</Bonus>
 </Level>

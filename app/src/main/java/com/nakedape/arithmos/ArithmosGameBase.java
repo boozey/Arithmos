@@ -24,6 +24,7 @@ public class ArithmosGameBase {
     transient public static final String SPECIAL_SKIP = "SPECIAL_SKIP";
     transient public static final String SPECIAL_OP_ORDER = "SPECIAL_OP_ORDER";
     transient public static final String SPECIAL_CHANGE = "SPECIAL_CHANGE";
+    transient public static final String SPECIAL_ZERO = "SPECIAL_ZERO";
 
     // Order of challenges is that of the array
     transient public static final String[] challenges = {CRAZY_EIGHTS, EASY_123, LUCKY_7};
@@ -102,8 +103,7 @@ public class ArithmosGameBase {
     public boolean needsSaving(){return needsSaving;}
 
     public void resetGame(){
-        unlockedLevels = new ArrayList<>(1);
-        //unlockedLevels.add(CRAZY_EIGHTS + "0");
+        unlockedLevels.add(challenges[0] + String.valueOf(0));
         unlockAllLevels();
         stars = new HashMap<>();
         activityItems = new ArrayList<>();

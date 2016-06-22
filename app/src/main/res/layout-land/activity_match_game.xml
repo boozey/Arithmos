@@ -18,6 +18,7 @@
             android:gravity="end">
 
 
+
             <TextView android:id="@+id/p1_name_textview"
                 android:layout_width="match_parent"
                 android:layout_marginStart="4dp"
@@ -33,7 +34,7 @@
                 android:layout_height="wrap_content"
                 android:textSize="@dimen/game_popup_xsmall_text_size"
                 android:visibility="visible"
-                android:layout_gravity="center_horizontal"
+                android:layout_gravity="end"
                 android:text="0"/>
 
             <TextView android:id="@+id/p2_name_textview"
@@ -50,19 +51,18 @@
                 android:layout_marginStart="4dp"
                 android:layout_height="wrap_content"
                 android:textSize="@dimen/game_popup_xsmall_text_size"
-                android:layout_gravity="center_horizontal"
+                android:layout_gravity="end"
                 android:visibility="visible"
                 android:text="0"/>
 
             <LinearLayout android:id="@+id/upcoming_goal_linearlayout"
                 android:orientation="horizontal"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
                 android:layout_height="wrap_content"
                 android:layout_gravity="start"
-                android:background="@drawable/pencil_border_horizontal"
-                android:visibility="visible"/>
+                android:visibility="gone"/>
 
 
             <LinearLayout
@@ -70,6 +70,7 @@
                 android:layout_height="match_parent"
                 android:orientation="horizontal"
                 android:gravity="center_horizontal">
+
                 <ImageView android:id="@+id/slash_mult"
                     android:layout_width="@dimen/slash_icon_size"
                     android:layout_height="@dimen/slash_icon_size"
@@ -90,6 +91,17 @@
                     android:layout_height="@dimen/slash_icon_size"
                     android:background="@drawable/ic_slash_subtraction"
                     android:visibility="invisible"/>
+
+                <TextView android:id="@+id/jewel_count"
+                    android:layout_width="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:drawableEnd="@drawable/ic_red_jewel_32dp"
+                    android:drawablePadding="4dp"
+                    android:gravity="center_vertical"
+                    android:textSize="@dimen/small_text_size"
+                    android:text="0"/>
             </LinearLayout>
 
             <TextView android:id="@+id/ee01_textview"
@@ -100,70 +112,82 @@
                 android:visibility="gone"/>
 
 
-            <LinearLayout android:id="@+id/special_layout"
-                android:orientation="horizontal"
+
+            <ScrollView android:id="@+id/special_layout"
                 android:layout_width="wrap_content"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:scrollbars="vertical"
-                android:isScrollContainer="true"
-                android:background="@drawable/pencil_border_horizontal">
-
-                <ImageButton
-                    android:layout_width="@dimen/slash_icon_size"
-                    android:layout_height="@dimen/slash_icon_size"
-                    android:layout_margin="4dp"
-                    android:background="@drawable/operations_button_background"
-                    android:onClick="OperationButtonClick"/>
-
-                <TextView android:id="@+id/bomb_button"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="2dp"
-                    android:gravity="bottom"
-                    android:textColor="@color/text_primary_dark"
-                    android:drawableEnd="@drawable/ic_bomb"
-                    android:visibility="visible"/>
-                <TextView android:id="@+id/calc_button"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="2dp"
-                    android:gravity="bottom"
-                    android:textColor="@color/text_primary_dark"
-                    android:drawableEnd="@drawable/ic_calculator"
-                    android:onClick="CalcButtonClick"
-                    android:visibility="visible"/>
-
-                <TextView android:id="@+id/pencil_button"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="2dp"
-                    android:gravity="bottom"
-                    android:textColor="@color/text_primary_dark"
-                    android:drawableEnd="@drawable/ic_pencil"
-                    android:visibility="visible"/>
-                <TextView android:id="@+id/skip_button"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="2dp"
-                    android:gravity="bottom"
-                    android:textColor="@color/text_primary_dark"
-                    android:drawableEnd="@drawable/ic_right_arrow"
-                    android:onClick="SkipGoalNumberClick"
-                    android:visibility="visible"/>
-            </LinearLayout>
-
-
-            <TextView android:id="@+id/jewel_count"
-                android:layout_width="wrap_content"
-                android:layout_marginStart="4dp"
                 android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:drawableEnd="@drawable/ic_red_jewel_32dp"
-                android:drawablePadding="4dp"
-                android:gravity="center_vertical"
-                android:textSize="@dimen/small_text_size"
-                android:text="0"/>
+                android:scrollbars="none"
+                android:layout_gravity="center_horizontal"
+                android:background="@drawable/pencil_border_horizontal">
+                <LinearLayout android:orientation="vertical"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical">
+
+                        <ImageButton
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="4dp"
+                            android:background="@drawable/operations_button_background"
+                            android:onClick="OperationButtonClick"/>
+
+                        <TextView android:id="@+id/bomb_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="2dp"
+                            android:gravity="bottom"
+                            android:textColor="@color/text_primary_dark"
+                            android:drawableStart="@drawable/ic_bomb"
+                            android:visibility="gone"/>
+                        <TextView android:id="@+id/calc_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="2dp"
+                            android:gravity="bottom"
+                            android:textColor="@color/text_primary_dark"
+                            android:drawableStart="@drawable/ic_calculator"
+                            android:onClick="CalcButtonClick"
+                            android:visibility="gone"/>
+
+                        <TextView android:id="@+id/pencil_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="2dp"
+                            android:gravity="bottom"
+                            android:textColor="@color/text_primary_dark"
+                            android:drawableStart="@drawable/ic_pencil"
+                            android:visibility="gone"/>
+                    </LinearLayout>
+                    <LinearLayout android:orientation="horizontal"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content">
+
+                        <TextView android:id="@+id/skip_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="2dp"
+                            android:gravity="bottom"
+                            android:textColor="@color/text_primary_dark"
+                            android:drawableStart="@drawable/ic_right_arrow"
+                            android:onClick="SkipGoalNumberClick"
+                            android:visibility="gone"/>
+
+                        <TextView android:id="@+id/zero_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="2dp"
+                            android:gravity="bottom"
+                            android:textColor="@color/text_primary_dark"
+                            android:drawableStart="@drawable/ic_zero"
+                            android:visibility="gone"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </ScrollView>
+
 
 
             <LinearLayout
