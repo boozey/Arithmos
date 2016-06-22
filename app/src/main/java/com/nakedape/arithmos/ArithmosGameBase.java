@@ -103,8 +103,9 @@ public class ArithmosGameBase {
     public boolean needsSaving(){return needsSaving;}
 
     public void resetGame(){
+        unlockedLevels = new ArrayList<>(1);
         unlockedLevels.add(challenges[0] + String.valueOf(0));
-        unlockAllLevels();
+        //unlockAllLevels();
         stars = new HashMap<>();
         activityItems = new ArrayList<>();
         needsSaving = true;
@@ -141,6 +142,14 @@ public class ArithmosGameBase {
             for (int i = 0; i < getLevelXmlIds(challenge).length; i++)
                 unlockedLevels.add(challenge + i);
         }
+    }
+
+    public boolean isChallengeThreeStarred(String challenge){
+        int numLevels = getLevelXmlIds(challenge).length;
+        int n = 0;
+        while (getNumStars(challenge, n) == 3)
+            n++;
+        return n >= numLevels;
     }
 
 
@@ -213,6 +222,7 @@ public class ArithmosGameBase {
     }
 
     public void addActivityItem(GameActivityItem item){
+        activityItems.remove(item);
         ArrayList<GameActivityItem> temp = new ArrayList<>(activityItems.size() + 1);
         temp.add(item);
         temp.addAll(activityItems);
@@ -226,21 +236,6 @@ public class ArithmosGameBase {
             return true;
         } else {
             return false;
-        }
-    }
-
-    public void removeSavedGameActivityItem(String uniqueName){
-        int index = -1;
-        for (int i = 0; i < activityItems.size(); i++){
-            if (activityItems.get(i).uniqueName != null && activityItems.get(i).uniqueName.equals(uniqueName)) {
-                index = i;
-                break;
-            }
-        }
-
-        if (index >= 0) {
-            activityItems.remove(index);
-            needsSaving = true;
         }
     }
 

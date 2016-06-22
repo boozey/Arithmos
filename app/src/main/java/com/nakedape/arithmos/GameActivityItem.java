@@ -78,6 +78,8 @@ public class GameActivityItem implements Serializable{
             GameActivityItem item = (GameActivityItem) o;
             if (item.uniqueName != null)
                 return item.uniqueName.equals(uniqueName);
+            else if (item.challengeName != null)
+                return item.challengeName.equals(challengeName) && item.challengeLevel == challengeLevel;
             else
                 return item.timeStamp == timeStamp;
         } else if (o instanceof String) {

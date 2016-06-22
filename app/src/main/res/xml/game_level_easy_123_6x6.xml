@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Level challenge_name="EASY_123"
-    challenge_level="6"
+    challenge_level="5"
     gridsize="6">
     <GridBaseNumbers>1, 2, 2, 3, 3</GridBaseNumbers>
     <GridSpecialNumbers>5, 10, 15, 20</GridSpecialNumbers>

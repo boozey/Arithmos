@@ -5,6 +5,7 @@
         <item>SPECIAL_BOMB</item>
         <item>SPECIAL_CHANGE</item>
         <item>SPECIAL_OP_ORDER</item>
+        <item>SPECIAL_ZERO</item>
     </array>
 
     <integer-array name="special_icons">
@@ -12,6 +13,7 @@
         <item>@drawable/ic_bomb</item>
         <item>@drawable/ic_pencil</item>
         <item>@drawable/ic_calculator</item>
+        <item>@drawable/ic_zero</item>
     </integer-array>
 
     <integer-array name="special_descriptions">
@@ -19,6 +21,7 @@
         <item>@string/bomb_description</item>
         <item>@string/pencil_description</item>
         <item>@string/calc_description</item>
+        <item>@string/zero_description</item>
     </integer-array>
 
     <integer-array name="special_costs">
@@ -26,6 +29,7 @@
         <item>100</item>
         <item>150</item>
         <item>150</item>
+        <item>100</item>
     </integer-array>
 
 </resources>

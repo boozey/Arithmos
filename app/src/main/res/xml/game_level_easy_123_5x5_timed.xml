@@ -1,5 +1,5 @@
 <Level challenge_name="EASY_123"
-    challenge_level="5"
+    challenge_level="4"
     gridsize="5"
     time_limit="180">
     <GridBaseNumbers>1, 2, 2, 3, 3</GridBaseNumbers>

@@ -1,5 +1,5 @@
 <Level challenge_name="EASY_123"
-    challenge_level="3"
+    challenge_level="2"
     gridsize="5">
     <GridBaseNumbers>1, 2, 2, 3, 3</GridBaseNumbers>
     <GridSpecialNumbers>5, 10, 15, 20</GridSpecialNumbers>

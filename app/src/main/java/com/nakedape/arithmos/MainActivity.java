@@ -466,9 +466,11 @@ public class MainActivity extends AppCompatActivity implements
 
         public void clearList(){
             history = new ArrayList<>(1);
-            matches = new ArrayList<>();
-            saves = new ArrayList<>();
-            //items.add(emptyItem);
+            history.add(emptyItem);
+            saves = new ArrayList<>(1);
+            saves.add(emptyItem);
+            items = new ArrayList<>(1);
+            items.add(emptyItem);
             notifyDataSetChanged();
         }
 
@@ -1431,6 +1433,10 @@ public class MainActivity extends AppCompatActivity implements
                     }
                     gameBase.resetGame();
                     activityListAdapter.clearList();
+                    cacheGame();
+                    SharedPreferences.Editor editor = getSharedPreferences(GAME_PREFS, MODE_PRIVATE).edit();
+                    editor.remove(GAME_FILE_NAME);
+                    editor.commit();
                     saveGameState();
                     if (challengeListAdapter != null) challengeListAdapter.notifyDataSetChanged();
                     // Clear loading popup
@@ -1471,9 +1477,9 @@ public class MainActivity extends AppCompatActivity implements
         private String[] names = getResources().getStringArray(R.array.special_item_names);
         private int[] costs = getResources().getIntArray(R.array.special_costs);
         private int[] iconResIds = {R.drawable.ic_right_arrow, R.drawable.ic_bomb,
-                R.drawable.ic_pencil, R.drawable.ic_calculator};
+                R.drawable.ic_pencil, R.drawable.ic_calculator, R.drawable.ic_zero};
         private int[] descResIds = {R.string.skip_description, R.string.bomb_description,
-                R.string.pencil_description, R.string.calc_description};
+                R.string.pencil_description, R.string.calc_description, R.string.zero_description};
 
         public SpecialListAdapter(){
 

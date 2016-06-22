@@ -133,15 +133,28 @@
         android:textSize="@dimen/game_popup_large_text_size"
         android:text="@string/you_lost"/>
 
-    <Button
+    <LinearLayout
         android:layout_width="wrap_content"
-        android:layout_height="30dp"
+        android:layout_height="wrap_content"
         android:layout_below="@id/pop_up_foreground"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="-20dp"
-        android:layout_marginEnd="-8dp"
-        android:background="@drawable/rounded_corner_primary_accent"
-        android:textColor="@color/text_primary_light"
-        android:text="@string/exit_button_text"
-        android:onClick="ExitButtonClick"/>
+        android:layout_marginEnd="-8dp">
+        <Button android:id="@+id/retry_button"
+            android:layout_width="wrap_content"
+            android:layout_height="30dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/rounded_corner_primary_accent"
+            android:textColor="@color/text_primary_light"
+            android:text="@string/retry"
+            android:visibility="gone"/>
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="30dp"
+            android:background="@drawable/rounded_corner_primary_accent"
+            android:textColor="@color/text_primary_light"
+            android:text="@string/exit_button_text"
+            android:onClick="ExitButtonClick"/>
+
+    </LinearLayout>
 </RelativeLayout>

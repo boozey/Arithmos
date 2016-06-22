@@ -54,13 +54,14 @@
                     android:layout_marginStart="4dp"
                     android:textSize="@dimen/score_text_size"
                     android:gravity="center_horizontal"
-                    android:layout_gravity="end"
+                    android:layout_gravity="start"
                     android:visibility="visible"
                     android:text="150,000"/>
 
             <LinearLayout android:orientation="horizontal"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:gravity="start">
 
                 <ImageView android:id="@+id/slash_add"
                     android:layout_width="@dimen/slash_icon_size"
@@ -83,35 +84,30 @@
                     android:layout_height="@dimen/slash_icon_size"
                     android:background="@drawable/ic_slash_division"
                     android:visibility="invisible"/>
-
-                <TextView android:id="@+id/jewel_count"
-                    android:layout_width="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="end"
-                    android:drawableEnd="@drawable/ic_red_jewel_32dp"
-                    android:drawablePadding="4dp"
-                    android:gravity="center_vertical"
-                    android:textSize="@dimen/small_text_size"
-                    android:text="0"/>
             </LinearLayout>
 
 
-            <LinearLayout android:id="@+id/upcoming_goal_linearlayout"
-                android:orientation="vertical"
+            <RelativeLayout
                 android:layout_width="wrap_content"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:layout_height="wrap_content"
-                android:layout_gravity="start"
-                android:visibility="visible"/>
+                android:layout_height="0dp"
+                android:layout_weight="1">
 
-            <TextView android:id="@+id/three01_textview"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="@dimen/three01_text_size"
-                android:text="128"
-                android:visibility="gone"/>
+                <LinearLayout android:id="@+id/upcoming_goal_linearlayout"
+                    android:orientation="vertical"
+                    android:layout_width="wrap_content"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="start"
+                    android:visibility="gone"/>
+
+                <TextView android:id="@+id/three01_textview"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/three01_text_size"
+                    android:text="128"
+                    android:visibility="gone"/>
+            </RelativeLayout>
 
             <ScrollView android:id="@+id/special_layout"
                 android:layout_width="wrap_content"
@@ -188,6 +184,19 @@
                     </LinearLayout>
                 </LinearLayout>
             </ScrollView>
+
+
+
+            <TextView android:id="@+id/jewel_count"
+                android:layout_width="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:drawableEnd="@drawable/ic_red_jewel_32dp"
+                android:drawablePadding="4dp"
+                android:gravity="center_vertical"
+                android:textSize="@dimen/small_text_size"
+                android:text="0"/>
         </LinearLayout>
 
 

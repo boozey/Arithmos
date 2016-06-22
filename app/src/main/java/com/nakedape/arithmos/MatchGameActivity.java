@@ -294,6 +294,7 @@ public class MatchGameActivity extends AppCompatActivity implements
             } else
                 three01.setText(value);
         } else {
+            rootLayout.findViewById(R.id.upcoming_goal_linearlayout).setVisibility(View.VISIBLE);
             refreshGoalList();
         }
 
@@ -1100,64 +1101,66 @@ public class MatchGameActivity extends AppCompatActivity implements
 
     @Override
     public void OnBomb(String operation){
-        final View layout = getLayoutInflater().inflate(R.layout.bomb_popup, null);
+        if (!game.isGameOver()) {
+            final View layout = getLayoutInflater().inflate(R.layout.bomb_popup, null);
 
-        // Animate bomb popup
-        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-        layout.setLayoutParams(params);
-        layout.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                return true;
+            // Animate bomb popup
+            RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            layout.setLayoutParams(params);
+            layout.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    return true;
+                }
+            });
+            ImageView imageView = (ImageView) layout.findViewById(R.id.image_view);
+            switch (operation) {
+                case ArithmosGame.ADD:
+                    Animations.popIn(rootLayout.findViewById(R.id.slash_add), 100, 0).start();
+                    imageView.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_slash_addition));
+                    break;
+                case ArithmosGame.SUBTRACT:
+                    Animations.popIn(rootLayout.findViewById(R.id.slash_sub), 100, 0).start();
+                    imageView.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_slash_subtraction));
+                    break;
+                case ArithmosGame.MULTIPLY:
+                    Animations.popIn(rootLayout.findViewById(R.id.slash_mult), 100, 0).start();
+                    imageView.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_slash_multiplication));
+                    break;
+                case ArithmosGame.DIVIDE:
+                    Animations.popIn(rootLayout.findViewById(R.id.slash_div), 100, 0).start();
+                    imageView.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_slash_division));
+                    break;
             }
-        });
-        ImageView imageView = (ImageView) layout.findViewById(R.id.image_view);
-        switch (operation){
-            case ArithmosGame.ADD:
-                Animations.popIn(rootLayout.findViewById(R.id.slash_add), 100, 0).start();
-                imageView.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_slash_addition));
-                break;
-            case ArithmosGame.SUBTRACT:
-                Animations.popIn(rootLayout.findViewById(R.id.slash_sub), 100, 0).start();
-                imageView.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_slash_subtraction));
-                break;
-            case ArithmosGame.MULTIPLY:
-                Animations.popIn(rootLayout.findViewById(R.id.slash_mult), 100, 0).start();
-                imageView.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_slash_multiplication));
-                break;
-            case ArithmosGame.DIVIDE:
-                Animations.popIn(rootLayout.findViewById(R.id.slash_div), 100, 0).start();
-                imageView.setImageBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_slash_division));
-                break;
+
+            rootLayout.addView(layout);
+            Animations.slideUp(layout, 200, animStartDelay + gameBoard.getAnimDelay(), rootLayout.getHeight() / 3).start();
+            AnimatorSet set = Animations.explodeFade(layout, 1200, 200 + animStartDelay + gameBoard.getAnimDelay());
+            animStartDelay += 1400;
+            set.addListener(new Animator.AnimatorListener() {
+                @Override
+                public void onAnimationStart(Animator animation) {
+
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    animStartDelay -= 1400;
+                    rootLayout.removeView(layout);
+                }
+
+                @Override
+                public void onAnimationCancel(Animator animation) {
+
+                }
+
+                @Override
+                public void onAnimationRepeat(Animator animation) {
+
+                }
+            });
+            set.start();
         }
-
-        rootLayout.addView(layout);
-        Animations.slideUp(layout, 200, animStartDelay + gameBoard.getAnimDelay(), rootLayout.getHeight() / 3).start();
-        AnimatorSet set = Animations.explodeFade(layout, 1200, 200 + animStartDelay + gameBoard.getAnimDelay());
-        animStartDelay += 1400;
-        set.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animation) {
-
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                animStartDelay -= 1400;
-                rootLayout.removeView(layout);
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animation) {
-
-            }
-
-            @Override
-            public void onAnimationRepeat(Animator animation) {
-
-            }
-        });
-        set.start();
     }
 
     @Override

@@ -86,11 +86,11 @@
     <string name="product_id">Product id: %s</string>
 
     <!-- Special descriptions -->
-    <string name="skip_description">Skips the top goal number</string>
+    <string name="skip_description">Skips the first goal number in the list</string>
     <string name="bomb_description">Destroys the operation that sets off the bomb preventing its use for three turns</string>
     <string name="pencil_description">Allows a number to be changed</string>
     <string name="calc_description">Evaluates a run from start to end without following the order of operations like an old-school calculator.</string>
-
+    <string name="zero_description">Changes a number on the board to zero</string>
 
 
     <!-- Game Activity Strings -->
@@ -100,6 +100,7 @@
     <string name="times_up">TIME\'S UP!</string>
     <string name="congratulations">Congratulations!</string>
     <string name="unlock_level_x_x">Unlocked %1$s %2$s</string>
+    <string name="retry">Retry</string>
 
     <!-- Level info strings -->
     <string name="no_time_limit">No time limit</string>
