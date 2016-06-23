@@ -1,5 +1,6 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:ads="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -13,7 +14,7 @@
         android:orientation="horizontal">
 
         <LinearLayout android:id="@+id/top_layout"
-            android:layout_width="wrap_content"
+            android:layout_width="320dp"
             android:layout_height="match_parent"
             android:orientation="vertical"
             android:gravity="end">
@@ -61,6 +62,7 @@
             <LinearLayout android:orientation="horizontal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_gravity="start"
                 android:gravity="start">
 
                 <ImageView android:id="@+id/slash_add"
@@ -94,7 +96,7 @@
 
                 <LinearLayout android:id="@+id/upcoming_goal_linearlayout"
                     android:orientation="vertical"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:paddingStart="16dp"
                     android:paddingEnd="16dp"
                     android:layout_height="wrap_content"
@@ -111,7 +113,8 @@
 
             <ScrollView android:id="@+id/special_layout"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="0dp"
+                android:layout_weight="1"
                 android:layout_gravity="center_horizontal"
                 android:scrollbars="none"
                 android:background="@drawable/pencil_border_horizontal">
@@ -197,6 +200,14 @@
                 android:gravity="center_vertical"
                 android:textSize="@dimen/small_text_size"
                 android:text="0"/>
+            <com.google.android.gms.ads.AdView
+                android:id="@+id/adView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                ads:adSize="BANNER"
+                ads:adUnitId="@string/banner_ad_unit_id"
+                android:visibility="gone"/>
         </LinearLayout>
 
 

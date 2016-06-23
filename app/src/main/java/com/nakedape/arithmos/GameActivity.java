@@ -33,6 +33,11 @@ import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.InterstitialAd;
+import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
@@ -59,7 +64,6 @@ public class GameActivity extends AppCompatActivity implements
         GameBoard.OnJewelListener, GameBoard.OnBombListener, GameBoard.OnCancelBombListener {
 
     private static final String LOG_TAG = "GameActivity";
-    private static final String ACTIVITY_PREFS = "game_activity_prefs";
 
     // Intent Extra tags
     public static final String LEVEL_XML_RES_ID = "level_xml_res_id";
@@ -79,6 +83,10 @@ public class GameActivity extends AppCompatActivity implements
     private int prevScore = 0;
     private long elapsedMillis = 0;
     private boolean stopTimer = false;
+
+    // Ads
+    private InterstitialAd mInterstitialAd;
+    private boolean showAds = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,6 +108,28 @@ public class GameActivity extends AppCompatActivity implements
         setContentView(R.layout.activity_game);
         context = this;
         rootLayout = (RelativeLayout)findViewById(R.id.root_layout);
+
+        // Setup Ads
+        showAds = generalPrefs.getBoolean(MainActivity.SHOW_ADS, true);
+        if (showAds) {
+            MobileAds.initialize(getApplicationContext(), "ca-app-pub-4640479150069852~3029191523");
+            AdView mAdView = (AdView) rootLayout.findViewById(R.id.adView);
+            mAdView.setVisibility(View.VISIBLE);
+            AdRequest adRequest = new AdRequest.Builder()
+                    .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
+                    .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
+                    .build();
+            mAdView.loadAd(adRequest);
+
+            AdRequest intstAdRequest = new AdRequest.Builder()
+                    .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
+                    .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
+                    .build();
+            mInterstitialAd = new InterstitialAd(this);
+            mInterstitialAd.setAdUnitId(getString(R.string.interstitial_ad_unit_id));
+            mInterstitialAd.loadAd(intstAdRequest);
+        }
+
         gameBoard = (GameBoard)rootLayout.findViewById(R.id.game_board);
         gameBoard.setOnAchievementListener(this);
         gameBoard.setOnPlayCompleted(this);
@@ -367,7 +397,7 @@ public class GameActivity extends AppCompatActivity implements
             }
         });
         int count = gameBase.getSpecialCount(ArithmosGameBase.SPECIAL_BOMB);
-        if (count > 0)
+        if (count > 0 && bomb.getVisibility() != View.VISIBLE)
             Animations.popIn(bomb, 200, 100).start();
         if (count > 1) {
             bomb.setCompoundDrawablePadding(-12);
@@ -376,7 +406,7 @@ public class GameActivity extends AppCompatActivity implements
 
         TextView calc = (TextView)rootLayout.findViewById(R.id.calc_button);
         count = gameBase.getSpecialCount(ArithmosGameBase.SPECIAL_OP_ORDER);
-        if (count > 0)
+        if (count > 0 && calc.getVisibility() != View.VISIBLE)
             Animations.popIn(calc, 200, 175).start();
         if (count > 1) {
             calc.setCompoundDrawablePadding(-12);
@@ -392,7 +422,7 @@ public class GameActivity extends AppCompatActivity implements
             }
         });
         count = gameBase.getSpecialCount(ArithmosGameBase.SPECIAL_CHANGE);
-        if (count > 0)
+        if (count > 0 && pencil.getVisibility() != View.VISIBLE)
             Animations.popIn(pencil, 200, 250).start();
         if (count > 1) {
             pencil.setCompoundDrawablePadding(-12);
@@ -401,7 +431,7 @@ public class GameActivity extends AppCompatActivity implements
 
         TextView arrow = (TextView)rootLayout.findViewById(R.id.skip_button);
         count = gameBase.getSpecialCount(ArithmosGameBase.SPECIAL_SKIP);
-        if (count > 0)
+        if (count > 0 && pencil.getVisibility() != View.VISIBLE)
             Animations.popIn(arrow, 200, 325).start();
         if (count > 1) {
             arrow.setCompoundDrawablePadding(-12);
@@ -417,7 +447,7 @@ public class GameActivity extends AppCompatActivity implements
             }
         });
         count = gameBase.getSpecialCount(ArithmosGameBase.SPECIAL_ZERO);
-        if (count > 0)
+        if (count > 0 && zero.getVisibility() != View.VISIBLE)
             Animations.popIn(zero, 200, 325).start();
         if (count > 1) {
             zero.setCompoundDrawablePadding(-12);
@@ -460,65 +490,108 @@ public class GameActivity extends AppCompatActivity implements
     }
 
     private void retryLevel(){
-        animStartDelay = 0;
-        AnimatorSet set = Animations.fadeOut(gameBoard, 300, 0);
-        set.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animation) {
+            animStartDelay = 0;
+            AnimatorSet set = Animations.fadeOut(gameBoard, 300, 0);
+            set.addListener(new Animator.AnimatorListener() {
+                @Override
+                public void onAnimationStart(Animator animation) {
 
-            }
+                }
 
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                String challenge = game.getChallengeName();
-                int level = game.getChallengeLevel();
-                LoadGameLevel(ArithmosGameBase.getLevelXmlIds(challenge)[level]);
-                cacheLevel();
-                cacheGame();
-            }
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    String challenge = game.getChallengeName();
+                    int level = game.getChallengeLevel();
+                    LoadGameLevel(ArithmosGameBase.getLevelXmlIds(challenge)[level]);
+                    cacheLevel();
+                    cacheGame();
+                }
 
-            @Override
-            public void onAnimationCancel(Animator animation) {
+                @Override
+                public void onAnimationCancel(Animator animation) {
 
-            }
+                }
 
-            @Override
-            public void onAnimationRepeat(Animator animation) {
+                @Override
+                public void onAnimationRepeat(Animator animation) {
 
-            }
-        });
-        set.start();
+                }
+            });
+            set.start();
     }
 
     private void loadNextLevel(){
-        animStartDelay = 0;
-        AnimatorSet set = Animations.fadeOut(gameBoard, 300, 0);
-        set.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animation) {
+        if (showAds && mInterstitialAd.isLoaded()){
+            mInterstitialAd.setAdListener(new AdListener() {
+                @Override
+                public void onAdClosed() {
+                    super.onAdClosed();
+                    animStartDelay = 0;
+                    AnimatorSet set = Animations.fadeOut(gameBoard, 300, 0);
+                    set.addListener(new Animator.AnimatorListener() {
+                        @Override
+                        public void onAnimationStart(Animator animation) {
 
-            }
+                        }
 
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                String challenge = game.getChallengeName();
-                int level = game.getChallengeLevel();
-                LoadGameLevel(ArithmosGameBase.getNextLevelXmlId(challenge, level));
-                cacheLevel();
-                cacheGame();
-            }
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            String challenge = game.getChallengeName();
+                            int level = game.getChallengeLevel();
+                            LoadGameLevel(ArithmosGameBase.getNextLevelXmlId(challenge, level));
+                            cacheLevel();
+                            cacheGame();
+                        }
 
-            @Override
-            public void onAnimationCancel(Animator animation) {
+                        @Override
+                        public void onAnimationCancel(Animator animation) {
 
-            }
+                        }
 
-            @Override
-            public void onAnimationRepeat(Animator animation) {
+                        @Override
+                        public void onAnimationRepeat(Animator animation) {
 
-            }
-        });
-        set.start();
+                        }
+                    });
+                    set.start();
+                    AdRequest intstAdRequest = new AdRequest.Builder()
+                            .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
+                            .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
+                            .build();
+                    mInterstitialAd.loadAd(intstAdRequest);
+                }
+            });
+            mInterstitialAd.show();
+        } else {
+            animStartDelay = 0;
+            AnimatorSet set = Animations.fadeOut(gameBoard, 300, 0);
+            set.addListener(new Animator.AnimatorListener() {
+                @Override
+                public void onAnimationStart(Animator animation) {
+
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    String challenge = game.getChallengeName();
+                    int level = game.getChallengeLevel();
+                    LoadGameLevel(ArithmosGameBase.getNextLevelXmlId(challenge, level));
+                    cacheLevel();
+                    cacheGame();
+                }
+
+                @Override
+                public void onAnimationCancel(Animator animation) {
+
+                }
+
+                @Override
+                public void onAnimationRepeat(Animator animation) {
+
+                }
+            });
+            set.start();
+        }
     }
 
     private void showLevelInfoPopup(ArithmosLevel level){
@@ -668,7 +741,7 @@ public class GameActivity extends AppCompatActivity implements
         return false;
     }
 
-    private void LoadSavedGame(){
+    private void loadSavedLevel(){
         final View loadingPopup = Utils.progressPopup(context, R.string.loading_saved_game_message);
         rootLayout.addView(loadingPopup);
         Animations.slideUp(loadingPopup, 200, 0, rootLayout.getHeight() / 3).start();
@@ -699,6 +772,7 @@ public class GameActivity extends AppCompatActivity implements
                     try {
                         if (openSnapshotResult.getSnapshot().getMetadata().getLastModifiedTimestamp() > gameBase.timeStamp()) {
                             gameBase.loadByteData(openSnapshotResult.getSnapshot().getSnapshotContents().readFully());
+                            cacheGame();
                             Log.d(LOG_TAG, "Game base updated from Google");
                             setupSpecials();
                             TextView jewelText = (TextView) rootLayout.findViewById(R.id.jewel_count);
@@ -1425,7 +1499,9 @@ public class GameActivity extends AppCompatActivity implements
 
                 @Override
                 public void onAnimationEnd(Animator animation) {
-                    icon.setVisibility(View.GONE);
+                    if (icon.getId() == R.id.slash_add)
+                        icon.setVisibility(View.INVISIBLE);
+                    else icon.setVisibility(View.GONE);
                 }
 
                 @Override
@@ -1659,7 +1735,7 @@ public class GameActivity extends AppCompatActivity implements
     @Override
     public void onConnected(Bundle connectionHint) {
         connectAttempts = 0;
-        if (loadSavedGame) LoadSavedGame();
+        if (loadSavedGame) loadSavedLevel();
         loadGameState();
     }
 

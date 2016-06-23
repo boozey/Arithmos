@@ -32,7 +32,7 @@
     <string name="sign_out_underlined"><u>Sign out</u></string>
     <string name="reset_game_message">Reset challenge progress, activity history, and saved games.  Jewels and specials will be saved.</string>
     <string name="reset_game_progress_message">Resetting game &#8230;</string>
-    <string name="more_jewels_text">Get more jewels</string>
+    <string name="more_jewels_text">Get more jewels and other stuff</string>
     <string name="use_google_play_prompt">Many features of this game require the use of Google Play Games.  Without signing in
         you will not be able to play match games, track achievements, view leaderboards, or sync your game across devices.
         \nAttempt to sign-in again?</string>
@@ -84,6 +84,7 @@
     <string name="order_history_popup_title">Order History</string>
     <string name="order_number">Order number: %s</string>
     <string name="product_id">Product id: %s</string>
+    <string name="ads_removed_notification">Ads have been removed!</string>
 
     <!-- Special descriptions -->
     <string name="skip_description">Skips the first goal number in the list</string>

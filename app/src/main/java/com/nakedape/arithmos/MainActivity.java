@@ -23,20 +23,22 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.InterstitialAd;
+import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
@@ -114,6 +116,7 @@ public class MainActivity extends AppCompatActivity implements
                 // add other APIs and scopes here as needed
                 .build();
 
+
         // Initialize fields and UI
         setContentView(R.layout.activity_main);
         context = this;
@@ -136,6 +139,27 @@ public class MainActivity extends AppCompatActivity implements
         ListView specialList = (ListView)rootLayout.findViewById(R.id.special_store_listview);
         View header2 = getLayoutInflater().inflate(R.layout.add_jewels_button_bar, null);
         specialList.addHeaderView(header2);
+
+        // Setup Ads
+        showAds = prefs.getBoolean(SHOW_ADS, true);
+        if (showAds) {
+            MobileAds.initialize(getApplicationContext(), "ca-app-pub-4640479150069852~3029191523");
+            AdView mAdView = (AdView) rootLayout.findViewById(R.id.adView);
+            mAdView.setVisibility(View.VISIBLE);
+            AdRequest adRequest = new AdRequest.Builder()
+                    .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
+                    .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
+                    .build();
+            mAdView.loadAd(adRequest);
+
+            AdRequest intstAdRequest = new AdRequest.Builder()
+                    .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
+                    .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
+                    .build();
+            mInterstitialAd = new InterstitialAd(this);
+            mInterstitialAd.setAdUnitId(getString(R.string.interstitial_ad_unit_id));
+            mInterstitialAd.loadAd(intstAdRequest);
+        }
 
         // Load cached data if it exists
         gameBase = new ArithmosGameBase();
@@ -168,6 +192,7 @@ public class MainActivity extends AppCompatActivity implements
         if (mAutoStartSignInFlow && !mGoogleApiClient.isConnected() && activityListAdapter.getCount() == 0) {
             rootLayout.findViewById(R.id.progress_bar).setVisibility(View.VISIBLE);
         }
+        loadInterstitialAd();
     }
 
     @Override
@@ -710,7 +735,7 @@ public class MainActivity extends AppCompatActivity implements
             button.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    playLevel(ArithmosGameBase.getLevelXmlIds(getItem(position).challengeName)[getItem(position).challengeLevel]);
+                    showAdThenPlayLevel(ArithmosGameBase.getLevelXmlIds(getItem(position).challengeName)[getItem(position).challengeLevel]);
                 }
             });
 
@@ -1187,6 +1212,20 @@ public class MainActivity extends AppCompatActivity implements
 
     }
 
+    private void showAdThenPlayLevel(final int levelXmlId){
+        if (showAds && mInterstitialAd.isLoaded()){
+            mInterstitialAd.setAdListener(new AdListener() {
+                @Override
+                public void onAdClosed() {
+                    super.onAdClosed();
+                    playLevel(levelXmlId);
+                }
+            });
+            mInterstitialAd.show();
+        } else
+            playLevel(levelXmlId);
+    }
+
     private void playLevel(int levelXmlId){
         Intent intent = new Intent(this, GameActivity.class);
         intent.putExtra(GameActivity.LEVEL_XML_RES_ID, levelXmlId);
@@ -1270,7 +1309,7 @@ public class MainActivity extends AppCompatActivity implements
                 button.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        playLevel(ArithmosGameBase.getLevelXmlIds(getGroup(groupPosition))[childPosition]);
+                        showAdThenPlayLevel(ArithmosGameBase.getLevelXmlIds(getGroup(groupPosition))[childPosition]);
                     }
                 });
                 if (mAutoStartSignInFlow) {
@@ -1537,7 +1576,7 @@ public class MainActivity extends AppCompatActivity implements
 
     // Purchasing API and purchase processing
     private static final int PURCHASE_REQUEST = 7001;
-    private static final String SKU_1000_JEWELS = "jewels_1000";
+    private static final String SKU_1000_JEWELS = "jewels_1000", SKU_REMOVE_ADS = "remove_ads";
     private static final String ORDER_HISTORY_FILENAME = "order_history";
     private IabHelper iabHelper;
     private IabListAdapter iabListAdapter;
@@ -1608,6 +1647,7 @@ public class MainActivity extends AppCompatActivity implements
                 iabListView.setAdapter(iabListAdapter);
                 final ArrayList<String> skuList = new ArrayList<>();
                 skuList.add(SKU_1000_JEWELS);
+                skuList.add(SKU_REMOVE_ADS);
                 try {
                     iabHelper.queryInventoryAsync(true, skuList, null, new IabHelper.QueryInventoryFinishedListener() {
                         @Override
@@ -1648,7 +1688,7 @@ public class MainActivity extends AppCompatActivity implements
                     } else {
                         Log.d(LOG_TAG, "Purchase Successful");
                         recordOrderAsync(info);
-                        consumePurchase(info);
+                        processPurchase(info);
                         hideLoadingPopup();
                     }
 
@@ -1847,25 +1887,33 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    private void consumePurchase(Purchase purchase){
-        try {
-            iabHelper.consumeAsync(purchase, new IabHelper.OnConsumeFinishedListener() {
-                @Override
-                public void onConsumeFinished(Purchase purchase, IabResult result) {
-                    if (result.isSuccess()) {
-                        processConsumedPurchase(purchase.getSku());
-                        cacheGame();
-                        saveGameState();
+    private void processPurchase(Purchase purchase){
+        if (purchase.getSku().equals(SKU_REMOVE_ADS))
+        {
+            removeAds();
+        } else {
+            try {
+                iabHelper.consumeAsync(purchase, new IabHelper.OnConsumeFinishedListener() {
+                    @Override
+                    public void onConsumeFinished(Purchase purchase, IabResult result) {
+                        if (result.isSuccess()) {
+                            processConsumedPurchase(purchase.getSku());
+                            cacheGame();
+                            saveGameState();
+                        }
                     }
-                }
-            });
-        } catch (IabHelper.IabAsyncInProgressException e) {e.printStackTrace();}
+                });
+            } catch (IabHelper.IabAsyncInProgressException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private void consumePurchases(){
         iabHelper = new IabHelper(this, getString(R.string.base64EncodedPublicKey));
         final ArrayList<String> skuList = new ArrayList<>();
         skuList.add(SKU_1000_JEWELS);
+        skuList.add(SKU_REMOVE_ADS);
         iabHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
             public void onIabSetupFinished(IabResult result) {
                 if (!result.isSuccess()) {
@@ -1883,20 +1931,9 @@ public class MainActivity extends AppCompatActivity implements
                                     if (inv.hasPurchase(sku)) purchases.add(inv.getPurchase(sku));
                                 }
                                 if (purchases.size() > 0)
-                                    try {
-                                        iabHelper.consumeAsync(purchases, new IabHelper.OnConsumeMultiFinishedListener() {
-                                            @Override
-                                            public void onConsumeMultiFinished(List<Purchase> purchases, List<IabResult> results) {
-                                                for (int i = 0; i < results.size(); i++){
-                                                    if (results.get(i).isSuccess()){
-                                                        processConsumedPurchase(purchases.get(i).getSku());
-                                                    }
-                                                }
-                                                cacheGame();
-                                                saveGameState();
-                                            }
-                                        });
-                                    } catch (IabHelper.IabAsyncInProgressException e) {e.printStackTrace();}
+                                    for (Purchase p : purchases){
+                                        processPurchase(p);
+                                    }
                             }
                             iabHelper.disposeWhenFinished();
                             Log.d(LOG_TAG, result.getMessage());
@@ -1984,7 +2021,12 @@ public class MainActivity extends AppCompatActivity implements
             }
 
             ImageView iconView = (ImageView)convertView.findViewById(R.id.icon);
-            iconView.setImageResource(R.drawable.ic_red_jewel);
+            iconView.setVisibility(View.VISIBLE);
+            if (productIds.get(position).contains("jewel")) {
+                iconView.setImageResource(R.drawable.ic_red_jewel);
+            }
+            else
+                iconView.setVisibility(View.GONE);
 
             TextView titleView = (TextView)convertView.findViewById(R.id.title_textview);
             titleView.setText(getItem(position).getTitle());
@@ -2359,13 +2401,24 @@ public class MainActivity extends AppCompatActivity implements
 
                 return;
             }
-            TurnBasedMatch match = loadMatchResult.getMatch();
-
-                hideLoadingPopup();
-                Intent intent = new Intent(context, MatchGameActivity.class);
-                intent.putExtra(MatchGameActivity.MATCH, match);
-                startActivityForResult(intent, REQUEST_TAKE_MATCH_TURN);
-                return;
+            final TurnBasedMatch match = loadMatchResult.getMatch();
+            hideLoadingPopup();
+                if (showAds && mInterstitialAd.isLoaded()){
+                    mInterstitialAd.setAdListener(new AdListener() {
+                        @Override
+                        public void onAdClosed() {
+                            super.onAdClosed();
+                            Intent intent = new Intent(context, MatchGameActivity.class);
+                            intent.putExtra(MatchGameActivity.MATCH, match);
+                            startActivityForResult(intent, REQUEST_TAKE_MATCH_TURN);
+                        }
+                    });
+                    mInterstitialAd.show();
+                } else {
+                    Intent intent = new Intent(context, MatchGameActivity.class);
+                    intent.putExtra(MatchGameActivity.MATCH, match);
+                    startActivityForResult(intent, REQUEST_TAKE_MATCH_TURN);
+                }
         }
     }
 
@@ -2762,6 +2815,33 @@ public class MainActivity extends AppCompatActivity implements
             refreshGameState();
         } else if (!mGoogleApiClient.isConnecting())
             mGoogleApiClient.connect();
+    }
+
+
+    // Ads
+    private InterstitialAd mInterstitialAd;
+    private boolean showAds = true;
+    public static String SHOW_ADS = "SHOW_ADS";
+
+    private void loadInterstitialAd(){
+        if (showAds && !mInterstitialAd.isLoaded()) {
+            AdRequest intstAdRequest = new AdRequest.Builder()
+                    .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
+                    .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
+                    .build();
+            mInterstitialAd.loadAd(intstAdRequest);
+        }
+    }
+
+    private void removeAds(){
+        SharedPreferences.Editor editor = getSharedPreferences(GENERAL_PREFS, MODE_PRIVATE).edit();
+        editor.putBoolean(SHOW_ADS, false);
+        editor.apply();
+        showAds = false;
+        rootLayout.findViewById(R.id.adView).setVisibility(View.GONE);
+        String message = getString(R.string.ads_removed_notification);
+        Snackbar snackbar = Snackbar.make(findViewById(R.id.myCoordinatorLayout), message, Snackbar.LENGTH_SHORT);
+        snackbar.show();
     }
 
 
