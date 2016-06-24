@@ -28,7 +28,6 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -283,7 +282,7 @@ public class GameActivity extends AppCompatActivity implements
         jewelText.setText(String.valueOf(gameBase.getJewelCount() + game.getJewelCount()));
 
         if (game.getGoalType() == ArithmosLevel.GOAL_301){
-            rootLayout.findViewById(R.id.upcoming_goal_linearlayout).setVisibility(View.GONE);
+            rootLayout.findViewById(R.id.goal_view).setVisibility(View.GONE);
             TextView three01 = (TextView)rootLayout.findViewById(R.id.three01_textview);
             three01.setVisibility(View.VISIBLE);
             String value = String.valueOf(game.get301Total());
@@ -297,8 +296,8 @@ public class GameActivity extends AppCompatActivity implements
                 three01.setText(value);
         } else {
             rootLayout.findViewById(R.id.three01_textview).setVisibility(View.GONE);
-            rootLayout.findViewById(R.id.upcoming_goal_linearlayout).setVisibility(View.VISIBLE);
-            refreshGoalList();
+            GoalView goalView = (GoalView)rootLayout.findViewById(R.id.goal_view);
+            goalView.setGame(game);
         }
 
         if (game.hasTimeLimit()){
@@ -342,47 +341,6 @@ public class GameActivity extends AppCompatActivity implements
                 case ArithmosGame.DIVIDE:
                     rootLayout.findViewById(R.id.slash_div).setVisibility(View.GONE);
                     break;
-            }
-        }
-    }
-
-    private void refreshGoalList(){
-        LinearLayout goalView = (LinearLayout)rootLayout.findViewById(R.id.upcoming_goal_linearlayout);
-        goalView.removeAllViews();
-        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            int cols = getResources().getInteger(R.integer.number_item_cols);
-            LinearLayout linearLayout = new LinearLayout(context);
-            linearLayout.setOrientation(LinearLayout.HORIZONTAL);
-            goalView.addView(linearLayout);
-            for (int i = 0, c = 0; i < game.getUpcomingGoals().size(); i++) {
-                String x = game.getUpcomingGoals().get(i);
-                TextView xView = (TextView) getLayoutInflater().inflate(R.layout.goal_list_item, null);
-                xView.setMinWidth(xView.getHeight());
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                params.setMargins(4, 4, 4, 4);
-                xView.setLayoutParams(params);
-                xView.setTag(x);
-                xView.setText(x);
-                linearLayout.addView(xView);
-                if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                    if (++c % cols == 0) {
-                        linearLayout = new LinearLayout(context);
-                        linearLayout.setOrientation(LinearLayout.HORIZONTAL);
-                        goalView.addView(linearLayout);
-                    }
-                }
-            }
-        } else {
-            for (int i = 0; i < game.getUpcomingGoals().size(); i++) {
-                String x = game.getUpcomingGoals().get(i);
-                TextView xView = (TextView) getLayoutInflater().inflate(R.layout.goal_list_item, null);
-                xView.setMinWidth(xView.getHeight());
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                params.setMargins(4, 4, 4, 4);
-                xView.setLayoutParams(params);
-                xView.setTag(x);
-                xView.setText(x);
-                goalView.addView(xView);
             }
         }
     }
@@ -1165,7 +1123,8 @@ public class GameActivity extends AppCompatActivity implements
                     three01.setText(value);
             } else {
                 // Update goal list
-                refreshGoalList();
+                GoalView goalView = (GoalView)rootLayout.findViewById(R.id.goal_view);
+                goalView.invalidate();
             }
 
             // If an evaluate left to right special was use, record and reset
@@ -1625,7 +1584,7 @@ public class GameActivity extends AppCompatActivity implements
             if (!numbers.contains(n))
                 numbers.add(n);
         }
-        numberList.setAdapter(new ArrayAdapter<>(context, R.layout.goal_list_item, numbers));
+        numberList.setAdapter(new ArrayAdapter<>(context, R.layout.number_list_item, numbers));
 
         // Setup touch response
         numberList.setOnItemClickListener(new AdapterView.OnItemClickListener() {

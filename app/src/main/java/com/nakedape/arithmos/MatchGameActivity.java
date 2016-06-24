@@ -7,13 +7,11 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.support.annotation.NonNull;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.DragEvent;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -26,7 +24,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -271,7 +268,7 @@ public class MatchGameActivity extends AppCompatActivity implements
             scoreTextView = p2ScoreView;
 
         if (game.getGoalType() == ArithmosLevel.GOAL_301){
-            rootLayout.findViewById(R.id.upcoming_goal_linearlayout).setVisibility(View.GONE);
+            rootLayout.findViewById(R.id.goal_view).setVisibility(View.GONE);
 
             // Show score and 301 total together for other player
             if (game.getCurrentPlayer().equals(game.PLAYER1)){
@@ -294,8 +291,9 @@ public class MatchGameActivity extends AppCompatActivity implements
             } else
                 three01.setText(value);
         } else {
-            rootLayout.findViewById(R.id.upcoming_goal_linearlayout).setVisibility(View.VISIBLE);
-            refreshGoalList();
+            rootLayout.findViewById(R.id.three01_textview).setVisibility(View.GONE);
+            GoalView goalView = (GoalView)rootLayout.findViewById(R.id.goal_view);
+            goalView.setGame(game);
         }
 
         if (!gameBaseNeedsDownload) {
@@ -327,33 +325,6 @@ public class MatchGameActivity extends AppCompatActivity implements
             }
         }
         matchHasLoaded = true;
-    }
-
-    private void refreshGoalList(){
-        LinearLayout goalView = (LinearLayout)rootLayout.findViewById(R.id.upcoming_goal_linearlayout);
-        goalView.removeAllViews();
-        int cols = getResources().getInteger(R.integer.number_item_cols);
-        LinearLayout linearLayout = new LinearLayout(context);
-        linearLayout.setOrientation(LinearLayout.HORIZONTAL);
-        goalView.addView(linearLayout);
-        for (int i = 0, c = 0; i < game.getUpcomingGoals().size(); i++){
-            String x = game.getUpcomingGoals().get(i);
-            TextView xView = (TextView)getLayoutInflater().inflate(R.layout.goal_list_item, null);
-            xView.setMinWidth(xView.getHeight());
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            params.setMargins(4, 4, 4, 4);
-            xView.setLayoutParams(params);
-            xView.setTag(x);
-            xView.setText(x);
-            linearLayout.addView(xView);
-            if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                if (++c % cols == 0) {
-                    linearLayout = new LinearLayout(context);
-                    linearLayout.setOrientation(LinearLayout.HORIZONTAL);
-                    goalView.addView(linearLayout);
-                }
-            }
-        }
     }
 
     private void setupSpecials(){
@@ -1057,7 +1028,9 @@ public class MatchGameActivity extends AppCompatActivity implements
                 }
                 three01.setText(finalValue.trim());
             } else {
-                refreshGoalList();
+                // Update goal list
+                GoalView goalView = (GoalView)rootLayout.findViewById(R.id.goal_view);
+                goalView.invalidate();
             }
 
             // If an evaluate left to right special was use, record and reset
@@ -1329,7 +1302,7 @@ public class MatchGameActivity extends AppCompatActivity implements
             if (!numbers.contains(n))
                 numbers.add(n);
         }
-        numberList.setAdapter(new ArrayAdapter<>(context, R.layout.goal_list_item, numbers));
+        numberList.setAdapter(new ArrayAdapter<>(context, R.layout.number_list_item, numbers));
 
         // Setup touch response
         numberList.setOnItemClickListener(new AdapterView.OnItemClickListener() {

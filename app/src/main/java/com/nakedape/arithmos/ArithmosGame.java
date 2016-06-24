@@ -44,12 +44,12 @@ public class ArithmosGame {
 
     transient public String PLAYER1 = "p1";
     transient public String PLAYER2 = "p2";
-    public static final String TIE = "tie";
+    transient public static final String TIE = "tie";
 
     transient private String[][] gameBoard;
     transient private int p1_301Total = 0, p2_301Total;
     transient private int[] goalNumbers;
-    transient private ArrayList<String> goalList, upcomingGoals;
+    transient private ArrayList<String> goalList, remainingGoals;
     transient private int goalType;
     transient private String currentPlayer;
     transient private int p1Points, p2Points, lastScore = 0;
@@ -70,6 +70,7 @@ public class ArithmosGame {
     transient private String p1Message, p2Message;
     transient private int jewelCount = 0;
     transient private long elapsedTime = 0;
+    transient private ArrayList<String> p1GoalsWon, p2GoalsWon;
 
     public ArithmosGame(){}
     public ArithmosGame(int size, int goalMin, int goalMax, int goalType){
@@ -315,35 +316,52 @@ public class ArithmosGame {
         return goalType;
     }
     public int getCurrentGoal(){
-        if (upcomingGoals != null && upcomingGoals.size() > 0)
-            return Integer.valueOf(upcomingGoals.get(0));
+        if (remainingGoals != null && remainingGoals.size() > 0)
+            return Integer.valueOf(remainingGoals.get(0));
         else return -1;
     }
-    public ArrayList<String> getUpcomingGoals() {
-        return upcomingGoals;
+    public ArrayList<String> getRemainingGoals() {
+        return remainingGoals;
+    }
+    public ArrayList<String> getGoalList() {return goalList;}
+    public ArrayList<String> getGoalsWon(String player){
+        if (player.equals(PLAYER1))
+            return p1GoalsWon;
+        else
+            return p2GoalsWon;
     }
     private boolean removeTopFromGoalList(){
         if (goalType == ArithmosLevel.GOAL_MULT_NUM) {
-            upcomingGoals.remove(0);
-            return upcomingGoals.size() > 0;
+            remainingGoals.remove(0);
+            return remainingGoals.size() > 0;
         }
         return true;
     }
-    private boolean removeFromGoalList(int value){
-        if (upcomingGoals != null && upcomingGoals.size() > 0){
-            upcomingGoals.remove(String.valueOf(value));
-            return upcomingGoals.size() > 0;
+    private boolean removeFromRemainingGoals(int value){
+        if (remainingGoals != null && remainingGoals.size() > 0){
+            remainingGoals.remove(String.valueOf(value));
+            return remainingGoals.size() > 0;
         }
         return true;
+    }
+    private void recordGoal(int value){
+        if (currentPlayer.equals(PLAYER1))
+            p1GoalsWon.add(String.valueOf(value));
+        else
+            p2GoalsWon.add(String.valueOf(value));
     }
     private int remainingGoalCount(){
-        return upcomingGoals.size() + goalList.size();
+        return remainingGoals.size() + goalList.size();
     }
     private void initializeGoalList(int[] goalNumbers){
-        upcomingGoals = new ArrayList<>(goalNumbers.length);
+        remainingGoals = new ArrayList<>(goalNumbers.length);
+        goalList = new ArrayList<>(goalNumbers.length);
         for (int x : goalNumbers){
-            upcomingGoals.add(String.valueOf(x));
+            remainingGoals.add(String.valueOf(x));
+            goalList.add(String.valueOf(x));
         }
+        p1GoalsWon = new ArrayList<>();
+        p2GoalsWon = new ArrayList<>();
     }
     public int get301Total() {
         if (currentPlayer.equals(PLAYER1))
@@ -573,6 +591,7 @@ public class ArithmosGame {
         }
         if (meetsGoal(exp, true)){
             result.result = GameResult.SUCCESS;
+            result.value = lastValue;
 
             // Find bonuses in selection
             ArrayList<String> bonusNames = new ArrayList<>(1);
@@ -715,8 +734,8 @@ public class ArithmosGame {
                 exp += s + " ";
 
             // Check if expression evaluates to the currentGoal and return true if it does
-            // Log.d(LOG_TAG, exp);
             if (meetsGoal(exp, record)){
+                result.value = lastValue;
                 result.result = GameResult.SUCCESS;
                 if (record) {
 
@@ -882,9 +901,10 @@ public class ArithmosGame {
             case ArithmosLevel.GOAL_SINGLE_NUM:
                 if (getCurrentGoal() < 0) return true;
                 else {
-                    boolean meets = upcomingGoals.contains(String.valueOf((int)value));
+                    boolean meets = remainingGoals.contains(String.valueOf((int)value));
                     if (meets && removeFromList) {
-                        removeFromGoalList((int)value);
+                        removeFromRemainingGoals((int)value);
+                        recordGoal((int)value);
                         lastValue = (int)value;
                     }
                     return meets;
@@ -1173,7 +1193,7 @@ public class ArithmosGame {
 
 
     // Serialization
-    transient private static final int serializationVersion = 4;
+    transient private static final int serializationVersion = 5;
 
     public byte[] getSaveGameData(){
         ByteArrayOutputStream bos = null;
@@ -1185,6 +1205,7 @@ public class ArithmosGame {
             bos.close();
         } catch (IOException e)
         {e.printStackTrace();}
+        Log.d(LOG_TAG, "Game byte size = " + bos.size());
         return bos.toByteArray();
     }
     public void writeObject(ObjectOutputStream out) throws IOException {
@@ -1193,7 +1214,7 @@ public class ArithmosGame {
         out.writeObject(gameBoard);
         out.writeObject(goalNumbers);
         out.writeObject(goalList);
-        out.writeObject(upcomingGoals);
+        out.writeObject(remainingGoals);
         out.writeInt(p1_301Total);
         out.writeInt(p2_301Total);
         out.writeInt(goalType);
@@ -1222,6 +1243,9 @@ public class ArithmosGame {
         // Version 4
         out.writeLong(elapsedTime);
         out.writeInt(jewelCount);
+        // Version 5
+        out.writeObject(p1GoalsWon);
+        out.writeObject(p2GoalsWon);
     }
     public void loadGameData(byte[] gameData){
         ByteArrayInputStream bis = new ByteArrayInputStream(gameData);
@@ -1237,7 +1261,7 @@ public class ArithmosGame {
             gameBoard = (String[][])in.readObject();
             goalNumbers = (int[])in.readObject();
             goalList = (ArrayList<String>)in.readObject();
-            upcomingGoals = (ArrayList<String>)in.readObject();
+            remainingGoals = (ArrayList<String>)in.readObject();
             p1_301Total = in.readInt();
             p2_301Total = in.readInt();
             goalType = in.readInt();
@@ -1259,6 +1283,8 @@ public class ArithmosGame {
             p1BonusCounts = (HashMap<String, Integer>)in.readObject();
             p2BonusCounts = (HashMap<String, Integer>)in.readObject();
             currentPlayer = PLAYER1;
+            p1GoalsWon = new ArrayList<>();
+            p2GoalsWon = new ArrayList<>();
         }
         if (version >= 2){
             p1Message = (String)in.readObject();
@@ -1270,6 +1296,10 @@ public class ArithmosGame {
         if (version >= 4){
             elapsedTime = in.readLong();
             jewelCount = in.readInt();
+        }
+        if (version >= 5){
+            p1GoalsWon = (ArrayList<String>)in.readObject();
+            p2GoalsWon = (ArrayList<String>)in.readObject();
         }
     }
 

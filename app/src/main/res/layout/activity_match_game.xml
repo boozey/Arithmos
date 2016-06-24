@@ -1,5 +1,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:custom="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context=".GameActivity"
@@ -19,6 +21,30 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
+            <ImageView android:id="@+id/slash_mult"
+                android:layout_width="@dimen/slash_icon_size"
+                android:layout_height="@dimen/slash_icon_size"
+                android:layout_margin="4dp"
+                android:background="@drawable/ic_slash_multiplication"
+                android:visibility="gone"/>
+            <ImageView android:id="@+id/slash_div"
+                android:layout_width="@dimen/slash_icon_size"
+                android:layout_height="@dimen/slash_icon_size"
+                android:layout_margin="4dp"
+                android:background="@drawable/ic_slash_division"
+                android:visibility="gone"/>
+            <ImageView android:id="@+id/slash_add"
+                android:layout_width="@dimen/slash_icon_size"
+                android:layout_height="@dimen/slash_icon_size"
+                android:layout_margin="4dp"
+                android:background="@drawable/ic_slash_addition"
+                android:visibility="gone"/>
+            <ImageView android:id="@+id/slash_sub"
+                android:layout_width="@dimen/slash_icon_size"
+                android:layout_height="@dimen/slash_icon_size"
+                android:layout_margin="4dp"
+                android:background="@drawable/ic_slash_subtraction"
+                android:visibility="gone"/>
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -100,42 +126,18 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical"
                 android:gravity="center_horizontal">
-                <LinearLayout android:id="@+id/upcoming_goal_linearlayout"
-                android:orientation="vertical"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:divider="@android:color/transparent"
-                android:gravity="center_horizontal"
-                android:visibility="gone"/>
+                <com.nakedape.arithmos.GoalView android:id="@+id/goal_view"
+                    android:layout_width="@dimen/goal_list_width"
+                    android:layout_height="match_parent"
+                    custom:orientation="vertical"
+                    custom:textColor="@color/text_primary_light"
+                    custom:shapeColor="@android:color/holo_red_light"
+                    android:visibility="visible"/>
                 <TextView android:id="@+id/three01_textview"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="@dimen/three01_text_size"
                     android:text="1\n2\n8"
-                    android:visibility="gone"/>
-                <ImageView android:id="@+id/slash_mult"
-                    android:layout_width="@dimen/slash_icon_size"
-                    android:layout_height="@dimen/slash_icon_size"
-                    android:layout_margin="4dp"
-                    android:background="@drawable/ic_slash_multiplication"
-                    android:visibility="gone"/>
-                <ImageView android:id="@+id/slash_div"
-                    android:layout_width="@dimen/slash_icon_size"
-                    android:layout_height="@dimen/slash_icon_size"
-                    android:layout_margin="4dp"
-                    android:background="@drawable/ic_slash_division"
-                    android:visibility="gone"/>
-                <ImageView android:id="@+id/slash_add"
-                    android:layout_width="@dimen/slash_icon_size"
-                    android:layout_height="@dimen/slash_icon_size"
-                    android:layout_margin="4dp"
-                    android:background="@drawable/ic_slash_addition"
-                    android:visibility="gone"/>
-                <ImageView android:id="@+id/slash_sub"
-                    android:layout_width="@dimen/slash_icon_size"
-                    android:layout_height="@dimen/slash_icon_size"
-                    android:layout_margin="4dp"
-                    android:background="@drawable/ic_slash_subtraction"
                     android:visibility="gone"/>
             </LinearLayout>
 
@@ -155,8 +157,8 @@
             android:gravity="center_vertical"
             android:background="@drawable/pencil_border_horizontal">
             <ImageButton
-                android:layout_width="@dimen/slash_icon_size"
-                android:layout_height="@dimen/slash_icon_size"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_margin="4dp"
                 android:background="@drawable/operations_button_background"
                 android:onClick="OperationButtonClick"/>

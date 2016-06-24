@@ -1,6 +1,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:ads="http://schemas.android.com/apk/res-auto"
+    xmlns:custom="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -60,10 +61,10 @@
                     android:text="150,000"/>
 
             <LinearLayout android:orientation="horizontal"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="start"
-                android:gravity="start">
+                android:gravity="end">
 
                 <ImageView android:id="@+id/slash_add"
                     android:layout_width="@dimen/slash_icon_size"
@@ -86,35 +87,37 @@
                     android:layout_height="@dimen/slash_icon_size"
                     android:background="@drawable/ic_slash_division"
                     android:visibility="invisible"/>
+
+                <TextView android:id="@+id/jewel_count"
+                    android:layout_width="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:drawableEnd="@drawable/ic_red_jewel_32dp"
+                    android:drawablePadding="4dp"
+                    android:gravity="center_vertical"
+                    android:textSize="@dimen/small_text_size"
+                    android:text="0"/>
             </LinearLayout>
 
-
-            <RelativeLayout
-                android:layout_width="wrap_content"
-                android:layout_height="0dp"
-                android:layout_weight="1">
-
-                <LinearLayout android:id="@+id/upcoming_goal_linearlayout"
-                    android:orientation="vertical"
-                    android:layout_width="match_parent"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="start"
-                    android:visibility="gone"/>
-
-                <TextView android:id="@+id/three01_textview"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="@dimen/three01_text_size"
-                    android:text="128"
-                    android:visibility="gone"/>
-            </RelativeLayout>
-
-            <ScrollView android:id="@+id/special_layout"
-                android:layout_width="wrap_content"
+            <com.nakedape.arithmos.GoalView android:id="@+id/goal_view"
+                android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
+                custom:orientation="horizontal"
+                custom:textColor="@color/text_primary_light"
+                custom:shapeColor="@android:color/holo_red_light"/>
+
+            <TextView android:id="@+id/three01_textview"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/three01_text_size"
+                android:text="128"
+                android:visibility="gone"/>
+
+            <ScrollView android:id="@+id/special_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:scrollbars="none"
                 android:background="@drawable/pencil_border_horizontal">
@@ -128,8 +131,8 @@
                     android:gravity="center_vertical">
 
                     <ImageButton
-                        android:layout_width="@dimen/slash_icon_size"
-                        android:layout_height="@dimen/slash_icon_size"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
                         android:layout_margin="4dp"
                         android:background="@drawable/operations_button_background"
                         android:onClick="OperationButtonClick"/>
@@ -141,7 +144,7 @@
                         android:textColor="@color/text_primary_dark"
                         android:drawableStart="@drawable/ic_calculator"
                         android:onClick="CalcButtonClick"
-                        android:visibility="gone"/>
+                        android:visibility="visible"/>
 
                     <TextView android:id="@+id/bomb_button"
                         android:layout_width="wrap_content"
@@ -160,46 +163,34 @@
                         android:textColor="@color/text_primary_dark"
                         android:drawableStart="@drawable/ic_pencil"
                         android:visibility="gone"/>
+
+                    <TextView android:id="@+id/skip_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="2dp"
+                        android:gravity="bottom"
+                        android:textColor="@color/text_primary_dark"
+                        android:drawableStart="@drawable/ic_right_arrow"
+                        android:onClick="SkipGoalNumberClick"
+                        android:visibility="visible"/>
+
+                    <TextView android:id="@+id/zero_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="2dp"
+                        android:gravity="bottom"
+                        android:textColor="@color/text_primary_dark"
+                        android:drawableStart="@drawable/ic_zero"
+                        android:onClick="ZeroButtonClick"
+                        android:visibility="gone"/>
                 </LinearLayout>
                     <LinearLayout android:orientation="horizontal"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content">
-
-                        <TextView android:id="@+id/skip_button"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_margin="2dp"
-                            android:gravity="bottom"
-                            android:textColor="@color/text_primary_dark"
-                            android:drawableStart="@drawable/ic_right_arrow"
-                            android:onClick="SkipGoalNumberClick"
-                            android:visibility="gone"/>
-
-                        <TextView android:id="@+id/zero_button"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_margin="2dp"
-                            android:gravity="bottom"
-                            android:textColor="@color/text_primary_dark"
-                            android:drawableStart="@drawable/ic_zero"
-                            android:onClick="ZeroButtonClick"
-                            android:visibility="gone"/>
                     </LinearLayout>
                 </LinearLayout>
             </ScrollView>
 
-
-
-            <TextView android:id="@+id/jewel_count"
-                android:layout_width="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:drawableEnd="@drawable/ic_red_jewel_32dp"
-                android:drawablePadding="4dp"
-                android:gravity="center_vertical"
-                android:textSize="@dimen/small_text_size"
-                android:text="0"/>
             <com.google.android.gms.ads.AdView
                 android:id="@+id/adView"
                 android:layout_width="wrap_content"
