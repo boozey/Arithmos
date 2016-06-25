@@ -69,7 +69,7 @@ public class GameActivity extends AppCompatActivity implements
     public static final String SAVED_GAME = "saved_game";
 
     // Saving/recreating the activity state
-    private static final String JEWEL_COUNT = "JEWEL_COUNT";
+    private static final String HAS_LEVEL_PASSED_SHOWN = "HAS_LEVEL_PASSED_SHOWN";
     private static final String ELAPSED_TIME = "ELAPSED_TIME";
     public static final String levelCacheFileName = "arithmos_level_cache";
     private static final String gameCacheFileName = MainActivity.gameCacheFileName;
@@ -117,12 +117,14 @@ public class GameActivity extends AppCompatActivity implements
             AdRequest adRequest = new AdRequest.Builder()
                     .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
                     .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
+                    .addTestDevice("19BA58A88672F3F9197685FEEB600EA7")
                     .build();
             mAdView.loadAd(adRequest);
 
             AdRequest intstAdRequest = new AdRequest.Builder()
                     .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
                     .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
+                    .addTestDevice("19BA58A88672F3F9197685FEEB600EA7")
                     .build();
             mInterstitialAd = new InterstitialAd(this);
             mInterstitialAd.setAdUnitId(getString(R.string.interstitial_ad_unit_id));
@@ -141,6 +143,9 @@ public class GameActivity extends AppCompatActivity implements
         scoreTextView = (TextView)findViewById(R.id.score_textview);
 
         // Restore activity state or initialize
+        if (savedInstanceState != null){
+            hasLevelPassedShown = savedInstanceState.getBoolean(HAS_LEVEL_PASSED_SHOWN, false);
+        }
         loadCachedGame();
 
         if (loadCachedLevel()) {
@@ -182,6 +187,7 @@ public class GameActivity extends AppCompatActivity implements
         // Save the user's current game state
         savedInstanceState.putLong(ELAPSED_TIME, elapsedMillis);
         stopTimer = true;
+        savedInstanceState.putBoolean(HAS_LEVEL_PASSED_SHOWN, hasLevelPassedShown);
 
         // Always call the superclass so it can save the view hierarchy state
         super.onSaveInstanceState(savedInstanceState);
@@ -297,6 +303,7 @@ public class GameActivity extends AppCompatActivity implements
         } else {
             rootLayout.findViewById(R.id.three01_textview).setVisibility(View.GONE);
             GoalView goalView = (GoalView)rootLayout.findViewById(R.id.goal_view);
+            goalView.setVisibility(View.VISIBLE);
             goalView.setGame(game);
         }
 
@@ -416,6 +423,7 @@ public class GameActivity extends AppCompatActivity implements
     private void LoadGameLevel(int resId){
         final ArithmosLevel level = new ArithmosLevel(context, resId);
         game = new ArithmosGame(level);
+        hasLevelPassedShown = false;
         setupGameUi();
         rootLayout.post(new Runnable() {
             @Override
@@ -515,6 +523,7 @@ public class GameActivity extends AppCompatActivity implements
                     AdRequest intstAdRequest = new AdRequest.Builder()
                             .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
                             .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
+                            .addTestDevice("19BA58A88672F3F9197685FEEB600EA7")
                             .build();
                     mInterstitialAd.loadAd(intstAdRequest);
                 }
@@ -570,6 +579,16 @@ public class GameActivity extends AppCompatActivity implements
 
         TextView subTitleView = (TextView)layout.findViewById(R.id.subtitle_textview);
         subTitleView.setText(level.getLevelDisplayNameId());
+
+        if (level.getGoalType() != ArithmosLevel.GOAL_301) {
+            TextView descView = (TextView) layout.findViewById(R.id.description_textview);
+            descView.setVisibility(View.VISIBLE);
+            if (level.getNumGoalsToWin() < level.getGoalNumbers().length) {
+                descView.setText(getString(R.string.find_x_of_x_numbers, level.getNumGoalsToWin(), level.getGoalNumbers().length));
+            } else {
+                descView.setText(getString(R.string.find_x_numbers, level.getNumGoalsToWin()));
+            }
+        }
 
         TextView oneStarView = (TextView)layout.findViewById(R.id.one_star);
         oneStarView.setText(String.valueOf(level.getStarLevels()[0]));
@@ -687,7 +706,7 @@ public class GameActivity extends AppCompatActivity implements
                     hasBeenPlayed = true;
                     elapsedMillis = game.getElapasedTime();
                     setupGameUi();
-                    if (game.isGameOver()) showGameOverPopup(0);
+                    if (game.isLevelPassed()) showLevelPassedPopup();
                     Log.d(LOG_TAG, "Level loaded from cache");
                     return true;
                 }
@@ -800,7 +819,7 @@ public class GameActivity extends AppCompatActivity implements
             public void onClick(View v) {
                 saveLevel = false;
                 ArithmosGame.GameResult result = new ArithmosGame.GameResult(ArithmosGame.GameResult.FORFEIT);
-                result.isGameOver = true;
+                result.isLevelPassed = true;
                 OnGameOver(result);
                 Animations.slideOutDown(layout, 200, 0, rootLayout.getHeight() / 3).start();
             }
@@ -897,7 +916,7 @@ public class GameActivity extends AppCompatActivity implements
             public void onClick(View v) {
                 saveLevel = false;
                 ArithmosGame.GameResult result = new ArithmosGame.GameResult(ArithmosGame.GameResult.FORFEIT);
-                result.isGameOver = true;
+                result.isLevelPassed = true;
                 OnGameOver(result);
                 AnimatorSet set = Animations.slideOutDown(layout, 200, 0, rootLayout.getHeight() / 3);
                 set.addListener(new Animator.AnimatorListener() {
@@ -1004,7 +1023,7 @@ public class GameActivity extends AppCompatActivity implements
 
     private void recordActivityTurnFinished(ArithmosGame.GameResult result){
         GameActivityItem newItem;
-        if (game.isGameOver()) {
+        if (game.isLevelPassed()) {
             newItem = new GameActivityItem(GameActivityItem.COMPLETED_LEVEL);
             newItem.description = getString(R.string.level_completed);
         } else {
@@ -1019,7 +1038,7 @@ public class GameActivity extends AppCompatActivity implements
 
     private void recordAchievements(){
         // Recorded locally
-        if (game.isGameOver()) {
+        if (game.isLevelPassed()) {
             gameBase.recordStars(game.getChallengeName(), game.getChallengeLevel(), game.getNumStars());
         }
         int jewelCount = game.getJewelCount();
@@ -1033,7 +1052,7 @@ public class GameActivity extends AppCompatActivity implements
                 if (jewelCount > 0 && mGoogleApiClient.isConnected()) {
                     Games.Achievements.increment(mGoogleApiClient, getString(R.string.achievement_collector), jewelCount);
                 }
-                if (game.isGameOver()) {
+                if (game.isLevelPassed()) {
                     // Record level score
                     if (game.getLeaderboardId() != null)
                         Games.Leaderboards.submitScore(mGoogleApiClient, game.getLeaderboardId(), game.getScore(game.getCurrentPlayer()));
@@ -1058,7 +1077,7 @@ public class GameActivity extends AppCompatActivity implements
 
     public void ExitButtonClick(View v){
         Animations.slideOutDown(findViewById(R.id.game_over_popup), 200, 0, rootLayout.getHeight() / 3).start();
-        if (game.isGameOver())
+        if (game.isLevelPassed())
             finishLevelComplete();
         else
             finishLevelIncomplete();
@@ -1066,6 +1085,7 @@ public class GameActivity extends AppCompatActivity implements
 
     // Game events
     private int animStartDelay = 0;
+    private boolean hasLevelPassedShown = false;
     private void startTimer(){
         final TextView timeText = (TextView)rootLayout.findViewById(R.id.time_textview);
         final long startMillis = SystemClock.elapsedRealtime() - elapsedMillis, endMillis = startMillis + game.getTimeLimit();
@@ -1093,7 +1113,7 @@ public class GameActivity extends AppCompatActivity implements
                         @Override
                         public void run() {
                             ArithmosGame.GameResult result = new ArithmosGame.GameResult(ArithmosGame.GameResult.TIME_UP);
-                            result.isGameOver = true;
+                            result.isLevelPassed = true;
                             OnGameOver(result);
                         }
                     });
@@ -1207,18 +1227,63 @@ public class GameActivity extends AppCompatActivity implements
 
     @Override
     public void OnGameOver(ArithmosGame.GameResult result){
-        stopTimer = true;
-        recordActivityTurnFinished(result);
-        recordAchievements();
-        showGameOverPopup(animStartDelay + gameBoard.getAnimDelay() + 200);
+        if (result.noMorePossiblePlays || result.result == ArithmosGame.GameResult.FORFEIT) {
+            stopTimer = true;
+            recordActivityTurnFinished(result);
+            recordAchievements();
+            showGameOverPopup(animStartDelay + gameBoard.getAnimDelay() + 200);
+        } else if (result.isLevelPassed){
+            showLevelPassedPopup();
+        }
+    }
+
+    private void showLevelPassedPopup(){
+        if (hasLevelPassedShown) return;
+        hasLevelPassedShown = true;
+        final View layout = getLayoutInflater().inflate(R.layout.level_passed_popup, null);
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.addRule(RelativeLayout.CENTER_HORIZONTAL);
+        layout.setLayoutParams(params);
+        layout.setVisibility(View.INVISIBLE);
+        rootLayout.addView(layout);
+        layout.post(new Runnable() {
+            @Override
+            public void run() {
+                AnimatorSet set = Animations.slideInDownAndOutUp(layout, 3000, animStartDelay + gameBoard.getAnimDelay(), layout.getMeasuredHeight());
+                set.addListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        rootLayout.removeView(layout);
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+
+                    }
+                });
+                set.start();
+            }
+        });
+
     }
 
     private void showGameOverPopup(int animDelay){
+        if (rootLayout.findViewById(R.id.game_over_popup) != null) return;
 
         final View layout = getLayoutInflater().inflate(R.layout.game_over_popup, null);
 
         // Prepare info to display
-        if (game.isGameOver()) {
+        if (game.isLevelPassed()) {
             TextView titleText = (TextView)layout.findViewById(R.id.title_textview);
             titleText.setText(R.string.you_won);
             int numStars = gameBase.getNumStars(game.getChallengeName(), game.getChallengeLevel());

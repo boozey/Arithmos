@@ -149,12 +149,14 @@ public class MainActivity extends AppCompatActivity implements
             AdRequest adRequest = new AdRequest.Builder()
                     .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
                     .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
+                    .addTestDevice("19BA58A88672F3F9197685FEEB600EA7")
                     .build();
             mAdView.loadAd(adRequest);
 
             AdRequest intstAdRequest = new AdRequest.Builder()
                     .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
                     .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
+                    .addTestDevice("19BA58A88672F3F9197685FEEB600EA7")
                     .build();
             mInterstitialAd = new InterstitialAd(this);
             mInterstitialAd.setAdUnitId(getString(R.string.interstitial_ad_unit_id));
@@ -2828,6 +2830,7 @@ public class MainActivity extends AppCompatActivity implements
             AdRequest intstAdRequest = new AdRequest.Builder()
                     .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
                     .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
+                    .addTestDevice("19BA58A88672F3F9197685FEEB600EA7")
                     .build();
             mInterstitialAd.loadAd(intstAdRequest);
         }

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="8dp"
+    android:background="@drawable/rounded_corner_primary"
+    android:id="@+id/level_passed_popup">
+    <View
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginEnd="4dp"
+        android:background="@mipmap/ic_launcher"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/text_primary_light"
+        android:text="@string/level_passed_message"/>
+
+</LinearLayout>

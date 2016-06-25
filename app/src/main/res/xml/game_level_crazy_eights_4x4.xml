@@ -4,7 +4,7 @@
     gridsize="4">
     <GridBaseNumbers>1, 2, 3, 4, 5, 6, 8, 8, 8, 8</GridBaseNumbers>
     <GridSpecialNumbers>7, 16, 64, 48</GridSpecialNumbers>
-    <GoalNumbers>8, 16, 24, 32, 48</GoalNumbers>
+    <GoalNumbers count="4">8, 10, 14, 16, 24, 32, 48, 64</GoalNumbers>
     <!-- 33 Bonus locations -->
     <Run>5, bonus_balloons, 6, bonus_lock+, 2</Run> <!-- 32 -->
     <Run>5, bonus_lock*, 5, bonus_balloons, 1</Run> <!-- 24 -->

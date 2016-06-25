@@ -24,12 +24,13 @@
             android:textColor="@color/text_primary_light"
             android:text="Subtitle"/>
         <TextView android:id="@+id/description_textview"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:textColor="@color/text_primary_light"
-            android:textSize="16sp"
-            android:text="Blah blah blah blah blah. Blah blah blah blah."
+            android:textSize="@dimen/game_popup_xsmall_text_size"
+            android:gravity="center_horizontal"
+            android:text="Find 5 out of 8 goal numbers"
             android:visibility="gone"/>
         <LinearLayout android:id="@+id/star_layout"
                 android:layout_width="wrap_content"

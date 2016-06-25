@@ -187,7 +187,6 @@ public class GameBoard extends View {
     }
     private void restartCheckBoardThread(){
         stopCheckBoardThread = true;
-        if (game.getGoalType() != ArithmosLevel.GOAL_301) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -204,7 +203,6 @@ public class GameBoard extends View {
                     checkBoardThread.start();
                 }
             }).start();
-        }
     }
     private class CheckBoardThread implements Runnable {
 
@@ -276,6 +274,15 @@ public class GameBoard extends View {
             if (stopCheckBoardThread) Log.d(LOG_TAG, "Checkboard thread stopped");
             else if (playFound) Log.d(LOG_TAG, "There is a possible expression");
             else {
+                lastGameResult.noMorePossiblePlays = true;
+                if (onGameOverListener != null) {
+                    thisView.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            onGameOverListener.OnGameOver(lastGameResult);
+                        }
+                    });
+                }
                 Log.d(LOG_TAG, "There are no possible expressions");
             }
         }
@@ -286,6 +293,7 @@ public class GameBoard extends View {
             return !a[1].equals(ArithmosGame.UNDEF);
         }
 
+        // Checks all subsets that start with index 0
         private boolean checkRun(ArrayList<int[]> run) {
             // Remove first and last entries if they are not number pieces
             int[] extra = run.get(run.size() - 1);
@@ -295,21 +303,30 @@ public class GameBoard extends View {
             if (run.size() < 3) return false;
 
             // Check from 1st to last that are at least three in length
-            if (game.checkAutoFillSelection(run, false).result == ArithmosGame.GameResult.SUCCESS || stopCheckBoardThread)
-                return true;
+            for (int i = 2; i < run.size(); i++ ) {
+                ArrayList<int[]> subList = new ArrayList<>(i);
+                subList.addAll(run.subList(0, i + 1));
+                if (game.checkAutoFillSelection(subList, false).result == ArithmosGame.GameResult.SUCCESS || stopCheckBoardThread)
+                    return true;
+            }
 
             // Check from last to first
             ArrayList<int[]> runReversed = new ArrayList<>(run.size());
             for (int i = run.size() - 1; i >= 0; i--)
                 runReversed.add(run.get(i));
 
-            if (game.checkAutoFillSelection(runReversed, false).result == ArithmosGame.GameResult.SUCCESS || stopCheckBoardThread)
-                return true;
+            for (int i = 2; i < run.size(); i++ ) {
+                ArrayList<int[]> subList = new ArrayList<>(i);
+                subList.addAll(runReversed.subList(0, i + 1));
+                if (game.checkAutoFillSelection(subList, false).result == ArithmosGame.GameResult.SUCCESS || stopCheckBoardThread)
+                    return true;
+            }
 
             // All subsets checked return false only if the thread hasn't been stopped
             return stopCheckBoardThread;
         }
 
+        // Checks all subsets of run
         private boolean checkRunAndSubsets(ArrayList<int[]> run){
             // Remove first and last entries if they are not number pieces
             int [] extra = run.get(run.size() - 1);
@@ -566,7 +583,7 @@ public class GameBoard extends View {
         selectionPath.rewind();
         if (onPlayCompleted != null)
             onPlayCompleted.OnPlayCompleted(lastGameResult);
-        if (lastGameResult.isGameOver && onGameOverListener != null)
+        if (lastGameResult.isLevelPassed && onGameOverListener != null)
             onGameOverListener.OnGameOver(lastGameResult);
     }
     public void useSkipSpecial(){
@@ -578,7 +595,7 @@ public class GameBoard extends View {
             }
         if (onPlayCompleted != null)
             onPlayCompleted.OnPlayCompleted(lastGameResult);
-        if (lastGameResult.isGameOver && onGameOverListener != null)
+        if (lastGameResult.isLevelPassed && onGameOverListener != null)
             onGameOverListener.OnGameOver(lastGameResult);
     }
 

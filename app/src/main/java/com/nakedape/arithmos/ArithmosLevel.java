@@ -37,8 +37,8 @@ public class ArithmosLevel {
     private int[] goalNumbers;
     public int[] getGoalNumbers() { return goalNumbers; }
 
-    private int goalCount;
-    public int getGoalListLength() {return goalCount;}
+    private int numGoalsToWin;
+    public int getNumGoalsToWin() {return numGoalsToWin;}
 
     private int gridSize;
     public int getGridSize(){ return gridSize; }
@@ -168,7 +168,7 @@ public class ArithmosLevel {
         for (int i = 0; i < parser.getAttributeCount(); i++) {
             switch (parser.getAttributeName(i)) {
                 case "count":
-                    goalCount = parser.getAttributeIntValue(i, 0);
+                    numGoalsToWin = parser.getAttributeIntValue(i, 0);
                     break;
             }
         }
@@ -181,7 +181,7 @@ public class ArithmosLevel {
         }
         if (goalNumbers.length > 1) goalType = GOAL_MULT_NUM;
         else goalType = GOAL_SINGLE_NUM;
-        goalCount = Math.max(goalCount, goalNumbers.length);
+        numGoalsToWin = numGoalsToWin > 0 ? numGoalsToWin : goalNumbers.length;
     }
     private void parseBonusTag(XmlResourceParser parser) throws XmlPullParserException, IOException{
         String type = BONUS_BALLOONS;

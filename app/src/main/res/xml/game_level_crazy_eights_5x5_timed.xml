@@ -5,7 +5,7 @@
     time_limit="180">
     <GridBaseNumbers>1, 2, 3, 4, 5, 6, 8, 8, 8, 8</GridBaseNumbers>
     <GridSpecialNumbers>7, 16, 64, 48</GridSpecialNumbers>
-    <GoalNumbers>2, 4, 8, 16, 24, 32, 48</GoalNumbers>
+    <GoalNumbers count="6">2, 4, 8, 16, 24, 32, 48</GoalNumbers>
     <Run>3, ?, 8, bonus_balloons, 12, ?, 6</Run> <!-- 48 -->
     <Run>16, ?, 8, ?, 2, ?, 4</Run> <!-- 16, 32 -->
     <Run>6, bonus_red_jewel, 6, bonus_lock-, 4</Run> <!-- 32 -->
