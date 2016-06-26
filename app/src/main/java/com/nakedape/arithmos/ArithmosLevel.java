@@ -2,6 +2,7 @@ package com.nakedape.arithmos;
 
 import android.content.Context;
 import android.content.res.XmlResourceParser;
+import android.util.Log;
 
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -44,7 +45,9 @@ public class ArithmosLevel {
     public int getGridSize(){ return gridSize; }
 
     private int goalType = GOAL_MULT_NUM;
-    public int getGoalType() { return goalType; }
+    public int getGoalType() {
+        return goalType;
+    }
 
     private int timeLimitMillis = -1;
     public int getTimeLimitMillis() { return timeLimitMillis; }
@@ -138,6 +141,7 @@ public class ArithmosLevel {
                 case "goal_type":
                     String name = parser.getAttributeValue(i);
                     if (name.equals("301")) goalType = GOAL_301;
+                    else if (name.equals("single")) goalType = GOAL_SINGLE_NUM;
                     else goalType = GOAL_MULT_NUM;
                     break;
                 case "time_limit":
@@ -179,8 +183,6 @@ public class ArithmosLevel {
         for (int i = 0; i < numbers.length; i++){
             goalNumbers[i] = Integer.valueOf(numbers[i]);
         }
-        if (goalNumbers.length > 1) goalType = GOAL_MULT_NUM;
-        else goalType = GOAL_SINGLE_NUM;
         numGoalsToWin = numGoalsToWin > 0 ? numGoalsToWin : goalNumbers.length;
     }
     private void parseBonusTag(XmlResourceParser parser) throws XmlPullParserException, IOException{

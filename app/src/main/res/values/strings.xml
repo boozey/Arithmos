@@ -103,7 +103,11 @@
     <string name="unlock_level_x_x">Unlocked %1$s %2$s</string>
     <string name="next_level">Next level</string>
     <string name="retry">Retry</string>
-    <string name="level_passed_message">Level passed! \nGo for a high score</string>
+    <string name="level_passed_message">Level passed! \nBonus round</string>
+    <plurals name="x_more_to_pass">
+        <item quantity="one">%d more number to pass</item>
+        <item quantity="other">%d more numbers to pass</item>
+    </plurals>
 
     <!-- Level info strings -->
     <string name="no_time_limit">No time limit</string>

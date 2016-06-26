@@ -69,6 +69,7 @@ public class MatchGameActivity extends AppCompatActivity implements
     private static final String JEWEL_COUNT = "JEWEL_COUNT";
     private static final String HAS_LEVEL_PASSED_SHOWN = "HAS_LEVEL_PASSED_SHOWN";
     private static final String PLAY_COUNT = "PLAY_COUNT";
+    private static final String IS_GOALVIEW_PLAYING = "IS_GOALVIEW_PLAYING";
     public static final String matchCacheFileName = "arithmos_match_cache";
     public static final String levelCacheFileName = "arithmos_level_cache";
     private static final String gameCacheFileName = "arithmos_game_cache";
@@ -111,6 +112,7 @@ public class MatchGameActivity extends AppCompatActivity implements
             playCount = savedInstanceState.getInt(PLAY_COUNT, 0);
             match = savedInstanceState.getParcelable(MATCH);
             hasLevelPassedShown = savedInstanceState.getBoolean(HAS_LEVEL_PASSED_SHOWN);
+            isGoalViewPlaying = savedInstanceState.getBoolean(IS_GOALVIEW_PLAYING, false);
         }
 
         if (loadCachedGame())
@@ -141,6 +143,29 @@ public class MatchGameActivity extends AppCompatActivity implements
     }
 
     @Override
+    protected void onResume(){
+        super.onResume();
+        if (game != null && isGoalViewPlaying) {
+            rootLayout.post(new Runnable() {
+                @Override
+                public void run() {
+                    GoalView goalView = (GoalView) rootLayout.findViewById(R.id.goal_view);
+                    goalView.startGoalAnimation();
+                }
+            });
+        }
+    }
+
+    @Override
+    protected void onPause(){
+        super.onPause();
+        if (game != null && game.getGoalType() == ArithmosLevel.GOAL_SINGLE_NUM) {
+            GoalView goalView = (GoalView) rootLayout.findViewById(R.id.goal_view);
+            goalView.stopGoalAnimation();
+        }
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
         mGoogleApiClient.disconnect();
@@ -153,6 +178,8 @@ public class MatchGameActivity extends AppCompatActivity implements
         savedInstanceState.putBoolean(HAS_LEVEL_PASSED_SHOWN, hasLevelPassedShown);
         savedInstanceState.putInt(PLAY_COUNT, playCount);
         savedInstanceState.putParcelable(MATCH, match);
+        GoalView goalView = (GoalView)rootLayout.findViewById(R.id.goal_view);
+        savedInstanceState.putBoolean(IS_GOALVIEW_PLAYING, goalView.isPlaying());
 
         // Always call the superclass so it can save the view hierarchy state
         super.onSaveInstanceState(savedInstanceState);
@@ -455,6 +482,8 @@ public class MatchGameActivity extends AppCompatActivity implements
                     @Override
                     public void onAnimationEnd(Animator animation) {
                         rootLayout.removeView(layout);
+                        GoalView goalView = (GoalView)rootLayout.findViewById(R.id.goal_view);
+                        goalView.startGoalAnimation();
                     }
 
                     @Override
@@ -740,7 +769,7 @@ public class MatchGameActivity extends AppCompatActivity implements
     private void showLevelPassedPopup(){
         if (hasLevelPassedShown) return;
         hasLevelPassedShown = true;
-        final View layout = getLayoutInflater().inflate(R.layout.level_passed_popup, null);
+        final View layout = getLayoutInflater().inflate(R.layout.quick_popup, null);
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         params.addRule(RelativeLayout.CENTER_HORIZONTAL);
         layout.setLayoutParams(params);
@@ -1066,7 +1095,7 @@ public class MatchGameActivity extends AppCompatActivity implements
 
     // Game events
     private int animStartDelay = 0;
-    private boolean hasLevelPassedShown = false;
+    private boolean hasLevelPassedShown = false, isGoalViewPlaying = false;
 
     @Override
     public void OnPlayCompleted(ArithmosGame.GameResult result){
@@ -1520,6 +1549,10 @@ public class MatchGameActivity extends AppCompatActivity implements
                         rootLayout.removeView(layout);
                         if (!match.getLastUpdaterId().equals(game.getCurrentPlayer()) && game.getScore(game.getCurrentPlayer()) == 0)
                             showLevelInfoPopup();
+                        else {
+                            GoalView goalView = (GoalView)rootLayout.findViewById(R.id.goal_view);
+                            goalView.startGoalAnimation();
+                        }
                     }
 
                     @Override

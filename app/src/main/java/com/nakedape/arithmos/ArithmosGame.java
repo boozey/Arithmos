@@ -50,19 +50,12 @@ public class ArithmosGame {
     transient private int p1_301Total = 0, p2_301Total;
     transient private int[] goalNumbers;
     transient private ArrayList<String> goalList, remainingGoals;
-    transient private int goalType;
-    transient private int numGoalsToWin;
     transient private String currentPlayer;
     transient private int p1Points, p2Points, lastScore = 0;
     transient private ArrayList<ArrayList<int[]>> p1Runs, p2Runs;
     transient private ArrayList<int[]> computerFoundRun;
     transient private int lastValue = 0;
-    transient private String leaderboardId;
-    transient private String challengeName;
-    transient private int challengeLevel;
-    transient private int[] starLevels;
     transient private int numStars = 0;
-    transient private long timeLimit = -1, timeRemaining = -1;
     transient private boolean reached301 = false, isLevelPassed = false;
     transient private String[] p1AvailableOperations, p2AvailableOperations;
     transient private HashMap<String, Integer> p1OpLimitCounts, p2OpLimitCounts;
@@ -72,6 +65,7 @@ public class ArithmosGame {
     transient private int jewelCount = 0;
     transient private long elapsedTime = 0;
     transient private ArrayList<String> p1GoalsWon, p2GoalsWon;
+    transient private int goalIndex = 0;
 
     public ArithmosGame(){}
     public ArithmosGame(int size, int goalMin, int goalMax, int goalType){
@@ -99,9 +93,8 @@ public class ArithmosGame {
         leaderboardId = level.getLeaderboardId();
         starLevels = level.getStarLevels();
         timeLimit = level.getTimeLimitMillis();
-        timeRemaining = timeLimit;
         setupBoard(level.getGridSize(), level.getGridNumbers(), level.getGridSpecialNumbers(), level.getBonuses(), level.getRuns());
-        if (goalType == ArithmosLevel.GOAL_MULT_NUM) {
+        if (goalType != ArithmosLevel.GOAL_301) {
             numGoalsToWin = level.getNumGoalsToWin();
             initializeGoalList(level.getGoalNumbers());
         }
@@ -122,9 +115,8 @@ public class ArithmosGame {
         leaderboardId = level.getLeaderboardId();
         starLevels = level.getStarLevels();
         timeLimit = level.getTimeLimitMillis();
-        timeRemaining = timeLimit;
         setupBoard(level.getGridSize(), level.getGridNumbers(), level.getGridSpecialNumbers(), level.getBonuses(), level.getRuns());
-        if (goalType == ArithmosLevel.GOAL_MULT_NUM) {
+        if (goalType != ArithmosLevel.GOAL_301) {
             numGoalsToWin = level.getNumGoalsToWin();
             initializeGoalList(level.getGoalNumbers());
         }
@@ -306,6 +298,14 @@ public class ArithmosGame {
     public ArrayList<ArrayList<int[]>> getP2Runs() { return p2Runs; }
 
     // Level info
+    transient private String leaderboardId;
+    transient private String challengeName;
+    transient private int challengeLevel;
+    transient private int[] starLevels;
+    transient private long timeLimit = -1;
+    transient private int goalType;
+    transient private int numGoalsToWin;
+
     public String getChallengeName() { return challengeName; }
     public int getChallengeLevel() { return challengeLevel; }
     public String getLeaderboardId() {return leaderboardId;}
@@ -323,8 +323,16 @@ public class ArithmosGame {
     }
     public int getCurrentGoal(){
         if (remainingGoals != null && remainingGoals.size() > 0)
-            return Integer.valueOf(remainingGoals.get(0));
+            return getGoalAt(goalIndex);
         else return -1;
+    }
+    public int getGoalAt(int index){
+        if (remainingGoals != null && index < remainingGoals.size() && index >= 0)
+            return Integer.valueOf(remainingGoals.get(index));
+        else return -1;
+    }
+    public void nextGoalIndex(){
+        goalIndex = (++goalIndex) % remainingGoals.size();
     }
     public ArrayList<String> getRemainingGoals() {
         return remainingGoals;
@@ -351,9 +359,12 @@ public class ArithmosGame {
         return true;
     }
     private void recordGoal(int value){
-        if (currentPlayer.equals(PLAYER1))
-            p1GoalsWon.add(String.valueOf(value));
-        else
+        if (currentPlayer.equals(PLAYER1)) {
+            if (!p1GoalsWon.contains(String.valueOf(value))) {
+                p1GoalsWon.add(String.valueOf(value));
+            }
+        }
+        else if (!p2GoalsWon.contains(String.valueOf(value)))
             p2GoalsWon.add(String.valueOf(value));
     }
     private int remainingGoalCount(){
@@ -509,12 +520,13 @@ public class ArithmosGame {
             else {
                 isLevelPassed = p1GoalsWon.size() + p2GoalsWon.size() >= numGoalsToWin;
                 Log.d(LOG_TAG, "numGoalsToWin = " + numGoalsToWin);
-                Log.d(LOG_TAG, "isLevelPassed = " + isLevelPassed);
+                Log.d(LOG_TAG, "goalsWon = " + (p1GoalsWon.size() + p2GoalsWon.size()));
             }
         }
         return isLevelPassed;
     }
 
+    // Two player
     public void setMessage(String playerId, String message){
         if (playerId.equals(PLAYER1))
             p1Message = message;
@@ -903,15 +915,23 @@ public class ArithmosGame {
     }
     private boolean meetsGoal(String exp, boolean record){
         double value;
+        boolean meets;
         if (evalLtoR) value = evalLeftToRight(exp);
         else value = eval(exp);
         if (value != (int) value) return false;
         switch (goalType){
-            case ArithmosLevel.GOAL_MULT_NUM:
             case ArithmosLevel.GOAL_SINGLE_NUM:
+                meets = getCurrentGoal() == (int)value;
+                if (record && meets) {
+                    removeFromRemainingGoals((int)value);
+                    recordGoal((int)value);
+                    lastValue = (int)value;
+                }
+                return meets;
+            case ArithmosLevel.GOAL_MULT_NUM:
                 if (getCurrentGoal() < 0) return true;
                 else {
-                    boolean meets = remainingGoals.contains(String.valueOf((int)value));
+                    meets = remainingGoals.contains(String.valueOf((int)value));
                     if (meets && record) {
                         removeFromRemainingGoals((int)value);
                         recordGoal((int)value);
@@ -919,10 +939,6 @@ public class ArithmosGame {
                     }
                     return meets;
                 }
-                // return value == getCurrentGoal();
-            case ArithmosLevel.GOAL_MULTIPLES:
-                if (getCurrentGoal() < 0) return true;
-                return value % getCurrentGoal() == 0;
             case ArithmosLevel.GOAL_301:
                 if (value < 0) return false;
                 if (get301Total() + (int)value < 301){
@@ -1051,7 +1067,6 @@ public class ArithmosGame {
                     break;
             }
         }
-        Log.d(LOG_TAG, "Left to Right = " + result);
         return result;
     }
     private void incrementBonusCount(String bonusName){
@@ -1071,6 +1086,111 @@ public class ArithmosGame {
         }
     }
     public ArrayList<int[]> getComputerFoundRun(){ return computerFoundRun;}
+    public GameResult threadAutoCheckSelection(ArrayList<int[]> run){
+        GameResult result = new GameResult(GameResult.FAILURE);
+        computerFoundRun = null;
+        // Make sure first and last arrays correspond to number tiles
+        int[] temp = run.get(0);
+        if (temp[0] % 2 != 0 || temp[1] % 2 != 0) run.remove(0);
+        temp = run.get(run.size() - 1);
+        if (temp[0] % 2 != 0 || temp[1] % 2 != 0) run.remove(run.size() - 1);
+        if (run.size() < 3) return result;
+
+
+        //
+        // Create and check all possible expressions
+        //
+
+        // Total number of combinations is the number of OPERATIONS to the power of the number of
+        // places an operation can be placed
+        String[] availableOperations;
+        if (currentPlayer.equals(PLAYER1))
+            availableOperations = p1AvailableOperations;
+        else
+            availableOperations = p2AvailableOperations;
+
+        int numCombinations = (int)Math.pow(availableOperations.length, run.size() - 1);
+        // Array of values selected with space to insert OPERATIONS in between each pair of values
+        String[] baseExp = new String[run.size()];
+        // One counter for each location an operation can be placed.  Num OPERATIONS is one less
+        // than the number of values selected
+        int[] counters = new int[(run.size() - 1) / 2];
+
+        // Loop until all possible combinations have been checked
+        for (int count = 0; count < numCombinations; count++) {
+            // Loop through selected values and insert next combination of OPERATIONS
+            for (int i = 0, j = 0; i < baseExp.length; i += 2) {
+                int[] a = run.get(i);
+                String[] s = gameBoard[a[0]][a[1]].split(SEPARATOR);
+                // return false if tile has already been used
+                if (s[1].equals(getCurrentPlayer())) return result;
+                baseExp[i] = s[0];
+                // Fill position with operation
+                if (j < counters.length) {
+                    baseExp[i + 1] = availableOperations[counters[j]];
+
+                    // Replace operation if it is a lock bonus
+                    if (isOpLockBonus(run.get(i + 1))) {
+                        a = run.get(i + 1);
+                        s = gameBoard[a[0]][a[1]].split(SEPARATOR);
+                        baseExp[i + 1] = s[0].replace(ArithmosLevel.BONUS_OP_LOCK, "");
+                    }
+                    j++;
+                }
+            }
+
+            // Build expression string to check from array
+            String exp = "";
+            for (String s : baseExp)
+                exp += s + " ";
+
+            // Check if expression evaluates to the currentGoal and return true if it does
+            if (meetGoalAutoCheck(exp)) {
+                result.result = GameResult.SUCCESS;
+                computerFoundRun = new ArrayList<>(run.size());
+                computerFoundRun.addAll(run);
+                return result;
+            }
+
+            // Increment counters to try next combination of OPERATIONS
+            // Counters increment modulo the number of OPERATIONS
+            int index = 0;
+            boolean carry = false;
+            do {
+                counters[index]++;
+                if (counters[index] == availableOperations.length) {
+                    counters[index] = 0;
+                    carry = true;
+                } else {
+                    carry = false;
+                }
+                index++;
+            } while (carry && index < counters.length);
+        } // End main loop
+
+        // If this statement is reached, all possible combinations of OPERATIONS failed
+        return result;
+    }
+    public boolean meetGoalAutoCheck(String exp){
+        double value;
+        if (evalLtoR) value = evalLeftToRight(exp);
+        else value = eval(exp);
+        if (value != (int) value) return false;
+        switch (goalType){
+            case ArithmosLevel.GOAL_SINGLE_NUM:
+            case ArithmosLevel.GOAL_MULT_NUM:
+                if (getCurrentGoal() < 0) return false;
+                else {
+                    return remainingGoals.contains(String.valueOf((int)value));
+
+                }
+            case ArithmosLevel.GOAL_301:
+                if (value < 0) return false;
+                return get301Total() + (int)value <= 301;
+            default:
+                return false;
+        }
+    }
 
     // Scoring
     private int scoreSelection(String[] expression, ArrayList<String> bonuses){

@@ -306,7 +306,7 @@ public class GameBoard extends View {
             for (int i = 2; i < run.size(); i++ ) {
                 ArrayList<int[]> subList = new ArrayList<>(i);
                 subList.addAll(run.subList(0, i + 1));
-                if (game.checkAutoFillSelection(subList, false).result == ArithmosGame.GameResult.SUCCESS || stopCheckBoardThread)
+                if (game.threadAutoCheckSelection(subList).result == ArithmosGame.GameResult.SUCCESS || stopCheckBoardThread)
                     return true;
             }
 
@@ -318,7 +318,7 @@ public class GameBoard extends View {
             for (int i = 2; i < run.size(); i++ ) {
                 ArrayList<int[]> subList = new ArrayList<>(i);
                 subList.addAll(runReversed.subList(0, i + 1));
-                if (game.checkAutoFillSelection(subList, false).result == ArithmosGame.GameResult.SUCCESS || stopCheckBoardThread)
+                if (game.threadAutoCheckSelection(subList).result == ArithmosGame.GameResult.SUCCESS || stopCheckBoardThread)
                     return true;
             }
 
@@ -340,7 +340,7 @@ public class GameBoard extends View {
                 for (int j = i + 2; j < run.size() && !stopCheckBoardThread; j++){
                     ArrayList<int[]> subList = new ArrayList<>(j - i);
                     subList.addAll(run.subList(i, j + 1));
-                    if (game.checkAutoFillSelection(subList, false).result == ArithmosGame.GameResult.SUCCESS || stopCheckBoardThread)
+                    if (game.threadAutoCheckSelection(subList).result == ArithmosGame.GameResult.SUCCESS || stopCheckBoardThread)
                         return true;
                 }
 
@@ -352,7 +352,7 @@ public class GameBoard extends View {
                 for (int j = i + 2; j < runReversed.size() && !stopCheckBoardThread; j++){
                     ArrayList<int[]> subList = new ArrayList<>(j - i);
                     subList.addAll(run.subList(i, j + 1));
-                    if (game.checkAutoFillSelection(subList, false).result == ArithmosGame.GameResult.SUCCESS || stopCheckBoardThread)
+                    if (game.threadAutoCheckSelection(subList).result == ArithmosGame.GameResult.SUCCESS || stopCheckBoardThread)
                         return true;
                 }
             // All subsets checked return false only if the thread hasn't been stopped

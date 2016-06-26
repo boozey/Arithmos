@@ -3,7 +3,7 @@
     gridsize="4">
     <GridBaseNumbers>7, 7, 2, 3</GridBaseNumbers>
     <GridSpecialNumbers>14, 28</GridSpecialNumbers>
-    <GoalNumbers count="6">13, 14, 21, 42</GoalNumbers>
+    <GoalNumbers count="3">13, 14, 21, 42</GoalNumbers>
     <StarLevels>1000, 1500, 2500</StarLevels>
     <!-- 33 Bonus spaces available -->
     <run>2, ?, 7, ?, 7, ?, 2</run>
