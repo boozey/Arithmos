@@ -162,18 +162,23 @@ public class GoalView extends View {
     String currentGoal = "";
 
     private void calculateSingleSize(int w, int h){
+        if (w == 0 || h == 0) return;
         if (orientation == VERTICAL) {
             float diam = Math.min(getResources().getDimensionPixelSize(R.dimen.goal_text_size) * 2, w);
             float margin = diam * 0.05f;
             shapeDiam = diam - 2 * margin;
             textPaint.setTextSize(diam * 0.5f);
             shapeRect = new RectF(0, h, diam, h + diam);
+            checkMarkBitmap = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_green_check_mark),
+                    (int)diam, (int)diam, false);
         } else {
             float diam = Math.min(getResources().getDimensionPixelSize(R.dimen.goal_text_size) * 2, h);
             float margin = diam * 0.05f;
             shapeDiam = diam - 2 * margin;
             textPaint.setTextSize(diam * 0.5f);
             shapeRect = new RectF(diam, 0, 0, diam);
+            checkMarkBitmap = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_green_check_mark),
+                    (int)diam, (int)diam, false);
         }
         invalidate();
     }
@@ -255,15 +260,17 @@ public class GoalView extends View {
         if (!stopAnimation) {
             if (game.getGoalsWon(game.PLAYER1).contains(currentGoal)) {
                 canvas.drawCircle(shapeRect.centerX(), shapeRect.centerY(), shapeDiam / 2, p1Paint);
-                canvas.drawBitmap(checkMarkBitmap, null, shapeRect, null);
+                canvas.drawBitmap(checkMarkBitmap, shapeRect.centerX() - checkMarkBitmap.getWidth() / 2,
+                        shapeRect.centerY() - checkMarkBitmap.getHeight() / 2, null);
             } else if (game.getGoalsWon(game.PLAYER2).contains(currentGoal)) {
                 canvas.drawCircle(shapeRect.centerX(), shapeRect.centerY(), shapeDiam / 2, p2Paint);
-                canvas.drawBitmap(checkMarkBitmap, null, shapeRect, null);
+                canvas.drawBitmap(checkMarkBitmap, shapeRect.centerX() - checkMarkBitmap.getWidth() / 2,
+                        shapeRect.centerY() - checkMarkBitmap.getHeight() / 2, null);
             } else
                 canvas.drawCircle(shapeRect.centerX(), shapeRect.centerY(), shapeDiam / 2, unPlayedPaint);
 
-
             canvas.drawText(currentGoal, shapeRect.centerX(), shapeRect.centerY() + textPaint.getTextSize() / 3, textPaint);
+
         }
     }
 }
