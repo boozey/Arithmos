@@ -375,7 +375,10 @@ public class ArithmosGame {
     }
     public GameResult skipGoalNumber(){
         GameResult result = new GameResult(GameResult.SUCCESS);
-        if (!removeTopFromGoalList()) result.isLevelPassed = true;
+        int value = getCurrentGoal();
+        if (!removeFromRemainingGoals(value)) result.isLevelPassed = true;
+        recordGoal(value);
+        lastValue = value;
         // Update counters for operation limits and reset when appropriate
         HashMap<String, Integer> opLimitCounts;
         if (currentPlayer.equals(PLAYER1))

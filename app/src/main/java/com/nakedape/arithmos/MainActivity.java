@@ -1100,6 +1100,7 @@ public class MainActivity extends AppCompatActivity implements
                     String desc = "Arithmos Game Data";
                     writeSnapshot(openSnapshotResult.getSnapshot(), gameBase.getByteData(), desc);
                     gameBase.setSaved(true);
+                    cacheGame();
                     Log.d(LOG_TAG, "Game state saved");
                 }
             });

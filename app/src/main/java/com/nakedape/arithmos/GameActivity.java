@@ -1599,12 +1599,13 @@ public class GameActivity extends AppCompatActivity implements
     public void SkipGoalNumberClick(View v){
         if (gameBase.getSpecialCount(ArithmosGameBase.SPECIAL_SKIP) > 0) {
             int count = gameBase.useSpecial(ArithmosGameBase.SPECIAL_SKIP);
+            Log.d(LOG_TAG, "Skip special count = " + count);
             gameBoard.useSkipSpecial();
             TextView skip = (TextView)rootLayout.findViewById(R.id.skip_button);
             if (count < 1)
                 skip.setVisibility(View.GONE);
             else if (count < 2)
-                skip.setText("");
+                skip.setText(" ");
             else
                 skip.setText(String.valueOf(count));
             cacheGame();
@@ -1645,7 +1646,7 @@ public class GameActivity extends AppCompatActivity implements
                         if (count < 1)
                             bomb.setVisibility(View.GONE);
                         else if (count < 2)
-                            bomb.setText("");
+                            bomb.setText(" ");
                         else
                             bomb.setText(String.valueOf(count));
                         cacheGame();
@@ -1712,7 +1713,7 @@ public class GameActivity extends AppCompatActivity implements
                 if (count < 1)
                     pencil.setVisibility(View.GONE);
                 else if (count < 2)
-                    pencil.setText("");
+                    pencil.setText(" ");
                 else
                     pencil.setText(String.valueOf(count));
                 cacheGame();
@@ -1784,7 +1785,7 @@ public class GameActivity extends AppCompatActivity implements
                         if (count < 1)
                             zeroView.setVisibility(View.GONE);
                         else if (count < 2)
-                            zeroView.setText("");
+                            zeroView.setText(" ");
                         else
                             zeroView.setText(String.valueOf(count));
                         cacheGame();

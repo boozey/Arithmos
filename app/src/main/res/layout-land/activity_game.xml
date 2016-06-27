@@ -144,7 +144,7 @@
                         android:textColor="@color/text_primary_dark"
                         android:drawableStart="@drawable/ic_calculator"
                         android:onClick="CalcButtonClick"
-                        android:visibility="visible"/>
+                        android:visibility="gone"/>
 
                     <TextView android:id="@+id/bomb_button"
                         android:layout_width="wrap_content"
@@ -172,7 +172,7 @@
                         android:textColor="@color/text_primary_dark"
                         android:drawableStart="@drawable/ic_right_arrow"
                         android:onClick="SkipGoalNumberClick"
-                        android:visibility="visible"/>
+                        android:visibility="gone"/>
 
                     <TextView android:id="@+id/zero_button"
                         android:layout_width="wrap_content"
