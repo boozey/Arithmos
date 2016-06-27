@@ -82,7 +82,6 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity implements
@@ -128,7 +127,10 @@ public class MainActivity extends AppCompatActivity implements
             }
         });
 
-        if (!mAutoStartSignInFlow) rootLayout.findViewById(R.id.achievements_button).setVisibility(View.GONE);
+        if (!mAutoStartSignInFlow) {
+            rootLayout.findViewById(R.id.achievements_button).setVisibility(View.GONE);
+            rootLayout.findViewById(R.id.sign_in_button).setVisibility(View.VISIBLE);
+        }
 
         ListView activityList = (ListView)rootLayout.findViewById(R.id.activity_listview);
         View header = getLayoutInflater().inflate(R.layout.activity_button_bar, null);
@@ -296,10 +298,8 @@ public class MainActivity extends AppCompatActivity implements
 
         // Level played
         if (requestCode == REQUEST_LEVEL_PLAYED){
-            if (!gameBaseNeedsRefresh) {
-                gameBaseNeedsRefresh = true;
-                refreshGameState();
-            }
+            // Update UI
+            loadCachedGame();
             // Save or delete save as necessary
             if (resultCode == Activity.RESULT_OK) {
                 if (intent.hasExtra(GameActivity.SAVED_GAME)) {
@@ -1124,9 +1124,12 @@ public class MainActivity extends AppCompatActivity implements
                             SharedPreferences.Editor editor = prefs.edit();
                             editor.putString(GAME_FILE_NAME, gameFileName);
                             editor.apply();
-                            if (s.getLastModifiedTimestamp() > gameBase.timeStamp())
+                            if (s.getLastModifiedTimestamp() > gameBase.timeStamp()) {
                                 loadGameState(gameFileName);
+                            }
                             Log.d(LOG_TAG, "Game base downloaded");
+                            Log.d(LOG_TAG, "Google timestamp: " + Utils.getDate(s.getLastModifiedTimestamp(), "MM/dd/yy hh:mm:ss"));
+                            Log.d(LOG_TAG, "Cache timestamp: " + Utils.getDate(gameBase.timeStamp(), "MM/dd/yy hh:mm:ss"));
                         }
                     }
                     loadSnapshotsResult.getSnapshots().release();
@@ -1156,7 +1159,6 @@ public class MainActivity extends AppCompatActivity implements
                         activityListAdapter.addItems(gameBase.getActivityItems());
                         activityListAdapter.sort();
                         gameBaseNeedsRefresh = false;
-                        isGameBaseRefreshing = false;
                         consumePurchases();
                         cacheGame();
                         Log.d(LOG_TAG, "Game refreshed from Google");
@@ -1190,7 +1192,7 @@ public class MainActivity extends AppCompatActivity implements
     private ArithmosGameBase gameBase;
     private File gameCacheFile;
     private boolean retrySaveGameBase = false, retryGameReset = false;
-    private boolean gameBaseNeedsRefresh = true, isGameBaseRefreshing = false;
+    private boolean gameBaseNeedsRefresh = true;
     private ChallengeListAdapter challengeListAdapter;
 
     public void ChallengesButtonClick(View v){
@@ -1360,9 +1362,13 @@ public class MainActivity extends AppCompatActivity implements
                 mInflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                 convertView = mInflater.inflate(groupResourceId, null);
             }
-            TextView textView = (TextView)convertView.findViewById(R.id.textView1);
+            TextView textView1 = (TextView)convertView.findViewById(R.id.textView1);
             String challengeName = ArithmosGameBase.challenges[position];
-            textView.setText(ArithmosGameBase.getChallengeDisplayNameResId(challengeName));
+            textView1.setText(ArithmosGameBase.getChallengeDisplayNameResId(challengeName));
+
+            TextView textView2 = (TextView)convertView.findViewById(R.id.textView2);
+            String numLevels = getString(R.string.x_of_x_levels, gameBase.getNumLevelsPassed(challengeName), ArithmosGameBase.getLevelXmlIds(challengeName).length);
+            textView2.setText(numLevels);
             return convertView;
         }
     }

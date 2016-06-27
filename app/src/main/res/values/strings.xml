@@ -32,7 +32,7 @@
     <string name="sign_out_underlined"><u>Sign out</u></string>
     <string name="reset_game_message">Reset challenge progress, activity history, and saved games.  Jewels and specials will be saved.</string>
     <string name="reset_game_progress_message">Resetting game &#8230;</string>
-    <string name="more_jewels_text">Get more jewels and other stuff</string>
+    <string name="more_jewels_text">Get more stuff</string>
     <string name="use_google_play_prompt">Many features of this game require the use of Google Play Games.  Without signing in
         you will not be able to play match games, track achievements, view leaderboards, or sync your game across devices.
         \nAttempt to sign-in again?</string>
@@ -58,6 +58,9 @@
     <string name="remove">Remove</string>
     <string name="leave">Leave</string>
 
+    <!-- Challenge list string -->
+    <string name="x_of_x_levels">%1$d of %2$d levels passed</string>
+
     <!-- Match update listener strings -->
     <string name="match_turn_taken_alert">%1$s took a turn</string>
     <string name="match_invitation_alert">%1$s invited you to play</string>
@@ -76,7 +79,7 @@
     <string name="xp">%d XP</string>
 
     <!-- In-app billing strings -->
-    <string name="iab_popup_title">Arithmos Store</string>
+    <string name="iab_popup_title">In-app Store</string>
     <string name="buy">Buy</string>
     <string name="owned">Owned</string>
     <string name="jewel_purchase">%d jewels added to inventory</string>
@@ -108,6 +111,7 @@
         <item quantity="one">%d more number to pass</item>
         <item quantity="other">%d more numbers to pass</item>
     </plurals>
+    <string name="no_more_moves">No more possible plays</string>
 
     <!-- Level info strings -->
     <string name="no_time_limit">No time limit</string>
@@ -134,6 +138,10 @@
     <plurals name="finish_turn_prompt">
         <item quantity="one">You still have %d move remaining</item>
         <item quantity="other">You still have %d moves remaining</item>
+    </plurals>
+    <plurals name="x_moves_remaining">
+        <item quantity="one">%d move remaining</item>
+        <item quantity="other">%d moves remaining</item>
     </plurals>
     <string name="submit_turn">Submit</string>
     <string name="forfeit_match">Forfeit match</string>
@@ -171,7 +179,7 @@
     <!-- Game, Challenge, and Level Strings -->
     <string name="level_locked">Locked</string>
     <string name="challenge_name_crazy_eights">Crazy Eights</string>
-    <string name="challenge_name_easy_as_123">Easy as ABC</string>
+    <string name="challenge_name_easy_as_123">Easy as 123</string>
     <string name="challenge_name_lucky_7">Lucky 7</string>
 
     <string name="level_4x4">4x4</string>

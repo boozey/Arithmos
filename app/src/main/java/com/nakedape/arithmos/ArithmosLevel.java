@@ -8,6 +8,7 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * Created by Nathan on 5/7/2016.
@@ -72,19 +73,16 @@ public class ArithmosLevel {
     private String leaderboardId;
     public String getLeaderboardId() { return leaderboardId; }
 
-    private ArrayList<String> bonuses;
-    public String[] getBonuses(){
-        String[] result = new String[bonuses.size()];
-        for (int i = 0; i < bonuses.size(); i++)
-            result[i] = bonuses.get(i);
-        return result;
+    private HashMap<String, Integer> bonuses;
+    public HashMap<String, Integer> getBonuses(){
+        return bonuses;
     }
 
     private ArrayList<String[]> runs;
     public ArrayList<String[]> getRuns() {return runs;}
 
     public ArithmosLevel(Context context, int levelResId){
-        bonuses = new ArrayList<>(5);
+        bonuses = new HashMap<>(9);
         runs = new ArrayList<>(5);
         XmlResourceParser parser = context.getResources().getXml(levelResId);
         // Process xml level data
@@ -196,8 +194,7 @@ public class ArithmosLevel {
         }
         parser.next();
         int count = Integer.valueOf(parser.getText());
-        for (int i = 0; i < count; i++)
-            bonuses.add(type);
+        bonuses.put(type, count);
     }
     private void parseStarLevelsTag(XmlResourceParser parser) throws XmlPullParserException, IOException {
         parser.next();

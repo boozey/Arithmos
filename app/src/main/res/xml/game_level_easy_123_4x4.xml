@@ -1,16 +1,18 @@
 <Level challenge_name="EASY_123"
     challenge_level="0"
-    gridsize="4">
-    <GridBaseNumbers>1, 2, 2, 3, 3</GridBaseNumbers>
-    <GridSpecialNumbers>5, 10, 15</GridSpecialNumbers>
-    <GoalNumbers>5, 12, 15, 20, 30</GoalNumbers>
-    <StarLevels>1000, 2000, 4000</StarLevels>
+    gridsize="4"
+    goal_type="single">
+    <GridBaseNumbers>2, 2, 3, 3</GridBaseNumbers>
+    <GridSpecialNumbers>1</GridSpecialNumbers>
+    <GoalNumbers count="5">3, 4, 6, 12, 15, 18, 20</GoalNumbers>
+    <StarLevels>1500, 2000, 3000</StarLevels>
     <!-- 33 Bonus spaces available -->
     <Run>2, bonus_lock*, 3, ?, 2</Run> <!-- 12 -->
-    <Run>15, ?, 3, ?, 6</Run> <!-- 30 -->
-    <Run>10, ?, 2</Run> <!-- 5 -->
-    <Run>3, ?, 5</Run> <!-- 15 -->
-    <Run>2, ?, 10</Run> <!-- 20 -->
-    <Bonus name="balloons">13</Bonus>
-    <Bonus name="red_jewel">19</Bonus>
+    <Run>2, ?, 2, ?, 3, ?, 2</Run> <!-- 20* -->
+    <Run>3, ?, 3, bonus_red_jewel, 2</Run> <!-- 18 -->
+    <Run>3, ?, 2</Run> <!-- 6 -->
+    <Run>3, ?, 1</Run> <!-- 3, 4 -->
+    <Bonus name="bananas">13</Bonus>
+    <Bonus name="cherries">13</Bonus>
+    <Bonus name="red_jewel">5</Bonus>
 </Level>

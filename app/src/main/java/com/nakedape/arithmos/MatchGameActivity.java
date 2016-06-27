@@ -50,6 +50,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 
 public class MatchGameActivity extends AppCompatActivity implements
@@ -288,8 +289,8 @@ public class MatchGameActivity extends AppCompatActivity implements
         TextView p2ScoreView = (TextView)rootLayout.findViewById(R.id.p2_score_textview);
         p1NameView.setText(match.getParticipant(game.PLAYER1).getDisplayName());
         p2NameView.setText(match.getParticipant(game.PLAYER2).getDisplayName());
-        p1ScoreView.setText(String.valueOf(game.getScore(game.PLAYER1)));
-        p2ScoreView.setText(String.valueOf(game.getScore(game.PLAYER2)));
+        p1ScoreView.setText(NumberFormat.getIntegerInstance().format(game.getScore(game.PLAYER1)));
+        p2ScoreView.setText(NumberFormat.getIntegerInstance().format(game.getScore(game.PLAYER2)));
         prevScore = game.getScore(game.getCurrentPlayer());
 
         if (game.getCurrentPlayer().equals(game.PLAYER1))
@@ -302,10 +303,10 @@ public class MatchGameActivity extends AppCompatActivity implements
 
             // Show score and 301 total together for other player
             if (game.getCurrentPlayer().equals(game.PLAYER1)){
-                p2ScoreView.setText(getString(R.string.score_slash_301, String.valueOf(game.getScore(game.PLAYER2)),
+                p2ScoreView.setText(getString(R.string.score_slash_301, NumberFormat.getIntegerInstance().format(game.getScore(game.PLAYER2)),
                         String.valueOf(game.get301Total(game.PLAYER2))));
             } else {
-                p1ScoreView.setText(getString(R.string.score_slash_301, String.valueOf(game.getScore(game.PLAYER1)),
+                p1ScoreView.setText(getString(R.string.score_slash_301, NumberFormat.getIntegerInstance().format(game.getScore(game.PLAYER1)),
                         String.valueOf(game.get301Total(game.PLAYER1))));
             }
 
@@ -456,13 +457,13 @@ public class MatchGameActivity extends AppCompatActivity implements
         }
 
         TextView oneStarView = (TextView)layout.findViewById(R.id.one_star);
-        oneStarView.setText(String.valueOf(game.getPointsForStar(1)));
+        oneStarView.setText(NumberFormat.getIntegerInstance().format(game.getPointsForStar(1)));
 
         TextView twoStarView = (TextView)layout.findViewById(R.id.two_star);
-        twoStarView.setText(String.valueOf(game.getPointsForStar(2)));
+        twoStarView.setText(NumberFormat.getIntegerInstance().format(game.getPointsForStar(2)));
 
         TextView threeStarView = (TextView)layout.findViewById(R.id.three_star);
-        threeStarView.setText(String.valueOf(game.getPointsForStar(3)));
+        threeStarView.setText(NumberFormat.getIntegerInstance().format(game.getPointsForStar(3)));
 
         TextView timeView = (TextView)layout.findViewById(R.id.time_limit_text);
         timeView.setVisibility(View.GONE);
@@ -929,7 +930,7 @@ public class MatchGameActivity extends AppCompatActivity implements
         winnerNameView.setText(match.getParticipant(winner).getDisplayName());
 
         TextView winnerScoreView = (TextView) layout.findViewById(R.id.winner_score_textview);
-        winnerScoreView.setText(String.valueOf(game.getScore(winner)));
+        winnerScoreView.setText(NumberFormat.getIntegerInstance().format(game.getScore(winner)));
 
         TextView winnerJewelView = (TextView) layout.findViewById(R.id.winner_jewel_count);
         winnerJewelView.setText(getString(R.string.number_after_x, game.getBonusCount(winner, ArithmosLevel.BONUS_RED_JEWEL)));
@@ -945,7 +946,7 @@ public class MatchGameActivity extends AppCompatActivity implements
         loserNameView.setText(match.getParticipant(loser).getDisplayName());
 
         TextView loserScoreView = (TextView) layout.findViewById(R.id.loser_score_textview);
-        loserScoreView.setText(String.valueOf(game.getScore(loser)));
+        loserScoreView.setText(NumberFormat.getIntegerInstance().format(game.getScore(loser)));
 
         TextView loserJewelView = (TextView) layout.findViewById(R.id.loser_jewel_count);
         loserJewelView.setText(getString(R.string.number_after_x, game.getBonusCount(loser, ArithmosLevel.BONUS_RED_JEWEL)));
@@ -1136,6 +1137,8 @@ public class MatchGameActivity extends AppCompatActivity implements
             cacheMatch();
             if ((playCount == 3 || game.getGoalType() == ArithmosLevel.GOAL_301) && !result.noMorePossiblePlays){
                 showEndTurnPopup();
+            } else {
+                showQuickPopup(getResources().getQuantityString(R.plurals.x_moves_remaining, 3 - playCount, 3 - playCount));
             }
         }
         if (game.isEvalLeftToRight()) {
@@ -1667,5 +1670,51 @@ public class MatchGameActivity extends AppCompatActivity implements
     public void onConnectionSuspended(int i) {
         // Attempt to reconnect
         mGoogleApiClient.connect();
+    }
+
+
+    // Utility methods
+    private void showQuickPopup(int stringResId){
+        showQuickPopup(getString(stringResId));
+    }
+    private void showQuickPopup(String text){
+        final View layout = getLayoutInflater().inflate(R.layout.quick_popup, null);
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        params.addRule(RelativeLayout.CENTER_HORIZONTAL);
+        layout.setLayoutParams(params);
+        layout.setVisibility(View.INVISIBLE);
+
+        TextView textView = (TextView)layout.findViewById(R.id.textView1);
+        textView.setText(text);
+
+        rootLayout.addView(layout);
+        layout.post(new Runnable() {
+            @Override
+            public void run() {
+                AnimatorSet set = Animations.slideInDownAndOutUp(layout, 3000, animStartDelay + gameBoard.getAnimDelay(), layout.getMeasuredHeight());
+                set.addListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        rootLayout.removeView(layout);
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+
+                    }
+                });
+                set.start();
+            }
+        });
     }
 }

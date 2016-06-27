@@ -6,13 +6,13 @@
     <GridSpecialNumbers>7, 16, 64, 48</GridSpecialNumbers>
     <GoalNumbers count="4">8, 10, 14, 16, 24, 32, 48, 64</GoalNumbers>
     <!-- 33 Bonus locations -->
-    <Run>5, bonus_red_jewel, 6, bonus_lock+, 2</Run> <!-- 32 -->
-    <Run>5, bonus_lock*, 5, bonus_red_jewel, 1</Run> <!-- 24 -->
+    <Run>5, bonus_red_jewel, 6, bonus_red_jewel, 2</Run> <!-- 32 -->
+    <Run>5, bonus_red_jewel, 5, bonus_red_jewel, 1</Run> <!-- 24 -->
     <Run>64, bonus_red_jewel, 8</Run> <!-- 8 -->
     <Run>48, bonus_red_jewel, 3</Run> <!-- 16 -->
     <Run>8, bonus_red_jewel, 6</Run> <!-- 48 -->
     <Run>48, bonus_red_jewel, 2</Run> <!-- 24 -->
     <Run>2, bonus_red_jewel, 4</Run> <!-- 8 -->
-    <StarLevels>1000, 1500, 2000</StarLevels>
+    <StarLevels>1000, 1500, 2100</StarLevels>
     <Bonus name="apple">24</Bonus>
 </Level>

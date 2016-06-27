@@ -2,16 +2,17 @@
     challenge_level="1"
     gridsize="4"
     time_limit="180">
-    <GridBaseNumbers>1, 2, 2, 3, 3</GridBaseNumbers>
-    <GridSpecialNumbers>5, 10, 15</GridSpecialNumbers>
-    <GoalNumbers>0, 6, 10, 12, 20, 30</GoalNumbers>
-    <StarLevels>1000, 2000, 4000</StarLevels>
+    <GridBaseNumbers>2, 2, 3, 3</GridBaseNumbers>
+    <GridSpecialNumbers>1</GridSpecialNumbers>
+    <GoalNumbers>4, 6, 10, 12, 20, 30</GoalNumbers>
+    <StarLevels>1500, 3000, 4500</StarLevels>
     <!-- 33 Bonus spaces available -->
     <Run>2, bonus_lock*, 3, ?, 2</Run> <!-- 12 -->
     <Run>15, ?, 3, ?, 6</Run> <!-- 30 -->
     <Run>10, ?, 2</Run> <!-- 5 -->
     <Run>3, ?, 5</Run> <!-- 15 -->
     <Run>2, ?, 10</Run> <!-- 20 -->
-    <Bonus name="balloons">13</Bonus>
-    <Bonus name="red_jewel">19</Bonus>
+    <Bonus name="bananas">14</Bonus>
+    <Bonus name="cherries">13</Bonus>
+    <Bonus name="red_jewel">5</Bonus>
 </Level>

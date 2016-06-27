@@ -12,6 +12,8 @@ import android.view.animation.DecelerateInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.TextView;
 
+import java.text.NumberFormat;
+
 /**
  * Created by Nathan on 5/14/2016.
  */
@@ -184,7 +186,7 @@ public class Animations {
         countUp.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
-                textView.setText(String.valueOf((int) animation.getAnimatedValue()));
+                textView.setText(NumberFormat.getIntegerInstance().format((int) animation.getAnimatedValue()));
             }
         });
         countUp.start();

@@ -87,7 +87,8 @@
             android:id="@+id/sign_in_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"/>
+            android:layout_centerHorizontal="true"
+            android:visibility="gone"/>
     </RelativeLayout>
 
     <LinearLayout android:id="@+id/button_bar_layout"
@@ -189,6 +190,7 @@
         android:layout_marginTop="4dp"
         android:layout_above="@id/adView"
         android:layout_below="@id/button_bar_layout"
+        android:groupIndicator="@color/window_background"
         android:visibility="gone"/>
     <ListView android:id="@+id/special_store_listview"
         android:layout_width="match_parent"

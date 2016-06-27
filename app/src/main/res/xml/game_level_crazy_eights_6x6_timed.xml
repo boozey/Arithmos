@@ -7,11 +7,14 @@
     <GridSpecialNumbers>7, 16, 64, 48</GridSpecialNumbers>
     <GoalNumbers count="10">2, 4, 8, 16, 24, 32, 48, 64, </GoalNumbers>
     <!-- 85 bonus locations -->
-    <Run>3, bonus_lock*, 8, bonus_balloons, 2, bonus_lock/, 1</Run>
+    <Run>8, bonus_red_jewel, 5, ?, 3, ?, 8</Run> <!-- 64 -->
+    <Run>3, bonus_lock*, 8, bonus_red_jewel, 2, bonus_lock/, 1</Run>
     <Run>16, ?, 8, ?, 2, ?, 4</Run>
     <Run>5, bonus_lock*, 5, bonus_balloons, 1</Run>
+    <Run>8, bonus_red_jewel, 7, bonus_red_jewel, 8</Run>
     <StarLevels>3000, 8000, 14000</StarLevels>
-    <Bonus name="balloons">50</Bonus>
-    <Bonus name="red_jewel">20</Bonus>
+    <Bonus name="apple">50</Bonus>
+    <Bonus name="bananas">8</Bonus>
+    <Bonus name="bomb">10</Bonus>
     <Bonus name="lock*">10</Bonus>
 </Level>

@@ -9,8 +9,10 @@
     <Run>16, ?, 8, ?, 2, ?, 4</Run>
     <Run>5, bonus_lock*, 5, bonus_balloons, 1</Run>
     <StarLevels>5000, 8000, 12000</StarLevels>
-    <Bonus name="balloons">20</Bonus>
-    <Bonus name="red_jewel">10</Bonus>
-    <Bonus name="lock*">5</Bonus>
+    <Bonus name="balloons">5</Bonus>
+    <Bonus name="red_jewel">8</Bonus>
+    <Bonus name="apple">60</Bonus>
+    <Bonus name="bananas">20</Bonus>
+    <Bonus name="lock-">2</Bonus>
     <Bonus name="bomb">10</Bonus>
 </Level>

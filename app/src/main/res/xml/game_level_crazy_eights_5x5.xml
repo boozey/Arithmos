@@ -17,8 +17,6 @@
     <Run>8, ?, 2</Run> <!-- 4 -->
     <Run>16, ?, 8</Run> <!-- 8 -->
     <StarLevels>4000, 5000, 6000</StarLevels>
-    <Bonus name="apple">20</Bonus>
-    <Bonus name="bananas">20</Bonus>
-    <Bonus name="balloons">1</Bonus>
-    <Bonus name="red_jewel">10</Bonus>
+    <Bonus name="apple">30</Bonus>
+    <Bonus name="bananas">21</Bonus>
 </Level>

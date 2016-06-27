@@ -179,7 +179,7 @@ public class GoalView extends View {
         invalidate();
     }
     public void startGoalAnimation(){
-        if (game.getGoalType() != ArithmosLevel.GOAL_SINGLE_NUM) return;
+        if (game == null || game.getGoalType() != ArithmosLevel.GOAL_SINGLE_NUM) return;
 
         if (stopAnimation) {
             stopAnimation = false;

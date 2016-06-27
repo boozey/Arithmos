@@ -68,23 +68,6 @@ public class ArithmosGame {
     transient private int goalIndex = 0;
 
     public ArithmosGame(){}
-    public ArithmosGame(int size, int goalMin, int goalMax, int goalType){
-        gameBoard = new String[2*size - 1][2*size - 1];
-        this.goalType = goalType;
-        switch (goalType){
-            case ArithmosLevel.GOAL_SINGLE_NUM:
-            case ArithmosLevel.GOAL_MULT_NUM:
-                setupRandomBoard(goalMin, goalMax);
-                break;
-            case ArithmosLevel.GOAL_MULTIPLES:
-                break;
-            case ArithmosLevel.GOAL_301:
-                break;
-        }
-        currentPlayer = PLAYER1;
-        p1Runs = new ArrayList<>();
-        p2Runs = new ArrayList<>();
-    }
     public ArithmosGame(ArithmosLevel level){
         goalType = level.getGoalType();
         goalNumbers = level.getGoalNumbers();
@@ -135,161 +118,171 @@ public class ArithmosGame {
     }
 
     // Initialization
-    private void setupBoard(int size, int[] numberList, int[] specialNumberList, String[] bonuses, ArrayList<String[]> runs){
+    private void setupBoard(int size, int[] numberList, int[] specialNumberList, HashMap<String, Integer> bonuses, ArrayList<String[]> runs){
         gameBoard = new String[2*size - 1][2*size - 1];
+        class Helper {
+            Random random = new Random();
+            char[][] orders = {{'v', 'h', 'l', 'r'}, {'v', 'h', 'r', 'l'}, {'v', 'l', 'h', 'r'},
+                    {'v', 'l', 'r', 'h'}, {'v', 'r', 'h', 'l'}, {'v', 'r', 'l', 'h'},
+                    {'h', 'l', 'v', 'r'}, {'h', 'l', 'r', 'v'}, {'h', 'r', 'v', 'l'},
+                    {'h', 'r', 'l', 'v'}, {'h', 'v', 'l', 'r'}, {'h', 'v', 'r', 'l'},
+                    {'l', 'v', 'h', 'r'}, {'l', 'v', 'r', 'h'}, {'l', 'r', 'v', 'h'},
+                    {'l', 'r', 'h', 'v'}, {'l', 'h', 'v', 'r'}, {'l', 'h', 'r', 'v'},
+                    {'r', 'h', 'v', 'l'}, {'r', 'h', 'l', 'v'}, {'r', 'v', 'l', 'h'},
+                    {'r', 'v', 'h', 'l'}, {'r', 'l', 'v', 'h'}, {'r', 'l', 'h', 'v'}};
+
+            private void findPlaceForRun(String[] run){
+                char[] order = orders[random.nextInt(orders.length)];
+
+                boolean placed = false;
+                for (int r = 0; r < gameBoard.length; r += 2)
+                    for (int c = 0; c < gameBoard[r].length; c += 2) {
+                        if (getPiece(r, c) == null){
+                            int i = 0;
+                            do {
+                                switch (order[i]){
+                                    case 'h':
+                                        placed = checkHoriz(r, c, run);
+                                        break;
+                                    case 'v':
+                                        placed = checkVert(r, c, run);
+                                        break;
+                                    case 'r':
+                                        placed = checkDiagRight(r, c, run);
+                                        break;
+                                    case 'l':
+                                        placed = checkDiagLeft(r, c, run);
+                                        break;
+                                }
+                                i++;
+                            } while (i < order.length && !placed);
+                            if (placed) return;
+                        }
+                    }
+            }
+            private boolean checkHoriz(int r, int c, String[] run){
+                int i = 0;
+                do {
+                    i++;
+                } while (c + i < gameBoard[0].length && getPiece(r, c + i) == null && i < run.length);
+                if (i == run.length) {
+                    placeHoriz(run, r, c);
+                    return true;
+                }
+                else return false;
+            }
+            private void placeHoriz(String[] run, int r, int c){
+                if (random.nextDouble() < 0.5)
+                for (int i = 0; i < run.length && c + i < gameBoard[r].length; i++)
+                    gameBoard[r][c + i] = run[i] + SEPARATOR + UNDEF;
+                else
+                    for (int i = 0; i < run.length && c + i < gameBoard[r].length; i++)
+                        gameBoard[r][c + i] = run[run.length - 1 - i] + SEPARATOR + UNDEF;
+            }
+            private boolean checkVert(int r, int c, String[] run){
+                int i = 0;
+                do {
+                    i++;
+                } while (r + i < gameBoard.length && getPiece(r + i, c) == null && i < run.length);
+                if (i == run.length) {
+                    placeVert(run, r, c);
+                    return true;
+                }
+                else return false;
+            }
+            private void placeVert(String[] run, int r, int c){
+                if (random.nextDouble() < 0.5)
+                for (int i = 0; i < run.length && r + i < gameBoard.length; i++)
+                    gameBoard[r + i][c] = run[i] + SEPARATOR + UNDEF;
+                else
+                    for (int i = 0; i < run.length && r + i < gameBoard.length; i++)
+                        gameBoard[r + i][c] = run[run.length - 1 - i] + SEPARATOR + UNDEF;
+            }
+            private boolean checkDiagRight(int r, int c, String[] run){
+                int i = 0;
+                do {
+                    i++;
+                } while (r + i < gameBoard.length && c + i < gameBoard[0].length && getPiece(r + i, c + i) == null && i < run.length);
+                if (i == run.length) {
+                    placeDiagRight(run, r, c);
+                    return true;
+                }
+                else return false;
+            }
+            private void placeDiagRight(String[] run, int r, int c){
+                if (random.nextDouble() < 0.5)
+                for (int i = 0; i < run.length && r + i < gameBoard.length && c + i < gameBoard[0].length; i++)
+                    gameBoard[r + i][c + i] = run[i] + SEPARATOR + UNDEF;
+                else
+                    for (int i = 0; i < run.length && r + i < gameBoard.length && c + i < gameBoard[0].length; i++)
+                        gameBoard[r + i][c + i] = run[run.length - 1 - i] + SEPARATOR + UNDEF;
+            }
+            private boolean checkDiagLeft(int r, int c, String[] run){
+                int i = 0;
+                do {
+                    i++;
+                } while (r + i < gameBoard.length && c - i >= 0 && getPiece(r + i, c - i) == null && i < run.length);
+                if (i == run.length) {
+                    placeDiagLeft(run, r, c);
+                    return true;
+                }
+                else return false;
+            }
+            private void placeDiagLeft(String[] run, int r, int c){
+                if (random.nextDouble() < 0.5)
+                for (int i = 0; i < run.length && r + i < gameBoard.length && c - i >= 0; i++)
+                    gameBoard[r + i][c - i] = run[i] + SEPARATOR + UNDEF;
+                else
+                    for (int i = 0; i < run.length && r + i < gameBoard.length && c - i >= 0; i++)
+                        gameBoard[r + i][c - i] = run[run.length - 1 - i] + SEPARATOR + UNDEF;
+            }
+        }
+        Helper mHelper = new Helper();
         Random random = new Random();
         int num;
 
         // Place pre-defined runs
         if (runs != null){
             for (String[] run : runs){
-                findPlaceForRun(run);
+                mHelper.findPlaceForRun(run);
             }
         }
 
-        // Add bonuses
-        for (String s : bonuses){
-            int r, c;
-            do {
-                r = random.nextInt(gameBoard.length);
-                c = random.nextInt(gameBoard.length);
-            } while (r % 2 == 0 && c % 2 == 0 || (getPiece(r, c) != null && !getPiece(r, c).equals(UNDEF)));
-            gameBoard[r][c] = s + SEPARATOR + UNDEF;
+        // Determine total bonus count and probability weights
+        int bonusTotalWeight = 0;
+        int[] bonusWeights = new int[bonuses.size()];
+        String[] bonusStrings = new String[bonuses.size()];
+        int index = 0;
+        for (String s : bonuses.keySet()){
+            bonusStrings[index] = s;
+            bonusTotalWeight += bonuses.get(s);
+            bonusWeights[index] = bonusTotalWeight;
+            index++;
         }
 
-        // Fill board with numbers
+        // Fill empty places on board with randomly selected numbers and bonuses
         for (int r = 0; r < gameBoard.length; r++)
             for (int c = 0; c <gameBoard[0].length; c++){
                 if (r % 2 == 0 && c % 2 == 0) {
+                    // Even row & col corresponds to a number
                     if (random.nextInt(100) > 80) {
                         num = specialNumberList[random.nextInt(specialNumberList.length)];
                     } else {
                         num = numberList[random.nextInt(numberList.length)];
                     }
                     if (gameBoard[r][c] == null) gameBoard[r][c] = String.valueOf(num) + SEPARATOR + UNDEF;
-                } else if (gameBoard[r][c] == null){
-                    gameBoard[r][c] = UNDEF + SEPARATOR + UNDEF;
-                }
-            }
-
-    }
-    private void findPlaceForRun(String[] run){
-        Random random = new Random();
-        char[][] orders = {{'v', 'h', 'l', 'r'}, {'v', 'h', 'r', 'l'}, {'v', 'l', 'h', 'r'},
-                {'v', 'l', 'r', 'h'}, {'v', 'r', 'h', 'l'}, {'v', 'r', 'l', 'h'},
-                {'h', 'l', 'v', 'r'}, {'h', 'l', 'r', 'v'}, {'h', 'r', 'v', 'l'},
-                {'h', 'r', 'l', 'v'}, {'h', 'v', 'l', 'r'}, {'h', 'v', 'r', 'l'},
-                {'l', 'v', 'h', 'r'}, {'l', 'v', 'r', 'h'}, {'l', 'r', 'v', 'h'},
-                {'l', 'r', 'h', 'v'}, {'l', 'h', 'v', 'r'}, {'l', 'h', 'r', 'v'},
-                {'r', 'h', 'v', 'l'}, {'r', 'h', 'l', 'v'}, {'r', 'v', 'l', 'h'},
-                {'r', 'v', 'h', 'l'}, {'r', 'l', 'v', 'h'}, {'r', 'l', 'h', 'v'}};
-        char[] order = orders[random.nextInt(orders.length)];
-
-        boolean placed = false;
-        for (int r = 0; r < gameBoard.length; r += 2)
-            for (int c = 0; c < gameBoard[r].length; c += 2) {
-                if (getPiece(r, c) == null){
-                    int i = 0;
-                    do {
-                        switch (order[i]){
-                            case 'h':
-                                placed = checkHoriz(r, c, run);
-                                break;
-                            case 'v':
-                                placed = checkVert(r, c, run);
-                                break;
-                            case 'r':
-                                placed = checkDiagRight(r, c, run);
-                                break;
-                            case 'l':
-                                placed = checkDiagLeft(r, c, run);
-                                break;
+                } else if (gameBoard[r][c] == null || getPiece(r, c).equals(UNDEF)){
+                    // Odd row or col corresponds to a bonus space
+                    int p = random.nextInt(bonusTotalWeight);
+                    for (int i = 0; i < bonusStrings.length; i++) {
+                        if (p <= bonusWeights[i]) {
+                            gameBoard[r][c] = bonusStrings[i] + SEPARATOR + UNDEF;
+                            break;
                         }
-                        i++;
-                    } while (i < order.length && !placed);
-                    if (placed) return;
+                    }
                 }
             }
-    }
-    private boolean checkHoriz(int r, int c, String[] run){
-        int i = 0;
-        do {
-            i++;
-        } while (c + i < gameBoard[0].length && getPiece(r, c + i) == null && i < run.length);
-        if (i == run.length) {
-            placeHoriz(run, r, c);
-            return true;
-        }
-        else return false;
-    }
-    private void placeHoriz(String[] run, int r, int c){
-        for (int i = 0; i < run.length && c + i < gameBoard[r].length; i++)
-            gameBoard[r][c + i] = run[i] + SEPARATOR + UNDEF;
-    }
-    private boolean checkVert(int r, int c, String[] run){
-        int i = 0;
-        do {
-            i++;
-        } while (r + i < gameBoard.length && getPiece(r + i, c) == null && i < run.length);
-        if (i == run.length) {
-            placeVert(run, r, c);
-            return true;
-        }
-        else return false;
-    }
-    private void placeVert(String[] run, int r, int c){
-        for (int i = 0; i < run.length && r + i < gameBoard.length; i++)
-            gameBoard[r + i][c] = run[i] + SEPARATOR + UNDEF;
-    }
-    private boolean checkDiagRight(int r, int c, String[] run){
-        int i = 0;
-        do {
-            i++;
-        } while (r + i < gameBoard.length && c + i < gameBoard[0].length && getPiece(r + i, c + i) == null && i < run.length);
-        if (i == run.length) {
-            placeDiagRight(run, r, c);
-            return true;
-        }
-        else return false;
-    }
-    private void placeDiagRight(String[] run, int r, int c){
-        for (int i = 0; i < run.length && r + i < gameBoard.length && c + i < gameBoard[0].length; i++)
-            gameBoard[r + i][c + i] = run[i] + SEPARATOR + UNDEF;
-    }
-    private boolean checkDiagLeft(int r, int c, String[] run){
-        int i = 0;
-        do {
-            i++;
-        } while (r + i < gameBoard.length && c - i >= 0 && getPiece(r + i, c - i) == null && i < run.length);
-        if (i == run.length) {
-            placeDiagLeft(run, r, c);
-            return true;
-        }
-        else return false;
-    }
-    private void placeDiagLeft(String[] run, int r, int c){
-        for (int i = 0; i < run.length && r + i < gameBoard.length && c - i >= 0; i++)
-            gameBoard[r + i][c - i] = run[i] + SEPARATOR + UNDEF;
-    }
 
-    private void setupRandomBoard(int goalMin, int goalMax){
-        Random r = new Random();
-        goalNumbers = new int[10];
-        for (int i = 0; i < goalNumbers.length; i++){
-            goalNumbers[i] = r.nextInt(goalMax - goalMin) + goalMin;
-        }
-        initializeGoalList(goalNumbers);
-
-        int num;
-        for (int i = 0; i < gameBoard.length; i++)
-            for (int j = 0; j < gameBoard[i].length; j++){
-                if (r.nextInt(100) > 80){
-                    num = r.nextInt(40) + 1;
-                } else {
-                    num = r.nextInt(10);
-                }
-                gameBoard[i][j] = i % 2 == 0 && j % 2 == 0 ? String.valueOf(num + 1) + SEPARATOR + UNDEF : UNDEF + SEPARATOR + UNDEF;
-            }
     }
     public String[][] getGameBoard(){
         return gameBoard;
@@ -379,18 +372,6 @@ public class ArithmosGame {
         }
         p1GoalsWon = new ArrayList<>();
         p2GoalsWon = new ArrayList<>();
-    }
-    public int get301Total() {
-        if (currentPlayer.equals(PLAYER1))
-            return p1_301Total;
-        else
-            return p2_301Total;
-    }
-    private void addTo301Total(int value){
-        if (currentPlayer.equals(PLAYER1))
-            p1_301Total += value;
-        else
-            p2_301Total += value;
     }
     public GameResult skipGoalNumber(){
         GameResult result = new GameResult(GameResult.SUCCESS);
@@ -539,12 +520,6 @@ public class ArithmosGame {
         if (playerId.equals(PLAYER1))
             return p1Message;
         else return p2Message;
-    }
-    public int get301Total(String player){
-        if (player.equals(PLAYER1))
-            return p1_301Total;
-        else
-            return p2_301Total;
     }
     public String getWinner(){
         if (getScore(PLAYER1) > getScore(PLAYER2))
@@ -960,7 +935,6 @@ public class ArithmosGame {
                 return false;
         }
     }
-    public boolean hasReached301() {return reached301;}
     public static double eval(final String str) {
         return new Object() {
             int pos = -1, ch;
@@ -1186,10 +1160,36 @@ public class ArithmosGame {
                 }
             case ArithmosLevel.GOAL_301:
                 if (value < 0) return false;
-                return get301Total() + (int)value <= 301;
+                return get301Total() + (int)value <= 301 && (int)value > 0;
             default:
                 return false;
         }
+    }
+
+    // 301
+    public boolean hasReached301() {
+        if (!reached301){
+            reached301 = get301Total() == 301;
+        }
+        return reached301;
+    }
+    public int get301Total(String player){
+        if (player.equals(PLAYER1))
+            return p1_301Total;
+        else
+            return p2_301Total;
+    }
+    public int get301Total() {
+        if (currentPlayer.equals(PLAYER1))
+            return p1_301Total;
+        else
+            return p2_301Total;
+    }
+    private void addTo301Total(int value){
+        if (currentPlayer.equals(PLAYER1))
+            p1_301Total += value;
+        else
+            p2_301Total += value;
     }
 
     // Scoring
@@ -1327,7 +1327,7 @@ public class ArithmosGame {
 
 
     // Serialization
-    transient private static final int serializationVersion = 6;
+    transient private static final int serializationVersion = 1;
 
     public byte[] getSaveGameData(){
         ByteArrayOutputStream bos = null;
@@ -1421,22 +1421,13 @@ public class ArithmosGame {
             p1GoalsWon = new ArrayList<>();
             p2GoalsWon = new ArrayList<>();
             numGoalsToWin = remainingGoals != null ? remainingGoals.size() : 0;
-        }
-        if (version >= 2){
             p1Message = (String)in.readObject();
             p2Message = (String)in.readObject();
-        }
-        if (version >= 3){
             timeLimit = in.readLong();
-        }
-        if (version >= 4){
             elapsedTime = in.readLong();
             jewelCount = in.readInt();
-        }
-        if (version >= 5){
             p1GoalsWon = (ArrayList<String>)in.readObject();
             p2GoalsWon = (ArrayList<String>)in.readObject();
-        } if (version >= 6){
             numGoalsToWin = in.readInt();
         }
     }

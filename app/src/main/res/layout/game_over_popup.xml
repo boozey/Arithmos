@@ -29,18 +29,20 @@
             android:textSize="@dimen/game_popup_xlarge_text_size"
             android:text="5,000"/>
 
-        <TextView android:id="@+id/level_textview1"
+        <TextView android:id="@+id/textview1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
             android:layout_marginTop="4dp"
             android:textColor="@color/text_primary_light"
             android:textSize="@dimen/game_popup_xsmall_text_size"
             android:text="Level 1"
             android:visibility="gone"/>
 
-        <TextView android:id="@+id/level_textview2"
+        <TextView android:id="@+id/textview2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
             android:layout_marginTop="4dp"
             android:textColor="@color/text_primary_light"
             android:textSize="@dimen/game_popup_xsmall_text_size"
