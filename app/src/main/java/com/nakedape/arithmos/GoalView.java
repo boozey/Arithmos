@@ -116,14 +116,13 @@ public class GoalView extends View {
             shapeDiam = diam - 2 * margin;
             for (int r = 0; r < list.size(); r++){
                 shapeRects.add(new RectF(0, diam * r, diam, diam *(r + 1)));
-                Log.d(LOG_TAG, "shapeRect = " + shapeRects.get(r).toShortString());
             }
             textPaint.setTextSize(diam * 0.5f);
         }
         else {
             int cols = list.size(), rows = 1;
-            float diam = Math.min(h, (float)w / cols);
-            while (rows * diam < 0.8 * h && cols * diam < 0.8 * w){
+            float diam = Math.min(w, h);
+            while (rows * diam < h && cols * diam > w){
                 rows++;
                 cols = (int)Math.ceil((double)list.size() / rows);
                 diam = Math.min((float)h / rows, (float)w / cols);
