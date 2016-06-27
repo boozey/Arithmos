@@ -1472,8 +1472,8 @@ public class MainActivity extends AppCompatActivity implements
                     for (SnapshotMetadata data : loadSnapshotsResult.getSnapshots()){
                         Games.Snapshots.delete(mGoogleApiClient, data);
                     }
-                    //gameBase.resetGame();
-                    gameBase = new ArithmosGameBase();
+                    gameBase.resetGame();
+                    //gameBase = new ArithmosGameBase();
                     activityListAdapter.clearList();
                     cacheGame();
                     SharedPreferences.Editor editor = getSharedPreferences(GAME_PREFS, MODE_PRIVATE).edit();

@@ -304,8 +304,7 @@ public class GameActivity extends AppCompatActivity implements
     private ArithmosGameBase gameBase;
     private File levelCache, gameCache;
     private String levelSnapShotName;
-    private boolean loadSavedGame = false, saveLevel = false,
-            gameBaseNeedsDownload = true, hasBeenPlayed = false;
+    private boolean loadSavedGame = false, gameBaseNeedsDownload = true, hasBeenPlayed = false;
     private Bitmap thumbNail;
 
     private void setupGameUi(){
@@ -455,7 +454,9 @@ public class GameActivity extends AppCompatActivity implements
     private void LoadGameLevel(int resId){
         final ArithmosLevel level = new ArithmosLevel(context, resId);
         game = new ArithmosGame(level);
+        animStartDelay = 0;
         hasLevelPassedShown = false;
+        elapsedMillis = 0;
         setupGameUi();
         rootLayout.post(new Runnable() {
             @Override
@@ -488,9 +489,6 @@ public class GameActivity extends AppCompatActivity implements
     }
 
     private void retryLevel() {
-        animStartDelay = 0;
-        hasLevelPassedShown = false;
-        elapsedMillis = 0;
         AnimatorSet set = Animations.fadeOut(gameBoard, 300, 0);
         set.addListener(new Animator.AnimatorListener() {
             @Override
@@ -522,38 +520,17 @@ public class GameActivity extends AppCompatActivity implements
 
     private void loadNextLevel(){
         if (showAds && mInterstitialAd.isLoaded()){
+            AnimatorSet set = Animations.fadeOut(gameBoard, 300, 0);
+            set.start();
             mInterstitialAd.setAdListener(new AdListener() {
                 @Override
                 public void onAdClosed() {
                     super.onAdClosed();
-                    animStartDelay = 0;
-                    AnimatorSet set = Animations.fadeOut(gameBoard, 300, 0);
-                    set.addListener(new Animator.AnimatorListener() {
-                        @Override
-                        public void onAnimationStart(Animator animation) {
-
-                        }
-
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            String challenge = game.getChallengeName();
-                            int level = game.getChallengeLevel();
-                            LoadGameLevel(ArithmosGameBase.getNextLevelXmlId(challenge, level));
-                            cacheLevel();
-                            cacheGame();
-                        }
-
-                        @Override
-                        public void onAnimationCancel(Animator animation) {
-
-                        }
-
-                        @Override
-                        public void onAnimationRepeat(Animator animation) {
-
-                        }
-                    });
-                    set.start();
+                    String challenge = game.getChallengeName();
+                    int level = game.getChallengeLevel();
+                    LoadGameLevel(ArithmosGameBase.getNextLevelXmlId(challenge, level));
+                    cacheLevel();
+                    cacheGame();
                     AdRequest intstAdRequest = new AdRequest.Builder()
                             .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
                             .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
@@ -564,7 +541,6 @@ public class GameActivity extends AppCompatActivity implements
             });
             mInterstitialAd.show();
         } else {
-            animStartDelay = 0;
             AnimatorSet set = Animations.fadeOut(gameBoard, 300, 0);
             set.addListener(new Animator.AnimatorListener() {
                 @Override
@@ -659,6 +635,7 @@ public class GameActivity extends AppCompatActivity implements
                             startTimer();
                         GoalView goalView = (GoalView)rootLayout.findViewById(R.id.goal_view);
                         goalView.startGoalAnimation();
+                        isGoalViewPlaying = true;
                     }
 
                     @Override
@@ -749,6 +726,7 @@ public class GameActivity extends AppCompatActivity implements
                             public void run() {
                                 GoalView goalView = (GoalView) rootLayout.findViewById(R.id.goal_view);
                                 goalView.startGoalAnimation();
+                                isGoalViewPlaying = true;
                             }
                         });
                     }
@@ -864,7 +842,6 @@ public class GameActivity extends AppCompatActivity implements
         button1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                saveLevel = false;
                 ArithmosGame.GameResult result = new ArithmosGame.GameResult(ArithmosGame.GameResult.FORFEIT);
                 result.isLevelPassed = false;
                 OnGameOver(result);
@@ -961,7 +938,6 @@ public class GameActivity extends AppCompatActivity implements
         button2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                saveLevel = false;
                 ArithmosGame.GameResult result = new ArithmosGame.GameResult(ArithmosGame.GameResult.FORFEIT);
                 result.isLevelPassed = true;
                 OnGameOver(result);

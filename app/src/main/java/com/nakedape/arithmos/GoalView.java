@@ -53,7 +53,7 @@ public class GoalView extends View {
         p1Paint.setColor(ResourcesCompat.getColor(getResources(), R.color.run_color1, null));
 
         p2Paint = new Paint();
-        p2Paint.setColor(ResourcesCompat.getColor(getResources(), R.color.run_color1, null));
+        p2Paint.setColor(ResourcesCompat.getColor(getResources(), R.color.run_color2, null));
 
         checkMarkBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_green_check_mark);
     }

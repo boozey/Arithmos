@@ -28,6 +28,10 @@ import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.InterstitialAd;
+import com.google.android.gms.ads.MobileAds;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
@@ -82,6 +86,9 @@ public class MatchGameActivity extends AppCompatActivity implements
     private TextView scoreTextView;
     private int prevScore = 0, playCount = 0, jewelCount = 0;
 
+    // Ads
+    private boolean showAds = true;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -98,6 +105,22 @@ public class MatchGameActivity extends AppCompatActivity implements
         setContentView(R.layout.activity_match_game);
         context = this;
         rootLayout = (RelativeLayout)findViewById(R.id.root_layout);
+
+        SharedPreferences generalPrefs = getSharedPreferences(MainActivity.GENERAL_PREFS, MODE_PRIVATE);
+        // Setup Ads
+        showAds = generalPrefs.getBoolean(MainActivity.SHOW_ADS, true);
+        if (showAds) {
+            MobileAds.initialize(getApplicationContext(), "ca-app-pub-4640479150069852~3029191523");
+            AdView mAdView = (AdView) rootLayout.findViewById(R.id.adView);
+            mAdView.setVisibility(View.VISIBLE);
+            AdRequest adRequest = new AdRequest.Builder()
+                    .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
+                    .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
+                    .addTestDevice("19BA58A88672F3F9197685FEEB600EA7")
+                    .build();
+            mAdView.loadAd(adRequest);
+        }
+
         gameBoard = (GameBoard)rootLayout.findViewById(R.id.game_board);
         gameBoard.setOnAchievementListener(this);
         gameBoard.setOnPlayCompleted(this);
