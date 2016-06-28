@@ -2,7 +2,8 @@
 <Level challenge_name="EASY_123"
     challenge_level="5"
     gridsize="6"
-    goal_type="301">
+    goal_type="301"
+    leaderboardid="CgkImpOZm4YQEAIQGA">
     <GridBaseNumbers>2, 2, 3, 3</GridBaseNumbers>
     <GridSpecialNumbers>1</GridSpecialNumbers>
     <!-- 85 bonus locations -->

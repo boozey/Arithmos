@@ -90,7 +90,7 @@
     <string name="ads_removed_notification">Ads have been removed!</string>
 
     <!-- Special descriptions -->
-    <string name="skip_description">Skips the first goal number in the list</string>
+    <string name="skip_description">Skips the current or first goal number in the list</string>
     <string name="bomb_description">Destroys the operation that sets off the bomb preventing its use for three turns</string>
     <string name="pencil_description">Allows a number to be changed</string>
     <string name="calc_description">Evaluates a run from start to end without following the order of operations like an old-school calculator.</string>
@@ -180,7 +180,7 @@
     <string name="level_locked">Locked</string>
     <string name="challenge_name_crazy_eights">Crazy Eights</string>
     <string name="challenge_name_easy_as_123">Easy as 123</string>
-    <string name="challenge_name_lucky_7">Lucky 7</string>
+    <string name="challenge_name_lucky_7">Lucky Seven</string>
 
     <string name="level_4x4">4x4</string>
     <string name="level_4x4_301">4x4 301</string>

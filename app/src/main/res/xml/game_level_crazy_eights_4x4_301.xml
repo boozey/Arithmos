@@ -2,7 +2,8 @@
 <Level challenge_name="CRAZY_EIGHTS"
     challenge_level="1"
     gridsize="4"
-    goal_type="301">
+    goal_type="301"
+    leaderboardid="CgkImpOZm4YQEAIQDA">
     <GridBaseNumbers>1, 2, 3, 4, 5, 6, 8, 8, 8, 8</GridBaseNumbers>
     <GridSpecialNumbers>7, 16, 64, 48</GridSpecialNumbers>
     <!-- 33 Bonus locations -->

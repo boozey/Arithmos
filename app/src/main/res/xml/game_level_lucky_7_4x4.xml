@@ -1,6 +1,7 @@
 <Level challenge_name="LUCKY_7"
     challenge_level="0"
-    gridsize="4">
+    gridsize="4"
+    leaderboardid="CgkImpOZm4YQEAIQGQ">
     <GridBaseNumbers>7, 11, 17, 77</GridBaseNumbers>
     <GridSpecialNumbers>1, 2, 3</GridSpecialNumbers>
     <GoalNumbers count="4">7, 21, 14, 27, 28, 42</GoalNumbers>

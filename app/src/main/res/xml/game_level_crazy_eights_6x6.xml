@@ -2,8 +2,8 @@
 <Level challenge_name="CRAZY_EIGHTS"
     challenge_level="5"
     gridsize="6"
-    leaderboardid="CgkImpOZm4YQEAIQAw"
-    goal_type="single">
+    goal_type="single"
+    leaderboardid="CgkImpOZm4YQEAIQEA">
     <GridBaseNumbers>1, 2, 3, 4, 5, 6, 8, 8, 8, 8</GridBaseNumbers>
     <GridSpecialNumbers>7, 16, 64, 48</GridSpecialNumbers>
     <GoalNumbers count="10">2, 4, 7, 8, 15, 16, 22, 24, 30, 32, 48, 64</GoalNumbers>
