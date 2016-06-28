@@ -6,6 +6,7 @@
         <item>SPECIAL_CHANGE</item>
         <item>SPECIAL_OP_ORDER</item>
         <item>SPECIAL_ZERO</item>
+        <item>SPECIAL_AUTO_RUN</item>
     </array>
 
     <integer-array name="special_icons">
@@ -30,6 +31,7 @@
         <item>100</item>
         <item>100</item>
         <item>75</item>
+        <item>225</item>
     </integer-array>
 
 </resources>

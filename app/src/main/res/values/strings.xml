@@ -95,6 +95,7 @@
     <string name="pencil_description">Allows a number to be changed</string>
     <string name="calc_description">Evaluates a run from start to end without following the order of operations like an old-school calculator.</string>
     <string name="zero_description">Changes a number on the board to zero</string>
+    <string name="auto_run_description">Finds a run to meet the goal and you get the points</string>
 
 
     <!-- Game Activity Strings -->

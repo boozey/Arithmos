@@ -164,6 +164,7 @@ public class MatchGameActivity extends AppCompatActivity implements
     protected void onStart() {
         super.onStart();
         mGoogleApiClient.connect();
+        gameBoard.startGame();
     }
 
     @Override
@@ -193,6 +194,7 @@ public class MatchGameActivity extends AppCompatActivity implements
     protected void onStop() {
         super.onStop();
         mGoogleApiClient.disconnect();
+        gameBoard.stopGame();
     }
 
     @Override
@@ -379,10 +381,12 @@ public class MatchGameActivity extends AppCompatActivity implements
                     break;
             }
         }
+        setupSpecials();
         matchHasLoaded = true;
     }
 
     private void setupSpecials(){
+        if (game == null || gameBase == null) return;
         TextView bomb = (TextView)rootLayout.findViewById(R.id.bomb_button);
         bomb.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
@@ -1146,8 +1150,10 @@ public class MatchGameActivity extends AppCompatActivity implements
                 int count = gameBase.useSpecial(ArithmosGameBase.SPECIAL_OP_ORDER);
                 if (count < 1)
                     calc.setVisibility(View.GONE);
-                else if (count < 2)
+                else if (count < 2) {
                     calc.setText("");
+                    calc.setCompoundDrawablePadding(0);
+                }
                 else
                     calc.setText(String.valueOf(count));
                 cacheGame();
@@ -1313,8 +1319,10 @@ public class MatchGameActivity extends AppCompatActivity implements
             TextView skip = (TextView)rootLayout.findViewById(R.id.skip_button);
             if (count < 1)
                 skip.setVisibility(View.GONE);
-            else if (count < 2)
+            else if (count < 2) {
                 skip.setText("");
+                skip.setCompoundDrawablePadding(0);
+            }
             else
                 skip.setText(String.valueOf(count));
             ArithmosGame.GameResult result = new ArithmosGame.GameResult(ArithmosGame.GameResult.SUCCESS);
@@ -1357,8 +1365,10 @@ public class MatchGameActivity extends AppCompatActivity implements
                         int count = gameBase.useSpecial(ArithmosGameBase.SPECIAL_BOMB);
                         if (count < 1)
                             bomb.setVisibility(View.GONE);
-                        else if (count < 2)
+                        else if (count < 2) {
                             bomb.setText("");
+                            bomb.setCompoundDrawablePadding(0);
+                        }
                         else
                             bomb.setText(String.valueOf(count));
                         playCount++;
@@ -1426,8 +1436,10 @@ public class MatchGameActivity extends AppCompatActivity implements
                 int count = gameBase.useSpecial(ArithmosGameBase.SPECIAL_CHANGE);
                 if (count < 1)
                     pencil.setVisibility(View.GONE);
-                else if (count < 2)
+                else if (count < 2) {
                     pencil.setText("");
+                    pencil.setCompoundDrawablePadding(0);
+                }
                 else
                     pencil.setText(String.valueOf(count));
                 cacheGame();
@@ -1500,8 +1512,10 @@ public class MatchGameActivity extends AppCompatActivity implements
                         int count = gameBase.useSpecial(ArithmosGameBase.SPECIAL_ZERO);
                         if (count < 1)
                             zeroView.setVisibility(View.GONE);
-                        else if (count < 2)
+                        else if (count < 2) {
                             zeroView.setText("");
+                            zeroView.setCompoundDrawablePadding(0);
+                        }
                         else
                             zeroView.setText(String.valueOf(count));
                         cacheGame();
@@ -1509,6 +1523,25 @@ public class MatchGameActivity extends AppCompatActivity implements
                     return true;
                 default:
                     return false;
+            }
+        }
+    }
+
+    public void AutoRunButtonClick(View v){
+        if (gameBase.getSpecialCount(ArithmosGameBase.SPECIAL_AUTO_RUN) > 0) {
+            if (gameBoard.useAutoRunSpecial());
+            {
+                int count = gameBase.useSpecial(ArithmosGameBase.SPECIAL_AUTO_RUN);
+                TextView skip = (TextView) rootLayout.findViewById(R.id.auto_run_button);
+                if (count < -10)
+                    skip.setVisibility(View.GONE);
+                else if (count < 2) {
+                    skip.setText("");
+                    skip.setCompoundDrawablePadding(0);
+                }
+                else
+                    skip.setText(String.valueOf(count));
+                cacheGame();
             }
         }
     }

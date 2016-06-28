@@ -25,6 +25,7 @@ public class ArithmosGameBase {
     transient public static final String SPECIAL_OP_ORDER = "SPECIAL_OP_ORDER";
     transient public static final String SPECIAL_CHANGE = "SPECIAL_CHANGE";
     transient public static final String SPECIAL_ZERO = "SPECIAL_ZERO";
+    transient public static final String SPECIAL_AUTO_RUN = "SPECIAL_AUTO_RUN";
 
     // Order of challenges is that of the array
     transient public static final String[] challenges = {CRAZY_EIGHTS, EASY_123, LUCKY_7};
@@ -255,6 +256,7 @@ public class ArithmosGameBase {
             specials.put(special, count);
             needsSaving = true;
         }
+        Log.d(LOG_TAG, special + " = " + count);
         return count;
     }
 

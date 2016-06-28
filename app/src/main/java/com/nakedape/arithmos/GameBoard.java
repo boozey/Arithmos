@@ -185,6 +185,13 @@ public class GameBoard extends View {
         resetGameBoard(getWidth(), getHeight());
         invalidate();
     }
+    public void startGame(){
+        if (game != null)
+            restartCheckBoardThread();
+    }
+    public void stopGame(){
+        stopCheckBoardThread = true;
+    }
     private void restartCheckBoardThread(){
         stopCheckBoardThread = true;
             new Thread(new Runnable() {
@@ -543,22 +550,6 @@ public class GameBoard extends View {
         int targetSize = (int)Math.min(dimens.width(), dimens.height());
         return Bitmap.createScaledBitmap(bitmap, targetSize, targetSize, false);
     }
-    public boolean showComputerRun(){
-        if (game.getComputerFoundRun() != null){
-            int[] start = game.getComputerFoundRun().get(0);
-            int[] end = game.getComputerFoundRun().get(game.getComputerFoundRun().size() - 1);
-            RectF startRect = tileDimensions[start[0]][start[1]];
-            RectF endRect = tileDimensions[end[0]][end[1]];
-            computerRunPath = new Path();
-            computerRunPath.moveTo(startRect.centerX(), startRect.centerY());
-            computerRunPath.lineTo(endRect.centerX(), endRect.centerY());
-            computerRunPaint = new Paint(selectionPaint);
-            computerRunPaint.setARGB(127, 255, 0, 0);
-            showComputerRun = true;
-            invalidate();
-        }
-        return showComputerRun;
-    }
     private void playCompleted(){
         if (lastGameResult.result == ArithmosGame.GameResult.SUCCESS) {
             restartCheckBoardThread();
@@ -581,18 +572,6 @@ public class GameBoard extends View {
         }
         selectedPieces = new ArrayList<>();
         selectionPath.rewind();
-        if (onPlayCompleted != null)
-            onPlayCompleted.OnPlayCompleted(lastGameResult);
-        if (lastGameResult.isLevelPassed && onGameOverListener != null)
-            onGameOverListener.OnGameOver(lastGameResult);
-    }
-    public void useSkipSpecial(){
-        lastGameResult = game.skipGoalNumber();
-        if (onCancelBombListener != null)
-            for (String op : lastGameResult.opsReplaced) {
-                onCancelBombListener.OnCancelBomb(op);
-                setupOpButtons();
-            }
         if (onPlayCompleted != null)
             onPlayCompleted.OnPlayCompleted(lastGameResult);
         if (lastGameResult.isLevelPassed && onGameOverListener != null)
@@ -910,6 +889,35 @@ public class GameBoard extends View {
     public boolean isChangeableNumber(float x, float y){
         int[] l = getTileLocation(x, y);
         return (l[0] % 2 == 0 && l[1] % 2 == 0) && !game.isPiecePlayed(l);
+    }
+    public void useSkipSpecial(){
+        lastGameResult = game.skipGoalNumber();
+        if (onCancelBombListener != null)
+            for (String op : lastGameResult.opsReplaced) {
+                onCancelBombListener.OnCancelBomb(op);
+                setupOpButtons();
+            }
+        if (onPlayCompleted != null)
+            onPlayCompleted.OnPlayCompleted(lastGameResult);
+        if (lastGameResult.isLevelPassed && onGameOverListener != null)
+            onGameOverListener.OnGameOver(lastGameResult);
+    }
+    public boolean useAutoRunSpecial(){
+            if (game.getComputerFoundRun() != null){
+                int[] start = game.getComputerFoundRun().get(0);
+                int[] end = game.getComputerFoundRun().get(game.getComputerFoundRun().size() - 1);
+                RectF startRect = tileDimensions[start[0]][start[1]];
+                RectF endRect = tileDimensions[end[0]][end[1]];
+                selectionPath.rewind();
+                selectionPath.moveTo(startRect.centerX(), startRect.centerY());
+                selectionPath.lineTo(endRect.centerX(), endRect.centerY());
+                selectedPieces = new ArrayList<>(game.getComputerFoundRun().size());
+                selectedPieces.addAll(game.getComputerFoundRun());
+                startProcessingAnimation();
+                processSelection();
+                return true;
+            } else
+                return showComputerRun;
     }
 
 

@@ -178,6 +178,7 @@ public class GameActivity extends AppCompatActivity implements
         super.onStart();
         if (useGooglePlay)
             mGoogleApiClient.connect();
+        gameBoard.startGame();
     }
 
     @Override
@@ -210,6 +211,7 @@ public class GameActivity extends AppCompatActivity implements
     protected void onStop() {
         super.onStop();
         mGoogleApiClient.disconnect();
+        gameBoard.stopGame();
     }
 
     @Override
@@ -381,9 +383,12 @@ public class GameActivity extends AppCompatActivity implements
                     break;
             }
         }
+
+        setupSpecials();
     }
 
     private void setupSpecials(){
+        if (game == null || gameBase == null) return;
         TextView bomb = (TextView)rootLayout.findViewById(R.id.bomb_button);
         bomb.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
@@ -425,13 +430,15 @@ public class GameActivity extends AppCompatActivity implements
             pencil.setText(String.valueOf(count));
         }
 
-        TextView arrow = (TextView)rootLayout.findViewById(R.id.skip_button);
-        count = gameBase.getSpecialCount(ArithmosGameBase.SPECIAL_SKIP);
-        if (count > 0 && pencil.getVisibility() != View.VISIBLE)
-            Animations.popIn(arrow, 200, 325).start();
-        if (count > 1) {
-            arrow.setCompoundDrawablePadding(-12);
-            arrow.setText(String.valueOf(count));
+        if (game.getGoalType() != ArithmosLevel.GOAL_301) {
+            TextView arrow = (TextView) rootLayout.findViewById(R.id.skip_button);
+            count = gameBase.getSpecialCount(ArithmosGameBase.SPECIAL_SKIP);
+            if (count > 0 && pencil.getVisibility() != View.VISIBLE)
+                Animations.popIn(arrow, 200, 325).start();
+            if (count > 1) {
+                arrow.setCompoundDrawablePadding(-12);
+                arrow.setText(String.valueOf(count));
+            }
         }
 
         TextView zero = (TextView)rootLayout.findViewById(R.id.zero_button);
@@ -449,6 +456,17 @@ public class GameActivity extends AppCompatActivity implements
             zero.setCompoundDrawablePadding(-12);
             zero.setText(String.valueOf(count));
         }
+
+        if (game.getGoalType() != ArithmosLevel.GOAL_301){
+            TextView autoView = (TextView)rootLayout.findViewById(R.id.auto_run_button);
+            count = gameBase.getSpecialCount(ArithmosGameBase.SPECIAL_AUTO_RUN);
+            if (count > 0 && autoView.getVisibility() != View.VISIBLE)
+                Animations.popIn(autoView, 200, 325).start();
+            if (count > 1) {
+                autoView.setCompoundDrawablePadding(-12);
+                autoView.setText(String.valueOf(count));
+            }
+        }
     }
 
     private void LoadGameLevel(int resId){
@@ -458,6 +476,7 @@ public class GameActivity extends AppCompatActivity implements
         hasLevelPassedShown = false;
         elapsedMillis = 0;
         setupGameUi();
+        gameBoard.startGame();
         rootLayout.post(new Runnable() {
             @Override
             public void run() {
@@ -529,6 +548,7 @@ public class GameActivity extends AppCompatActivity implements
                     String challenge = game.getChallengeName();
                     int level = game.getChallengeLevel();
                     LoadGameLevel(ArithmosGameBase.getNextLevelXmlId(challenge, level));
+                    setupSpecials();
                     cacheLevel();
                     cacheGame();
                     AdRequest intstAdRequest = new AdRequest.Builder()
@@ -720,6 +740,7 @@ public class GameActivity extends AppCompatActivity implements
                     hasBeenPlayed = true;
                     elapsedMillis = game.getElapasedTime();
                     setupGameUi();
+                    gameBoard.startGame();
                     if (game.getGoalType() == ArithmosLevel.GOAL_SINGLE_NUM) {
                         rootLayout.post(new Runnable() {
                             @Override
@@ -1188,8 +1209,10 @@ public class GameActivity extends AppCompatActivity implements
                 int count = gameBase.useSpecial(ArithmosGameBase.SPECIAL_OP_ORDER);
                 if (count < 1)
                     calc.setVisibility(View.GONE);
-                else if (count < 2)
+                else if (count < 2) {
                     calc.setText("");
+                    calc.setCompoundDrawablePadding(0);
+                }
                 else
                     calc.setText(String.valueOf(count));
                 cacheGame();
@@ -1599,13 +1622,14 @@ public class GameActivity extends AppCompatActivity implements
     public void SkipGoalNumberClick(View v){
         if (gameBase.getSpecialCount(ArithmosGameBase.SPECIAL_SKIP) > 0) {
             int count = gameBase.useSpecial(ArithmosGameBase.SPECIAL_SKIP);
-            Log.d(LOG_TAG, "Skip special count = " + count);
             gameBoard.useSkipSpecial();
             TextView skip = (TextView)rootLayout.findViewById(R.id.skip_button);
             if (count < 1)
                 skip.setVisibility(View.GONE);
-            else if (count < 2)
-                skip.setText(" ");
+            else if (count < 2) {
+                skip.setText("");
+                skip.setCompoundDrawablePadding(0);
+            }
             else
                 skip.setText(String.valueOf(count));
             cacheGame();
@@ -1645,8 +1669,9 @@ public class GameActivity extends AppCompatActivity implements
                         int count = gameBase.useSpecial(ArithmosGameBase.SPECIAL_BOMB);
                         if (count < 1)
                             bomb.setVisibility(View.GONE);
-                        else if (count < 2)
-                            bomb.setText(" ");
+                        else if (count < 2) {
+                            bomb.setText("");
+                        }
                         else
                             bomb.setText(String.valueOf(count));
                         cacheGame();
@@ -1712,8 +1737,10 @@ public class GameActivity extends AppCompatActivity implements
                 int count = gameBase.useSpecial(ArithmosGameBase.SPECIAL_CHANGE);
                 if (count < 1)
                     pencil.setVisibility(View.GONE);
-                else if (count < 2)
-                    pencil.setText(" ");
+                else if (count < 2) {
+                    pencil.setText("");
+                    pencil.setCompoundDrawablePadding(0);
+                }
                 else
                     pencil.setText(String.valueOf(count));
                 cacheGame();
@@ -1784,8 +1811,10 @@ public class GameActivity extends AppCompatActivity implements
                         int count = gameBase.useSpecial(ArithmosGameBase.SPECIAL_ZERO);
                         if (count < 1)
                             zeroView.setVisibility(View.GONE);
-                        else if (count < 2)
-                            zeroView.setText(" ");
+                        else if (count < 2) {
+                            zeroView.setText("");
+                            zeroView.setCompoundDrawablePadding(0);
+                        }
                         else
                             zeroView.setText(String.valueOf(count));
                         cacheGame();
@@ -1796,6 +1825,26 @@ public class GameActivity extends AppCompatActivity implements
             }
         }
     }
+
+    public void AutoRunButtonClick(View v){
+        if (gameBase.getSpecialCount(ArithmosGameBase.SPECIAL_AUTO_RUN) > 0) {
+            if (gameBoard.useAutoRunSpecial());
+            {
+                int count = gameBase.useSpecial(ArithmosGameBase.SPECIAL_AUTO_RUN);
+                TextView skip = (TextView) rootLayout.findViewById(R.id.auto_run_button);
+                if (count < -10)
+                    skip.setVisibility(View.GONE);
+                else if (count < 2) {
+                    skip.setText("");
+                    skip.setCompoundDrawablePadding(0);
+                }
+                else
+                    skip.setText(String.valueOf(count));
+                cacheGame();
+            }
+        }
+    }
+
 
     // Google Play Games Services
     private GoogleApiClient mGoogleApiClient;

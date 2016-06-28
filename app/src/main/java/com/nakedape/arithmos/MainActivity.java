@@ -1520,9 +1520,11 @@ public class MainActivity extends AppCompatActivity implements
         private String[] names = getResources().getStringArray(R.array.special_item_names);
         private int[] costs = getResources().getIntArray(R.array.special_costs);
         private int[] iconResIds = {R.drawable.ic_right_arrow, R.drawable.ic_bomb,
-                R.drawable.ic_pencil, R.drawable.ic_calculator, R.drawable.ic_zero};
+                R.drawable.ic_pencil, R.drawable.ic_calculator, R.drawable.ic_zero,
+                R.drawable.ic_auto_run};
         private int[] descResIds = {R.string.skip_description, R.string.bomb_description,
-                R.string.pencil_description, R.string.calc_description, R.string.zero_description};
+                R.string.pencil_description, R.string.calc_description, R.string.zero_description,
+                R.string.auto_run_description};
 
         public SpecialListAdapter(){
 

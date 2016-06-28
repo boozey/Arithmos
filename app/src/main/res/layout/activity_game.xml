@@ -199,6 +199,15 @@
                 android:drawableStart="@drawable/ic_zero"
                 android:onClick="ZeroButtonClick"
                 android:visibility="gone"/>
+            <TextView android:id="@+id/auto_run_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="2dp"
+                android:gravity="bottom"
+                android:textColor="@color/text_primary_dark"
+                android:drawableStart="@drawable/ic_auto_run"
+                android:onClick="AutoRunButtonClick"
+                android:visibility="gone"/>
         </LinearLayout>
 
         <com.google.android.gms.ads.AdView
