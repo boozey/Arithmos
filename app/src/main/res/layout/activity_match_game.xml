@@ -20,37 +20,48 @@
         <LinearLayout android:id="@+id/top_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:minHeight="76dp"
             android:orientation="horizontal">
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="wrap_content"
+                android:minWidth="38dp"
+                android:layout_height="wrap_content">
+                <ImageView android:id="@+id/slash_mult"
+                    android:layout_width="@dimen/slash_icon_size"
+                    android:layout_height="@dimen/slash_icon_size"
+                    android:layout_margin="4dp"
+                    android:background="@drawable/ic_slash_multiplication"
+                    android:visibility="gone"/>
+                <ImageView android:id="@+id/slash_div"
+                    android:layout_width="@dimen/slash_icon_size"
+                    android:layout_height="@dimen/slash_icon_size"
+                    android:layout_margin="4dp"
+                    android:background="@drawable/ic_slash_division"
+                    android:visibility="gone"/>
+            </LinearLayout>
 
-            <ImageView android:id="@+id/slash_mult"
-                android:layout_width="@dimen/slash_icon_size"
-                android:layout_height="@dimen/slash_icon_size"
-                android:layout_margin="4dp"
-                android:background="@drawable/ic_slash_multiplication"
-                android:visibility="gone"/>
-            <ImageView android:id="@+id/slash_div"
-                android:layout_width="@dimen/slash_icon_size"
-                android:layout_height="@dimen/slash_icon_size"
-                android:layout_margin="4dp"
-                android:background="@drawable/ic_slash_division"
-                android:visibility="gone"/>
-            <ImageView android:id="@+id/slash_add"
-                android:layout_width="@dimen/slash_icon_size"
-                android:layout_height="@dimen/slash_icon_size"
-                android:layout_margin="4dp"
-                android:background="@drawable/ic_slash_addition"
-                android:visibility="gone"/>
-            <ImageView android:id="@+id/slash_sub"
-                android:layout_width="@dimen/slash_icon_size"
-                android:layout_height="@dimen/slash_icon_size"
-                android:layout_margin="4dp"
-                android:background="@drawable/ic_slash_subtraction"
-                android:visibility="gone"/>
+            <LinearLayout android:orientation="vertical"
+                android:layout_width="wrap_content"
+                android:minWidth="38dp"
+                android:layout_height="wrap_content">
+                <ImageView android:id="@+id/slash_add"
+                    android:layout_width="@dimen/slash_icon_size"
+                    android:layout_height="@dimen/slash_icon_size"
+                    android:layout_margin="4dp"
+                    android:background="@drawable/ic_slash_addition"
+                    android:visibility="gone"/>
+                <ImageView android:id="@+id/slash_sub"
+                    android:layout_width="@dimen/slash_icon_size"
+                    android:layout_height="@dimen/slash_icon_size"
+                    android:layout_margin="4dp"
+                    android:background="@drawable/ic_slash_subtraction"
+                    android:visibility="gone"/>
+            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_weight="1"
-                android:layout_marginStart="40dp"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="center_horizontal">
@@ -60,7 +71,7 @@
                     android:layout_height="wrap_content"
                     android:background="@drawable/pencil_underline"
                     android:gravity="center_horizontal"
-                    android:maxLength="12"
+                    android:maxLines="1"
                     android:textSize="@dimen/small_text_size"
                     android:visibility="visible"/>
                 <TextView android:id="@+id/p1_score_textview"
@@ -86,7 +97,7 @@
                     android:layout_height="wrap_content"
                     android:background="@drawable/pencil_underline"
                     android:gravity="center_horizontal"
-                    android:maxLength="12"
+                    android:maxLines="1"
                     android:textSize="@dimen/small_text_size"
                     android:visibility="visible" />
                 <TextView android:id="@+id/p2_score_textview"
@@ -133,10 +144,11 @@
                     custom:orientation="vertical"
                     custom:textColor="@color/text_primary_light"
                     custom:shapeColor="@android:color/holo_red_light"
-                    android:visibility="visible"/>
+                    android:visibility="gone"/>
                 <TextView android:id="@+id/three01_textview"
-                    android:layout_width="wrap_content"
+                    android:layout_width="@dimen/goal_list_width"
                     android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
                     android:textSize="@dimen/three01_text_size"
                     android:text="1\n2\n8"
                     android:visibility="gone"/>

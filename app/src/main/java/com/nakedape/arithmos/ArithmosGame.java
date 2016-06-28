@@ -325,7 +325,7 @@ public class ArithmosGame {
         else return -1;
     }
     public void nextGoalIndex(){
-        goalIndex = (++goalIndex) % remainingGoals.size();
+        goalIndex = (++goalIndex) % Math.max(remainingGoals.size(), 1);
     }
     public ArrayList<String> getRemainingGoals() {
         return remainingGoals;

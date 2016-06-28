@@ -630,8 +630,6 @@ public class GameBoard extends View {
                     playJewelAnimation(bonusTile);
                     break;
                 case ArithmosLevel.BONUS_BOMB:
-                    game.removeOperation(game.getPiece(bonusTile.getRow(), bonusTile.getCol()));
-                    setupOpButtons();
                     playBombAnimation(bonusTile);
                     break;
                 case ArithmosLevel.BONUS_LOCK_ADD:
@@ -791,7 +789,18 @@ public class GameBoard extends View {
                     @Override
                     public void onAnimationEnd(Animator animation) {
                         animDelay -= 75;
-                        if (lastGameResult.result == ArithmosGame.GameResult.SUCCESS && onBombListener != null) onBombListener.OnBomb(game.getPiece(bombTile.getRow(), bombTile.getCol()));
+                            boolean hasOp = false;
+                            String operation = game.getPiece(bombTile.getRow(), bombTile.getCol());
+                            for (String s : game.availableOperations()){
+                                hasOp = hasOp | s.equals(operation);
+                            }
+                            if (hasOp) {
+                                game.removeOperation(operation);
+                                setupOpButtons();
+                                if (onBombListener != null) {
+                                    onBombListener.OnBomb(operation);
+                                }
+                            }
                         bonuses.remove(bombTile);
                     }
 

@@ -353,12 +353,6 @@ public class MatchGameActivity extends AppCompatActivity implements
             goalView.setGame(game);
         }
 
-        if (!gameBaseNeedsDownload) {
-            setupSpecials();
-            TextView jewelText = (TextView) rootLayout.findViewById(R.id.jewel_count);
-            Animations.CountTo(jewelText, 0, gameBase.getJewelCount());
-        }
-
         // Show unavailabe operations
         rootLayout.findViewById(R.id.slash_div).setVisibility(View.VISIBLE);
         rootLayout.findViewById(R.id.slash_mult).setVisibility(View.VISIBLE);
@@ -428,13 +422,15 @@ public class MatchGameActivity extends AppCompatActivity implements
             pencil.setText(String.valueOf(count));
         }
 
-        TextView arrow = (TextView)rootLayout.findViewById(R.id.skip_button);
-        count = gameBase.getSpecialCount(ArithmosGameBase.SPECIAL_SKIP);
-        if (count > 0)
-            Animations.popIn(arrow, 200, 325).start();
-        if (count > 1) {
-            arrow.setCompoundDrawablePadding(-12);
-            arrow.setText(String.valueOf(count));
+        if (game.getGoalType() != ArithmosLevel.GOAL_301) {
+            TextView arrow = (TextView) rootLayout.findViewById(R.id.skip_button);
+            count = gameBase.getSpecialCount(ArithmosGameBase.SPECIAL_SKIP);
+            if (count > 0)
+                Animations.popIn(arrow, 200, 325).start();
+            if (count > 1) {
+                arrow.setCompoundDrawablePadding(-12);
+                arrow.setText(String.valueOf(count));
+            }
         }
 
         TextView zero = (TextView)rootLayout.findViewById(R.id.zero_button);
@@ -449,8 +445,19 @@ public class MatchGameActivity extends AppCompatActivity implements
         if (count > 0)
             Animations.popIn(zero, 200, 325).start();
         if (count > 1) {
-            zero.setCompoundDrawablePadding(-12);
+            zero.setCompoundDrawablePadding(-8);
             zero.setText(String.valueOf(count));
+        }
+
+        if (game.getGoalType() != ArithmosLevel.GOAL_301){
+            TextView autoView = (TextView)rootLayout.findViewById(R.id.auto_run_button);
+            count = gameBase.getSpecialCount(ArithmosGameBase.SPECIAL_AUTO_RUN);
+            if (count > 0 && autoView.getVisibility() != View.VISIBLE)
+                Animations.popIn(autoView, 200, 325).start();
+            if (count > 1) {
+                autoView.setCompoundDrawablePadding(-8);
+                autoView.setText(String.valueOf(count));
+            }
         }
     }
 
@@ -1237,7 +1244,7 @@ public class MatchGameActivity extends AppCompatActivity implements
 
             rootLayout.addView(layout);
             Animations.slideUp(layout, 200, animStartDelay + gameBoard.getAnimDelay(), rootLayout.getHeight() / 3).start();
-            AnimatorSet set = Animations.explodeFade(layout, 1200, 200 + animStartDelay + gameBoard.getAnimDelay());
+            AnimatorSet set = Animations.explodeFade(layout, 200, animStartDelay + 1200 + gameBoard.getAnimDelay());
             animStartDelay += 1400;
             set.addListener(new Animator.AnimatorListener() {
                 @Override

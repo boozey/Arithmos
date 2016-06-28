@@ -98,13 +98,15 @@ public class MainActivity extends AppCompatActivity implements
 
     private Context context;
     private RelativeLayout rootLayout;
+    private SharedPreferences generalPrefs;
+    private int activityStartCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        SharedPreferences prefs = getSharedPreferences(GENERAL_PREFS, MODE_PRIVATE);
-        mAutoStartSignInFlow = prefs.getBoolean(AUTO_SIGN_IN, true);
+        generalPrefs = getSharedPreferences(GENERAL_PREFS, MODE_PRIVATE);
+        mAutoStartSignInFlow = generalPrefs.getBoolean(AUTO_SIGN_IN, true);
 
         // Create the Google Api Client with access to the Play Games services
         mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -142,28 +144,6 @@ public class MainActivity extends AppCompatActivity implements
         View header2 = getLayoutInflater().inflate(R.layout.add_jewels_button_bar, null);
         specialList.addHeaderView(header2);
 
-        // Setup Ads
-        showAds = prefs.getBoolean(SHOW_ADS, true);
-        if (showAds) {
-            MobileAds.initialize(getApplicationContext(), "ca-app-pub-4640479150069852~3029191523");
-            AdView mAdView = (AdView) rootLayout.findViewById(R.id.adView);
-            mAdView.setVisibility(View.VISIBLE);
-            AdRequest adRequest = new AdRequest.Builder()
-                    .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
-                    .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
-                    .addTestDevice("19BA58A88672F3F9197685FEEB600EA7")
-                    .build();
-            mAdView.loadAd(adRequest);
-
-            AdRequest intstAdRequest = new AdRequest.Builder()
-                    .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
-                    .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
-                    .addTestDevice("19BA58A88672F3F9197685FEEB600EA7")
-                    .build();
-            mInterstitialAd = new InterstitialAd(this);
-            mInterstitialAd.setAdUnitId(getString(R.string.interstitial_ad_unit_id));
-            mInterstitialAd.loadAd(intstAdRequest);
-        }
 
         // Load cached data if it exists
         gameBase = new ArithmosGameBase();
@@ -185,6 +165,11 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     protected void onStart() {
         super.onStart();
+        activityStartCount = gameBase.getInt(ArithmosGameBase.MAIN_START_COUNT, 1);
+        gameBase.putInt(ArithmosGameBase.MAIN_START_COUNT, ++activityStartCount);
+        Log.d(LOG_TAG, "MAIN_START_COUNT = " + activityStartCount);
+        cacheGame();
+        showAds();
         if (mAutoStartSignInFlow)
             mGoogleApiClient.connect();
     }
@@ -1033,19 +1018,24 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void cacheGame(){
-        if (gameCacheFile == null)
-            gameCacheFile = new File(getCacheDir(), gameCacheFileName);
-        FileOutputStream outputStream;
-        try {
-            outputStream = new FileOutputStream(gameCacheFile);
-            byte[] data = gameBase.getByteData();
-            outputStream.write(data, 0, data.length);
-            outputStream.close();
-            gameBase.setSaved(false);
-            Log.d(LOG_TAG, "Game base cached");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if (gameCacheFile == null)
+                    gameCacheFile = new File(getCacheDir(), gameCacheFileName);
+                FileOutputStream outputStream;
+                try {
+                    outputStream = new FileOutputStream(gameCacheFile);
+                    byte[] data = gameBase.getByteData();
+                    outputStream.write(data, 0, data.length);
+                    outputStream.close();
+                    gameBase.setSaved(false);
+                    Log.d(LOG_TAG, "Game base cached");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 
     private boolean loadCachedGame(){
@@ -1161,6 +1151,9 @@ public class MainActivity extends AppCompatActivity implements
                         activityListAdapter.sort();
                         gameBaseNeedsRefresh = false;
                         consumePurchases();
+                        activityStartCount = gameBase.getInt(ArithmosGameBase.MAIN_START_COUNT, --activityStartCount);
+                        gameBase.putInt(ArithmosGameBase.MAIN_START_COUNT, ++activityStartCount);
+                        showAds();
                         cacheGame();
                         Log.d(LOG_TAG, "Game refreshed from Google");
                     } catch (IOException | NullPointerException | ClassCastException e) {
@@ -1218,7 +1211,7 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void showAdThenPlayLevel(final int levelXmlId){
-        if (showAds && mInterstitialAd.isLoaded()){
+        if (showAds && mInterstitialAd.isLoaded() && Math.random() < 0.5){
             mInterstitialAd.setAdListener(new AdListener() {
                 @Override
                 public void onAdClosed() {
@@ -2833,6 +2826,7 @@ public class MainActivity extends AppCompatActivity implements
     private InterstitialAd mInterstitialAd;
     private boolean showAds = true;
     public static String SHOW_ADS = "SHOW_ADS";
+    public static final int COUNT_TO_SHOW_ADS = 15;
 
     private void loadInterstitialAd(){
         if (showAds && !mInterstitialAd.isLoaded()) {
@@ -2854,6 +2848,39 @@ public class MainActivity extends AppCompatActivity implements
         String message = getString(R.string.ads_removed_notification);
         Snackbar snackbar = Snackbar.make(findViewById(R.id.myCoordinatorLayout), message, Snackbar.LENGTH_SHORT);
         snackbar.show();
+    }
+
+    private void hideAds(){
+        showAds = false;
+        rootLayout.findViewById(R.id.adView).setVisibility(View.GONE);
+    }
+
+    private void showAds(){
+        // Setup Ads
+        activityStartCount = gameBase.getInt(ArithmosGameBase.MAIN_START_COUNT, 1);
+        int levelStartCount = gameBase.getInt(ArithmosGameBase.LEVEL_START_COUNT, 0);
+        Log.d(LOG_TAG, "Start count = " + (activityStartCount + levelStartCount));
+        showAds = generalPrefs.getBoolean(MainActivity.SHOW_ADS, true) && activityStartCount + levelStartCount >= MainActivity.COUNT_TO_SHOW_ADS;
+        if (showAds) {
+            MobileAds.initialize(getApplicationContext(), "ca-app-pub-4640479150069852~3029191523");
+            AdView mAdView = (AdView) rootLayout.findViewById(R.id.adView);
+            mAdView.setVisibility(View.VISIBLE);
+            AdRequest adRequest = new AdRequest.Builder()
+                    .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
+                    .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
+                    .addTestDevice("19BA58A88672F3F9197685FEEB600EA7")
+                    .build();
+            mAdView.loadAd(adRequest);
+
+            AdRequest intstAdRequest = new AdRequest.Builder()
+                    .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
+                    .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
+                    .addTestDevice("19BA58A88672F3F9197685FEEB600EA7")
+                    .build();
+            mInterstitialAd = new InterstitialAd(this);
+            mInterstitialAd.setAdUnitId(getString(R.string.interstitial_ad_unit_id));
+            mInterstitialAd.loadAd(intstAdRequest);
+        }
     }
 
 

@@ -27,6 +27,10 @@ public class ArithmosGameBase {
     transient public static final String SPECIAL_ZERO = "SPECIAL_ZERO";
     transient public static final String SPECIAL_AUTO_RUN = "SPECIAL_AUTO_RUN";
 
+    transient public static final String MAIN_START_COUNT = "MAIN_START_COUNT";
+    transient public static final String LEVEL_START_COUNT = "LEVEL_START_COUNT";
+    transient public static final String MATCH_START_COUNT = "MATCH_START_COUNT";
+
     // Order of challenges is that of the array
     transient public static final String[] challenges = {CRAZY_EIGHTS, EASY_123, LUCKY_7};
 
@@ -76,7 +80,7 @@ public class ArithmosGameBase {
         }
     }
 
-    transient private static final int serializationVersion = 4;
+    transient private static final int serializationVersion = 5;
     transient private static final long weekInMillis = 604800000;
     transient private static final long dayInMillis = 86400000;
     transient private ArrayList<String> unlockedLevels;
@@ -86,8 +90,10 @@ public class ArithmosGameBase {
     transient private ArrayList<GameActivityItem> activityItems;
     transient private boolean needsSaving = false;
     transient private long timeStamp = 0;
+    transient private HashMap<String, Integer> intData;
 
     public ArithmosGameBase(){
+        intData = new HashMap<>();
         unlockedLevels = new ArrayList<>();
         unlockedLevels.add(challenges[0] + "0");
         stars = new HashMap<>();
@@ -114,6 +120,17 @@ public class ArithmosGameBase {
     }
 
     public long timeStamp() {return timeStamp;}
+
+    public void putInt(String key, int value){
+        intData.put(key, value);
+    }
+
+    public int getInt(String key, int defaultValue){
+        if (intData.containsKey(key))
+            return intData.get(key);
+        else
+            return defaultValue;
+    }
 
     // Level unlocking
     public boolean isLevelUnlocked(String challengeName, int level){
@@ -312,6 +329,7 @@ public class ArithmosGameBase {
         out.writeObject(activityItems);
         timeStamp = System.currentTimeMillis();
         out.writeLong(timeStamp);
+        out.writeObject(intData);
     }
 
     public void loadByteData(byte[] data){
@@ -339,6 +357,8 @@ public class ArithmosGameBase {
             }
         } if (version >= 4)
             timeStamp = in.readLong();
+        if (version >= 5)
+            intData = (HashMap<String, Integer>)in.readObject();
 
         needsSaving = false;
     }

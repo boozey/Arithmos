@@ -85,16 +85,14 @@ public class GameActivity extends AppCompatActivity implements
     private int prevScore = 0;
     private long elapsedMillis = 0;
     private boolean stopTimer = false;
-
-    // Ads
-    private InterstitialAd mInterstitialAd;
-    private boolean showAds = true;
+    private int activityStartCount;
+    SharedPreferences generalPrefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        SharedPreferences generalPrefs = getSharedPreferences(MainActivity.GENERAL_PREFS, MODE_PRIVATE);
+        generalPrefs = getSharedPreferences(MainActivity.GENERAL_PREFS, MODE_PRIVATE);
         useGooglePlay = generalPrefs.getBoolean(MainActivity.AUTO_SIGN_IN, true);
         if (!useGooglePlay) Log.d(LOG_TAG, "Google Play Services disabled");
 
@@ -110,29 +108,6 @@ public class GameActivity extends AppCompatActivity implements
         setContentView(R.layout.activity_game);
         context = this;
         rootLayout = (RelativeLayout)findViewById(R.id.root_layout);
-
-        // Setup Ads
-        showAds = generalPrefs.getBoolean(MainActivity.SHOW_ADS, true);
-        if (showAds) {
-            MobileAds.initialize(getApplicationContext(), "ca-app-pub-4640479150069852~3029191523");
-            AdView mAdView = (AdView) rootLayout.findViewById(R.id.adView);
-            mAdView.setVisibility(View.VISIBLE);
-            AdRequest adRequest = new AdRequest.Builder()
-                    .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
-                    .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
-                    .addTestDevice("19BA58A88672F3F9197685FEEB600EA7")
-                    .build();
-            mAdView.loadAd(adRequest);
-
-            AdRequest intstAdRequest = new AdRequest.Builder()
-                    .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
-                    .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
-                    .addTestDevice("19BA58A88672F3F9197685FEEB600EA7")
-                    .build();
-            mInterstitialAd = new InterstitialAd(this);
-            mInterstitialAd.setAdUnitId(getString(R.string.interstitial_ad_unit_id));
-            mInterstitialAd.loadAd(intstAdRequest);
-        }
 
         gameBoard = (GameBoard)rootLayout.findViewById(R.id.game_board);
         gameBoard.setOnAchievementListener(this);
@@ -151,6 +126,7 @@ public class GameActivity extends AppCompatActivity implements
             isGoalViewPlaying = savedInstanceState.getBoolean(IS_GOALVIEW_PLAYING, false);
         }
         loadCachedGame();
+        showAds();
 
         if (loadCachedLevel()) {
             if (game.hasTimeLimit()) {
@@ -340,10 +316,13 @@ public class GameActivity extends AppCompatActivity implements
             goalView.setGame(game);
         }
 
+        TextView timeView = (TextView)rootLayout.findViewById(R.id.time_textview);
         if (game.hasTimeLimit()){
-            TextView timeView = (TextView)rootLayout.findViewById(R.id.time_textview);
             timeView.setText(Utils.getDate(game.getTimeLimit(), "mm:ss"));
+            timeView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.text_primary_dark, null));
             timeView.setVisibility(View.VISIBLE);
+        } else {
+            timeView.setVisibility(View.GONE);
         }
 
         // Show stars earned
@@ -453,7 +432,7 @@ public class GameActivity extends AppCompatActivity implements
         if (count > 0 && zero.getVisibility() != View.VISIBLE)
             Animations.popIn(zero, 200, 325).start();
         if (count > 1) {
-            zero.setCompoundDrawablePadding(-12);
+            zero.setCompoundDrawablePadding(-8);
             zero.setText(String.valueOf(count));
         }
 
@@ -463,7 +442,7 @@ public class GameActivity extends AppCompatActivity implements
             if (count > 0 && autoView.getVisibility() != View.VISIBLE)
                 Animations.popIn(autoView, 200, 325).start();
             if (count > 1) {
-                autoView.setCompoundDrawablePadding(-12);
+                autoView.setCompoundDrawablePadding(-8);
                 autoView.setText(String.valueOf(count));
             }
         }
@@ -474,6 +453,7 @@ public class GameActivity extends AppCompatActivity implements
         game = new ArithmosGame(level);
         animStartDelay = 0;
         hasLevelPassedShown = false;
+        hasBeenPlayed = false;
         elapsedMillis = 0;
         setupGameUi();
         gameBoard.startGame();
@@ -508,37 +488,55 @@ public class GameActivity extends AppCompatActivity implements
     }
 
     private void retryLevel() {
-        AnimatorSet set = Animations.fadeOut(gameBoard, 300, 0);
-        set.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animation) {
+        if (showAds && mInterstitialAd.isLoaded() && Math.random() < 0.5){
+            AnimatorSet set = Animations.fadeOut(gameBoard, 300, 0);
+            set.start();
+            mInterstitialAd.setAdListener(new AdListener() {
+                @Override
+                public void onAdClosed() {
+                    super.onAdClosed();
+                    String challenge = game.getChallengeName();
+                    int level = game.getChallengeLevel();
+                    LoadGameLevel(ArithmosGameBase.getLevelXmlIds(challenge)[level]);
+                    cacheLevel();
+                    cacheGame();
+                    loadInterstitialAd();
+                }
+            });
+            mInterstitialAd.show();
+        } else {
+            AnimatorSet set = Animations.fadeOut(gameBoard, 300, 0);
+            set.addListener(new Animator.AnimatorListener() {
+                @Override
+                public void onAnimationStart(Animator animation) {
 
-            }
+                }
 
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                String challenge = game.getChallengeName();
-                int level = game.getChallengeLevel();
-                LoadGameLevel(ArithmosGameBase.getLevelXmlIds(challenge)[level]);
-                cacheLevel();
-                cacheGame();
-            }
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    String challenge = game.getChallengeName();
+                    int level = game.getChallengeLevel();
+                    LoadGameLevel(ArithmosGameBase.getLevelXmlIds(challenge)[level]);
+                    cacheLevel();
+                    cacheGame();
+                }
 
-            @Override
-            public void onAnimationCancel(Animator animation) {
+                @Override
+                public void onAnimationCancel(Animator animation) {
 
-            }
+                }
 
-            @Override
-            public void onAnimationRepeat(Animator animation) {
+                @Override
+                public void onAnimationRepeat(Animator animation) {
 
-            }
-        });
-        set.start();
+                }
+            });
+            set.start();
+        }
     }
 
     private void loadNextLevel(){
-        if (showAds && mInterstitialAd.isLoaded()){
+        if (showAds && mInterstitialAd.isLoaded() && Math.random() < 0.75){
             AnimatorSet set = Animations.fadeOut(gameBoard, 300, 0);
             set.start();
             mInterstitialAd.setAdListener(new AdListener() {
@@ -551,12 +549,7 @@ public class GameActivity extends AppCompatActivity implements
                     setupSpecials();
                     cacheLevel();
                     cacheGame();
-                    AdRequest intstAdRequest = new AdRequest.Builder()
-                            .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
-                            .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
-                            .addTestDevice("19BA58A88672F3F9197685FEEB600EA7")
-                            .build();
-                    mInterstitialAd.loadAd(intstAdRequest);
+                    loadInterstitialAd();
                 }
             });
             mInterstitialAd.show();
@@ -656,6 +649,9 @@ public class GameActivity extends AppCompatActivity implements
                         GoalView goalView = (GoalView)rootLayout.findViewById(R.id.goal_view);
                         goalView.startGoalAnimation();
                         isGoalViewPlaying = true;
+                        int levelPlays = gameBase.getInt(ArithmosGameBase.LEVEL_START_COUNT, 0);
+                        gameBase.putInt(ArithmosGameBase.LEVEL_START_COUNT, ++levelPlays);
+                        if (!showAds) showAds();
                     }
 
                     @Override
@@ -1159,6 +1155,7 @@ public class GameActivity extends AppCompatActivity implements
                     rootLayout.post(new Runnable() {
                         @Override
                         public void run() {
+                            timeText.setText("00:00");
                             ArithmosGame.GameResult result = new ArithmosGame.GameResult(ArithmosGame.GameResult.TIME_UP);
                             result.isLevelPassed = false;
                             OnGameOver(result);
@@ -1509,6 +1506,7 @@ public class GameActivity extends AppCompatActivity implements
 
     @Override
     public void OnBomb(String operation){
+
         final View layout = getLayoutInflater().inflate(R.layout.bomb_popup, null);
 
         // Animate bomb popup
@@ -1542,7 +1540,7 @@ public class GameActivity extends AppCompatActivity implements
 
         rootLayout.addView(layout);
         Animations.slideUp(layout, 200, animStartDelay + gameBoard.getAnimDelay(), rootLayout.getHeight() / 3).start();
-        AnimatorSet set = Animations.explodeFade(layout, animStartDelay + 200 + gameBoard.getAnimDelay(), 1200);
+        AnimatorSet set = Animations.explodeFade(layout, 200, animStartDelay + 1200 + gameBoard.getAnimDelay());
         animStartDelay += 1400;
         set.addListener(new Animator.AnimatorListener() {
             @Override
@@ -1917,6 +1915,50 @@ public class GameActivity extends AppCompatActivity implements
         }
 
     }
+
+
+    // Ads
+    private InterstitialAd mInterstitialAd;
+    private boolean showAds = true;
+
+    private void showAds(){
+        // Setup Ads
+        activityStartCount = gameBase.getInt(ArithmosGameBase.MAIN_START_COUNT, 1);
+        int levelStartCount = gameBase.getInt(ArithmosGameBase.LEVEL_START_COUNT, 0);
+        showAds = generalPrefs.getBoolean(MainActivity.SHOW_ADS, true) && activityStartCount + levelStartCount >= MainActivity.COUNT_TO_SHOW_ADS;
+        if (showAds) {
+            MobileAds.initialize(getApplicationContext(), "ca-app-pub-4640479150069852~3029191523");
+            AdView mAdView = (AdView) rootLayout.findViewById(R.id.adView);
+            mAdView.setVisibility(View.VISIBLE);
+            AdRequest adRequest = new AdRequest.Builder()
+                    .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
+                    .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
+                    .addTestDevice("19BA58A88672F3F9197685FEEB600EA7")
+                    .build();
+            mAdView.loadAd(adRequest);
+
+            AdRequest intstAdRequest = new AdRequest.Builder()
+                    .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
+                    .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
+                    .addTestDevice("19BA58A88672F3F9197685FEEB600EA7")
+                    .build();
+            mInterstitialAd = new InterstitialAd(this);
+            mInterstitialAd.setAdUnitId(getString(R.string.interstitial_ad_unit_id));
+            mInterstitialAd.loadAd(intstAdRequest);
+        }
+    }
+
+    private void loadInterstitialAd(){
+        if (showAds && !mInterstitialAd.isLoaded()) {
+            AdRequest intstAdRequest = new AdRequest.Builder()
+                    .addTestDevice("B351AB87B7184CD82FD0563D59D1E95B")
+                    .addTestDevice("84217760FD1D092D92F5FE072A2F1861")
+                    .addTestDevice("19BA58A88672F3F9197685FEEB600EA7")
+                    .build();
+            mInterstitialAd.loadAd(intstAdRequest);
+        }
+    }
+
 
     // Utility methods
     private void showLoadingPopup(){

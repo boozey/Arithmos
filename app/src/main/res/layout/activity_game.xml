@@ -46,32 +46,35 @@
                 </LinearLayout>
                 <LinearLayout
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:minWidth="60dp"
+                    android:layout_height="@dimen/slash_icon_size"
+                    android:layout_margin="4dp"
+                    android:gravity="center_vertical"
                     android:orientation="horizontal">
                     <ImageView android:id="@+id/slash_mult"
                         android:layout_width="@dimen/slash_icon_size"
                         android:layout_height="@dimen/slash_icon_size"
                         android:layout_margin="4dp"
                         android:background="@drawable/ic_slash_multiplication"
-                        android:visibility="invisible"/>
+                        android:visibility="gone"/>
                     <ImageView android:id="@+id/slash_div"
                         android:layout_width="@dimen/slash_icon_size"
                         android:layout_height="@dimen/slash_icon_size"
                         android:layout_margin="4dp"
                         android:background="@drawable/ic_slash_division"
-                        android:visibility="invisible"/>
+                        android:visibility="gone"/>
                     <ImageView android:id="@+id/slash_add"
                         android:layout_width="@dimen/slash_icon_size"
                         android:layout_height="@dimen/slash_icon_size"
                         android:layout_margin="4dp"
                         android:background="@drawable/ic_slash_addition"
-                        android:visibility="invisible"/>
+                        android:visibility="gone"/>
                     <ImageView android:id="@+id/slash_sub"
                         android:layout_width="@dimen/slash_icon_size"
                         android:layout_height="@dimen/slash_icon_size"
                         android:layout_margin="4dp"
                         android:background="@drawable/ic_slash_subtraction"
-                        android:visibility="invisible"/>
+                        android:visibility="gone"/>
                 </LinearLayout>
 
             </LinearLayout>
@@ -90,7 +93,6 @@
                 android:layout_width="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
                 android:textSize="@dimen/time_text_size"
                 android:text="3:00"
                 android:visibility="gone"/>
@@ -122,11 +124,13 @@
                 android:layout_height="match_parent"
                 custom:orientation="vertical"
                 custom:textColor="@color/text_primary_light"
-                custom:shapeColor="@android:color/holo_red_light"/>
+                custom:shapeColor="@android:color/holo_red_light"
+                android:visibility="gone"/>
 
                 <TextView android:id="@+id/three01_textview"
-                    android:layout_width="wrap_content"
+                    android:layout_width="@dimen/goal_list_width"
                     android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
                     android:textSize="@dimen/three01_text_size"
                     android:text="1\n2\n8"
                     android:visibility="gone"/>
