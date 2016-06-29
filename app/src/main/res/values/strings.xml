@@ -88,6 +88,7 @@
     <string name="order_number">Order number: %s</string>
     <string name="product_id">Product id: %s</string>
     <string name="ads_removed_notification">Ads have been removed!</string>
+    <string name="special_pkg_purchase">Added two of each special to your inventory</string>
 
     <!-- Special descriptions -->
     <string name="skip_description">Skips the current or first goal number in the list</string>

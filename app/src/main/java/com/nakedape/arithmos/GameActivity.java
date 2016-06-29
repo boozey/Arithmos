@@ -788,16 +788,12 @@ public class GameActivity extends AppCompatActivity implements
                 @Override
                 public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
                     try {
-                        if (openSnapshotResult.getSnapshot().getMetadata().getLastModifiedTimestamp() > gameBase.timeStamp()) {
                             gameBase.loadByteData(openSnapshotResult.getSnapshot().getSnapshotContents().readFully());
                             cacheGame();
                             Log.d(LOG_TAG, "Game base updated from Google");
                             setupSpecials();
                             TextView jewelText = (TextView) rootLayout.findViewById(R.id.jewel_count);
                             Animations.CountTo(jewelText, 0, gameBase.getJewelCount());
-                        } else {
-                            Log.d(LOG_TAG, "Game base downloaded but not updated");
-                        }
                         gameBaseNeedsDownload = false;
 
                     } catch (IOException | NullPointerException e) {

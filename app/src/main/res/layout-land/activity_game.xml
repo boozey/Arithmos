@@ -115,11 +115,12 @@
                 android:text="128"
                 android:visibility="gone"/>
 
-            <ScrollView android:id="@+id/special_layout"
+            <HorizontalScrollView android:id="@+id/special_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:scrollbars="none"
+                android:fillViewport="true"
                 android:background="@drawable/pencil_border_horizontal">
                 <LinearLayout
                     android:orientation="horizontal"
@@ -191,7 +192,7 @@
                         android:onClick="AutoRunButtonClick"
                         android:visibility="gone"/>
                 </LinearLayout>
-            </ScrollView>
+            </HorizontalScrollView>
 
             <com.google.android.gms.ads.AdView
                 android:id="@+id/adView"

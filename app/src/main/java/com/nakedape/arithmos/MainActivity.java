@@ -168,10 +168,12 @@ public class MainActivity extends AppCompatActivity implements
         activityStartCount = gameBase.getInt(ArithmosGameBase.MAIN_START_COUNT, 1);
         gameBase.putInt(ArithmosGameBase.MAIN_START_COUNT, ++activityStartCount);
         Log.d(LOG_TAG, "MAIN_START_COUNT = " + activityStartCount);
-        cacheGame();
         showAds();
-        if (mAutoStartSignInFlow)
+        if (mAutoStartSignInFlow) {
             mGoogleApiClient.connect();
+        } else {
+            cacheGame();
+        }
     }
 
     @Override
@@ -1115,9 +1117,7 @@ public class MainActivity extends AppCompatActivity implements
                             SharedPreferences.Editor editor = prefs.edit();
                             editor.putString(GAME_FILE_NAME, gameFileName);
                             editor.apply();
-                            if (s.getLastModifiedTimestamp() > gameBase.timeStamp()) {
-                                loadGameState(gameFileName);
-                            }
+                            loadGameState(gameFileName);
                             Log.d(LOG_TAG, "Game base downloaded");
                             Log.d(LOG_TAG, "Google timestamp: " + Utils.getDate(s.getLastModifiedTimestamp(), "MM/dd/yy hh:mm:ss"));
                             Log.d(LOG_TAG, "Cache timestamp: " + Utils.getDate(gameBase.timeStamp(), "MM/dd/yy hh:mm:ss"));
@@ -1132,7 +1132,7 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void loadGameState(String gameFileName){
-        if (gameFileName != null && gameBaseNeedsRefresh && mGoogleApiClient.isConnected()) {
+        if (gameFileName != null && mGoogleApiClient.isConnected()) {
             Games.Snapshots.open(mGoogleApiClient, gameFileName, false).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
                 @Override
                 public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
@@ -1580,7 +1580,7 @@ public class MainActivity extends AppCompatActivity implements
 
     // Purchasing API and purchase processing
     private static final int PURCHASE_REQUEST = 7001;
-    private static final String SKU_1000_JEWELS = "jewels_1000", SKU_REMOVE_ADS = "remove_ads";
+    private static final String SKU_1000_JEWELS = "jewels_1000", SKU_SPECIAL_PKG = "special_set_2", SKU_REMOVE_ADS = "remove_ads";
     private static final String ORDER_HISTORY_FILENAME = "order_history";
     private IabHelper iabHelper;
     private IabListAdapter iabListAdapter;
@@ -1651,6 +1651,7 @@ public class MainActivity extends AppCompatActivity implements
                 iabListView.setAdapter(iabListAdapter);
                 final ArrayList<String> skuList = new ArrayList<>();
                 skuList.add(SKU_1000_JEWELS);
+                skuList.add(SKU_SPECIAL_PKG);
                 skuList.add(SKU_REMOVE_ADS);
                 try {
                     iabHelper.queryInventoryAsync(true, skuList, null, new IabHelper.QueryInventoryFinishedListener() {
@@ -1917,6 +1918,7 @@ public class MainActivity extends AppCompatActivity implements
         iabHelper = new IabHelper(this, getString(R.string.base64EncodedPublicKey));
         final ArrayList<String> skuList = new ArrayList<>();
         skuList.add(SKU_1000_JEWELS);
+        skuList.add(SKU_SPECIAL_PKG);
         skuList.add(SKU_REMOVE_ADS);
         iabHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
             public void onIabSetupFinished(IabResult result) {
@@ -1934,10 +1936,12 @@ public class MainActivity extends AppCompatActivity implements
                                 for (String sku : skuList){
                                     if (inv.hasPurchase(sku)) purchases.add(inv.getPurchase(sku));
                                 }
-                                if (purchases.size() > 0)
-                                    for (Purchase p : purchases){
+                                if (purchases.size() > 0) {
+                                    for (Purchase p : purchases) {
                                         processPurchase(p);
                                     }
+                                    saveGameState();
+                                }
                             }
                             iabHelper.disposeWhenFinished();
                             Log.d(LOG_TAG, result.getMessage());
@@ -1957,6 +1961,15 @@ public class MainActivity extends AppCompatActivity implements
                 Animations.CountTo(getResources(), R.string.number_after_x, jewelView, prevCount, gameBase.getJewelCount());
                 Log.d(LOG_TAG, "Consumed 1000 jewel purchase");
                 Toast.makeText(context, getString(R.string.jewel_purchase, 1000), Toast.LENGTH_SHORT).show();
+                break;
+            case SKU_SPECIAL_PKG:
+                for (String s : getResources().getStringArray(R.array.special_item_names)){
+                    gameBase.addSpecial(s, 2);
+                }
+                ListView listView = (ListView)rootLayout.findViewById(R.id.special_store_listview);
+                SpecialListAdapter adapter = (SpecialListAdapter)listView.getAdapter();
+                adapter.notifyDataSetChanged();
+                Toast.makeText(context, getString(R.string.special_pkg_purchase), Toast.LENGTH_SHORT).show();
                 break;
         }
     }
@@ -2826,7 +2839,7 @@ public class MainActivity extends AppCompatActivity implements
     private InterstitialAd mInterstitialAd;
     private boolean showAds = true;
     public static String SHOW_ADS = "SHOW_ADS";
-    public static final int COUNT_TO_SHOW_ADS = 15;
+    public static final int COUNT_TO_SHOW_ADS = 10;
 
     private void loadInterstitialAd(){
         if (showAds && !mInterstitialAd.isLoaded()) {

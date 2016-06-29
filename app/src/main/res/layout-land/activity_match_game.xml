@@ -119,7 +119,7 @@
                     android:visibility="gone"/>
 
 
-            <ScrollView android:id="@+id/special_layout"
+            <HorizontalScrollView android:id="@+id/special_layout"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:scrollbars="none"
@@ -194,7 +194,7 @@
                             android:onClick="AutoRunButtonClick"
                             android:visibility="gone"/>
                 </LinearLayout>
-            </ScrollView>
+            </HorizontalScrollView>
 
             <com.google.android.gms.ads.AdView
                 android:id="@+id/adView"
