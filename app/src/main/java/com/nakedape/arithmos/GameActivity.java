@@ -47,6 +47,7 @@ import com.google.android.gms.games.snapshot.Snapshot;
 import com.google.android.gms.games.snapshot.SnapshotMetadataChange;
 import com.google.android.gms.games.snapshot.Snapshots;
 import com.google.example.games.basegameutils.BaseGameUtils;
+import com.google.firebase.analytics.FirebaseAnalytics;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -86,12 +87,17 @@ public class GameActivity extends AppCompatActivity implements
     private long elapsedMillis = 0;
     private boolean stopTimer = false;
     private int activityStartCount;
+    private FirebaseAnalytics mFirebaseAnalytics;
     SharedPreferences generalPrefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Initialize Firebase analytics
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+
+        // Initialize Google Play Services
         generalPrefs = getSharedPreferences(MainActivity.GENERAL_PREFS, MODE_PRIVATE);
         useGooglePlay = generalPrefs.getBoolean(MainActivity.AUTO_SIGN_IN, true);
         if (!useGooglePlay) Log.d(LOG_TAG, "Google Play Services disabled");
@@ -485,6 +491,12 @@ public class GameActivity extends AppCompatActivity implements
                 set.start();
             }
         });
+
+        // Record Firebase Event
+        Bundle bundle = new Bundle();
+        bundle.putString(FirebaseAnalytics.Param.CONTENT_TYPE, "Game Level");
+        bundle.putString(FirebaseAnalytics.Param.ITEM_ID, game.getChallengeName() + game.getChallengeLevel());
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
     }
 
     private void retryLevel() {
@@ -1082,6 +1094,12 @@ public class GameActivity extends AppCompatActivity implements
         game.resetJewelCount();
         gameBase.recordJewels(jewelCount);
         cacheGame();
+
+        // Record Firebase Event
+        Bundle bundle = new Bundle();
+        bundle.putLong(FirebaseAnalytics.Param.SCORE, game.getScore(game.getCurrentPlayer()));
+        bundle.putString(FirebaseAnalytics.Param.CHARACTER, game.getChallengeName() + " Level " + game.getChallengeLevel());
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.POST_SCORE, bundle);
 
         // Recorded if using Google Play Games
             if (mGoogleApiClient.isConnected()) {

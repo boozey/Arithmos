@@ -65,6 +65,7 @@ import com.google.android.gms.games.snapshot.SnapshotMetadata;
 import com.google.android.gms.games.snapshot.SnapshotMetadataChange;
 import com.google.android.gms.games.snapshot.Snapshots;
 import com.google.example.games.basegameutils.BaseGameUtils;
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.nakedape.arithmos.purchaseUtils.IabHelper;
 import com.nakedape.arithmos.purchaseUtils.IabResult;
 import com.nakedape.arithmos.purchaseUtils.Inventory;
@@ -100,10 +101,14 @@ public class MainActivity extends AppCompatActivity implements
     private RelativeLayout rootLayout;
     private SharedPreferences generalPrefs;
     private int activityStartCount;
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Initialize Firebase analytics
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
 
         generalPrefs = getSharedPreferences(GENERAL_PREFS, MODE_PRIVATE);
         mAutoStartSignInFlow = generalPrefs.getBoolean(AUTO_SIGN_IN, true);
@@ -938,6 +943,11 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     public void ActivityButtonClick(View v){
+        // Record Firebase Event
+        Bundle bundle = new Bundle();
+        bundle.putString(FirebaseAnalytics.Param.ITEM_CATEGORY, "Activity List");
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.VIEW_ITEM_LIST, bundle);
+
         if (rootLayout.findViewById(R.id.activity_listview).getAlpha() == 0) {
             if (rootLayout.findViewById(R.id.challenge_listview).getAlpha() > 0)
                 Animations.fadeOut(rootLayout.findViewById(R.id.challenge_listview), 200, 0).start();
@@ -1190,6 +1200,11 @@ public class MainActivity extends AppCompatActivity implements
     private ChallengeListAdapter challengeListAdapter;
 
     public void ChallengesButtonClick(View v){
+        // Record Firebase Event
+        Bundle bundle = new Bundle();
+        bundle.putString(FirebaseAnalytics.Param.ITEM_CATEGORY, "Challenges List");
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.VIEW_ITEM_LIST, bundle);
+
         ExpandableListView listView = (ExpandableListView) rootLayout.findViewById(R.id.challenge_listview);
         if (listView.getVisibility() != View.VISIBLE || listView.getAlpha() == 0) {
             if (challengeListAdapter == null) {
@@ -1491,6 +1506,11 @@ public class MainActivity extends AppCompatActivity implements
 
     // Special Store
     public void specialStoreButtonClick(View v){
+        // Record Firebase Event
+        Bundle bundle = new Bundle();
+        bundle.putString(FirebaseAnalytics.Param.ITEM_CATEGORY, "Specials List");
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.VIEW_ITEM_LIST, bundle);
+
         ListView listView = (ListView)rootLayout.findViewById(R.id.special_store_listview);
         if (listView.getVisibility() != View.VISIBLE || listView.getAlpha() == 0) {
             listView.setAdapter(new SpecialListAdapter());
@@ -1570,6 +1590,13 @@ public class MainActivity extends AppCompatActivity implements
                         Animations.CountTo(getResources(), R.string.number_after_x, jewelText, prevCount, gameBase.getJewelCount());
                         cacheGame();
                         saveGameState();
+
+                        // Record Firebase Event
+                        Bundle bundle = new Bundle();
+                        bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, names[position]);
+                        bundle.putString(FirebaseAnalytics.Param.VIRTUAL_CURRENCY_NAME, "jewels");
+                        bundle.putLong(FirebaseAnalytics.Param.VALUE, costs[position]);
+                        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SPEND_VIRTUAL_CURRENCY, bundle);
                     }
                 }
             });
@@ -1586,6 +1613,11 @@ public class MainActivity extends AppCompatActivity implements
     private IabListAdapter iabListAdapter;
 
     public void IabButtonClick(View v){
+        // Record Firebase Event
+        Bundle bundle = new Bundle();
+        bundle.putString(FirebaseAnalytics.Param.ITEM_CATEGORY, "In-app Store List");
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.VIEW_ITEM_LIST, bundle);
+
         showIabStorePopup();
     }
 
@@ -2078,6 +2110,11 @@ public class MainActivity extends AppCompatActivity implements
     private AchievementListAdapter achievementListAdapter;
 
     public void achievementButtonClick(View v){
+        // Record Firebase Event
+        Bundle bundle = new Bundle();
+        bundle.putString(FirebaseAnalytics.Param.ITEM_CATEGORY, "Achievement List");
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.VIEW_ITEM_LIST, bundle);
+
         ListView listView = (ListView)rootLayout.findViewById(R.id.achievement_listview);
         if (listView.getVisibility() != View.VISIBLE || listView.getAlpha() == 0) {
             if (achievementListAdapter == null)
@@ -2385,6 +2422,12 @@ public class MainActivity extends AppCompatActivity implements
                 return;
             }
 
+
+            // Record Firebase Event
+            Bundle bundle = new Bundle();
+            bundle.putString(FirebaseAnalytics.Param.GROUP_ID, "Match initiated");
+            mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.JOIN_GROUP, bundle);
+
             // Initialize match
             TurnBasedMatch match = result.getMatch();
             ArithmosLevel level = new ArithmosLevel(context, matchLevelXmlId);
@@ -2418,6 +2461,12 @@ public class MainActivity extends AppCompatActivity implements
 
                 return;
             }
+
+            // Record Firebase Event
+            Bundle bundle = new Bundle();
+            bundle.putString(FirebaseAnalytics.Param.GROUP_ID, "Match turn taken");
+            mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.JOIN_GROUP, bundle);
+
             final TurnBasedMatch match = loadMatchResult.getMatch();
             hideLoadingPopup();
                 if (showAds && mInterstitialAd.isLoaded()){
