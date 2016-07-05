@@ -6,13 +6,15 @@
     leaderboardid="CgkImpOZm4YQEAIQEg">
     <GridBaseNumbers>1, 2, 3, 4, 5, 6, 8, 8, 8, 8</GridBaseNumbers>
     <GridSpecialNumbers>7, 16, 64, 48</GridSpecialNumbers>
-    <GoalNumbers count="10">2, 4, 8, 16, 24, 32, 48, 64, </GoalNumbers>
+    <GoalNumbers count="10">2, 4, 8, 16, 24, 32, 40, 48, 64, 72</GoalNumbers>
     <!-- 85 bonus locations -->
     <Run>8, bonus_red_jewel, 5, ?, 3, ?, 8</Run> <!-- 64 -->
-    <Run>3, bonus_lock*, 8, bonus_red_jewel, 2, bonus_lock/, 1</Run>
-    <Run>16, ?, 8, ?, 2, ?, 4</Run>
-    <Run>5, bonus_lock*, 5, bonus_balloons, 1</Run>
-    <Run>8, bonus_red_jewel, 7, bonus_red_jewel, 8</Run>
+    <Run>3, bonus_lock*, 8, bonus_red_jewel, 2, bonus_lock/, 1</Run> <!-- 48 -->
+    <Run>16, ?, 8, ?, 2, ?, 4</Run> <!-- 16, 64 -->
+    <Run>5, bonus_lock*, 5, bonus_balloons, 1</Run> <!-- 24 -->
+    <Run>8, bonus_red_jewel, 7, bonus_red_jewel, 8</Run> <!-- 48, 64-->
+    <Run>5, bonus_red_jewel, 8</Run> <!-- 40 -->
+    <Run>48, bonus_red_jewel, 2, ?, 3</Run> <!-- 8, 72 -->
     <StarLevels>3000, 8000, 14000</StarLevels>
     <Bonus name="apple">50</Bonus>
     <Bonus name="bananas">8</Bonus>
