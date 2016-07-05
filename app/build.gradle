@@ -7,7 +7,7 @@ android {
         applicationId 'com.nakedape.arithmos'
         minSdkVersion 17
         targetSdkVersion 23
-        versionCode 5
+        versionCode 6
         versionName "1.0"
     }
     buildTypes {

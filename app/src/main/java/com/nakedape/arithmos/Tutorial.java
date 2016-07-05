@@ -36,7 +36,9 @@ public class Tutorial {
         lessons.put(MANUAL_SIGN_IN, new Lesson(R.string.manual_sign_in_lesson, R.id.sign_in_button, true, true, CHALLENGES));
         lessons.put(AUTO_SIGN_IN, new Lesson(R.string.auto_sign_in_lesson, R.id.sign_out_button, true, true, CHALLENGES));
         lessons.put(CHALLENGES, new Lesson(R.string.challenges_button_lesson, R.id.challenges_button, Lesson.BELOW_CENTER, true, true, LEVELS));
-        lessons.put(LEVELS, new Lesson(R.string.level_selection_lesson, R.id.challenge_listview, Lesson.BELOW_CENTER, true, false, WAIT_FOR_USER));
+        Lesson selectLevelLesson = new Lesson(R.string.level_selection_lesson, R.id.challenges_button, Lesson.BELOW_CENTER, true, true, WAIT_FOR_USER);
+        selectLevelLesson.targetId = R.id.challenge_listview;
+        lessons.put(LEVELS, selectLevelLesson);
         // GameActivity Lessons
         Lesson levelInfoLesson = new Lesson(R.string.level_types_lesson, R.id.description_textview, Lesson.BELOW_CENTER, true, true, WAIT_FOR_USER);
         levelInfoLesson.targetId = R.id.ok_button;

@@ -1275,6 +1275,9 @@ public class MainActivity extends AppCompatActivity implements
                 }
             });
             set.start();
+        } else if (isTutorialMode &&
+                generalPrefs.getString(TUTORIAL_LESSON_NAME, Tutorial.SIGN_IN_LESSON).equals(Tutorial.CHALLENGES)){
+            nextLesson(Tutorial.LEVELS);
         }
 
     }
@@ -3141,8 +3144,8 @@ public class MainActivity extends AppCompatActivity implements
                     rootLayout.addView(tutorialPopup);
                 }
 
-                final Tutorial.Lesson lesson = tutorial.getLesson(lessonName);
                 // Setup tutorial message popup
+                final Tutorial.Lesson lesson = tutorial.getLesson(lessonName);
 
                 // Set message
                 TextView messageView = (TextView)tutorialPopup.findViewById(R.id.textview1);
@@ -3150,18 +3153,7 @@ public class MainActivity extends AppCompatActivity implements
 
                 // position popup and select background
                 View popupForeground = tutorialPopup.findViewById(R.id.pop_up_foreground);
-                View tempView;
-                if (lesson.anchorId == R.id.challenge_listview) {
-                    ExpandableListView listView = (ExpandableListView)rootLayout.findViewById(R.id.challenge_listview);
-                    tempView = listView.getChildAt(0);
-                    if (tempView == null || tempView.getVisibility() != View.VISIBLE) {
-                        tempView = rootLayout.findViewById(R.id.challenges_button);
-                        lesson.placementRelToAnchor = Tutorial.Lesson.BELOW_CENTER;
-                    }
-                } else {
-                    tempView = rootLayout.findViewById(lesson.anchorId);
-                }
-                final View anchorView = tempView;
+                final View anchorView = rootLayout.findViewById(lesson.anchorId);
                 final Rect anchorViewRect = new Rect();
                 anchorView.getGlobalVisibleRect(anchorViewRect);
                 final Rect rootLayoutRect = new Rect();
@@ -3174,27 +3166,27 @@ public class MainActivity extends AppCompatActivity implements
                 switch (lesson.placementRelToAnchor){
                     case Tutorial.Lesson.BELOW_CENTER:
                         popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_top_center_anchor, null));
-                        params.setMargins(anchorViewRect.centerX() - popupForeground.getMeasuredWidth() / 2, anchorViewRect.bottom - rootLayoutRect.top, 0, 0);
+                        params.setMargins(anchorViewRect.centerX() - popupForeground.getWidth() / 2, Math.max(Math.min(anchorViewRect.bottom - rootLayoutRect.top, rootLayout.getHeight() - popupForeground.getHeight()), 0), 0, 0);
                         break;
                     case Tutorial.Lesson.ABOVE_CENTER:
                         popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_bottom_center_anchor, null));
-                        params.setMargins(anchorViewRect.centerX() - popupForeground.getMeasuredWidth() / 2, anchorViewRect.top - rootLayoutRect.top - popupForeground.getMeasuredHeight(), 0, 0);
+                        params.setMargins(anchorViewRect.centerX() - popupForeground.getWidth() / 2, Math.max(anchorViewRect.top - rootLayoutRect.top - popupForeground.getHeight(), 0), 0, 0);
                         break;
                     case Tutorial.Lesson.RIGHT:
                         popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_left_center_anchor, null));
-                        params.setMargins(anchorViewRect.right, anchorViewRect.centerY() - rootLayoutRect.top - popupForeground.getMeasuredHeight() / 2, 0, 0);
+                        params.setMargins(anchorViewRect.right, anchorViewRect.centerY() - rootLayoutRect.top - popupForeground.getHeight() / 2, 0, 0);
                         break;
                     case Tutorial.Lesson.ABOVE_RIGHT:
                         popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_bottom_left_anchor, null));
-                        params.setMargins(anchorViewRect.centerX(), anchorViewRect.top - rootLayoutRect.top - popupForeground.getMeasuredHeight(), 0, 0);
+                        params.setMargins(anchorViewRect.centerX(), anchorViewRect.top - rootLayoutRect.top - popupForeground.getHeight(), 0, 0);
                         break;
                     case Tutorial.Lesson.CENTER:
                         popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_no_anchor, null));
-                        params.setMargins(anchorViewRect.centerX() - popupForeground.getMeasuredWidth() / 2, anchorViewRect.centerY() - rootLayoutRect.top - popupForeground.getMeasuredHeight() / 2, 0, 0);
+                        params.setMargins(anchorViewRect.centerX() - popupForeground.getWidth() / 2, anchorViewRect.centerY() - rootLayoutRect.top - popupForeground.getHeight() / 2, 0, 0);
                         break;
                     case Tutorial.Lesson.ABOVE_LEFT:
                         popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_bottom_right_anchor, null));
-                        params.setMargins(anchorViewRect.centerX() - popupForeground.getMeasuredWidth(), anchorViewRect.top - rootLayoutRect.top - popupForeground.getMeasuredHeight(), 0, 0);
+                        params.setMargins(anchorViewRect.centerX() - popupForeground.getWidth(), anchorViewRect.top - rootLayoutRect.top - popupForeground.getHeight(), 0, 0);
                         break;
                     default:
                         popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_top_left_anchor, null));
