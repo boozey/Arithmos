@@ -1353,6 +1353,7 @@ public class MainActivity extends AppCompatActivity implements
                 mInflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                 convertView = mInflater.inflate(childResourceId, null);
             }
+            final ArithmosLevel level = new ArithmosLevel(context, ArithmosGameBase.getLevelXmlIds(getGroup(groupPosition))[childPosition]);
 
             ImageView imageView = (ImageView)convertView.findViewById(R.id.image_view);
             if (!gameBase.isLevelUnlocked(getGroup(groupPosition), childPosition))
@@ -1390,18 +1391,19 @@ public class MainActivity extends AppCompatActivity implements
                     button2.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            ArithmosLevel level = new ArithmosLevel(context, ArithmosGameBase.getLevelXmlIds(getGroup(groupPosition))[childPosition]);
                             showLeaderboard(level.getLeaderboardId());
                         }
                     });
 
-                    matchButton.setVisibility(View.VISIBLE);
-                    matchButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            startMatchClick(ArithmosGameBase.getLevelXmlIds(getGroup(groupPosition))[childPosition]);
-                        }
-                    });
+                    if (!level.hasTimeLimit()) {
+                        matchButton.setVisibility(View.VISIBLE);
+                        matchButton.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                startMatchClick(ArithmosGameBase.getLevelXmlIds(getGroup(groupPosition))[childPosition]);
+                            }
+                        });
+                    }
                 } else {
                     button2.setVisibility(View.GONE);
                     matchButton.setVisibility(View.GONE);

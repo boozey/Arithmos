@@ -151,6 +151,7 @@
 
     <!-- Game Activity Strings -->
     <string name="bomb_message">for 3 turns</string>
+    <string name="auto_pick_level_up">Unlocked auto-pick level %d</string>
 
     <!-- Game over popup strings -->
     <string name="times_up">TIME\'S UP!</string>

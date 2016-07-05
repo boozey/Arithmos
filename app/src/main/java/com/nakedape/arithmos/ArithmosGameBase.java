@@ -1,6 +1,5 @@
 package com.nakedape.arithmos;
 
-import android.os.SystemClock;
 import android.util.Log;
 
 import java.io.ByteArrayInputStream;
@@ -58,7 +57,8 @@ public class ArithmosGameBase {
                         R.xml.game_level_crazy_eights_5x5_301, R.xml.game_level_crazy_eights_5x5_timed, R.xml.game_level_crazy_eights_6x6,
                         R.xml.game_level_crazy_eights_6x6_301, R.xml.game_level_crazy_eights_6x6_timed};
             case LUCKY_7:
-                return new int[] {R.xml.game_level_lucky_7_4x4, R.xml.game_level_lucky_7_5x5};
+                return new int[] {R.xml.game_level_lucky_7_4x4, R.xml.game_level_lucky_7_5x5, R.xml.game_level_lucky_7_5x5_bouncing,
+                        R.xml.game_level_lucky_7_5x5_301};
             default:
                 return getLevelXmlIds(EASY_123);
         }
@@ -74,13 +74,13 @@ public class ArithmosGameBase {
                 return new int[] {R.string.level_4x4, R.string.level_4x4_301, R.string.level_5x5, R.string.level_5x5_301, R.string.level_5x5_timed,
                         R.string.level_6x6, R.string.level_6x6_301, R.string.level_6x6_timed};
             case LUCKY_7:
-                return new int[] {R.string.level_4x4, R.string.level_5x5};
+                return new int[] {R.string.level_4x4, R.string.level_5x5, R.string.level_5x5, R.string.level_5x5_301};
             default:
                 return getLevelDisplayNameResIds(EASY_123);
         }
     }
 
-    transient private static final int serializationVersion = 5;
+    transient private static final int serializationVersion = 6;
     transient private static final long weekInMillis = 604800000;
     transient private static final long dayInMillis = 86400000;
     transient private ArrayList<String> unlockedLevels;
@@ -91,6 +91,7 @@ public class ArithmosGameBase {
     transient private boolean needsSaving = false;
     transient private long timeStamp = 0;
     transient private HashMap<String, Integer> intData;
+    transient private int autoPickCount = 0;
 
     public ArithmosGameBase(){
         intData = new HashMap<>();
@@ -116,6 +117,7 @@ public class ArithmosGameBase {
         //unlockAllLevels();
         stars = new HashMap<>();
         activityItems = new ArrayList<>();
+        autoPickCount = 0;
         needsSaving = true;
     }
 
@@ -130,6 +132,23 @@ public class ArithmosGameBase {
             return intData.get(key);
         else
             return defaultValue;
+    }
+
+    // Advancement
+    public int getAutoPickLevel(){
+        Log.d(LOG_TAG, "Auto-pick count: " + autoPickCount);
+        Log.d(LOG_TAG, "Auto-pick level: " + Math.min(autoPickCount / 4, 3));
+        return Math.min(autoPickCount / 4, 3);
+    }
+    public boolean updateAutoPickLevel(int level){
+        int current = getAutoPickLevel();
+        if (level > current) {
+            autoPickCount++;
+            Log.d(LOG_TAG, "Auto-pick count: " + autoPickCount);
+            Log.d(LOG_TAG, "Auto-pick level: " + Math.min(autoPickCount / 4, 3));
+            return getAutoPickLevel() > autoPickCount;
+        }
+        return false;
     }
 
     // Level unlocking
@@ -330,6 +349,7 @@ public class ArithmosGameBase {
         timeStamp = System.currentTimeMillis();
         out.writeLong(timeStamp);
         out.writeObject(intData);
+        out.writeInt(autoPickCount);
     }
 
     public void loadByteData(byte[] data){
@@ -355,10 +375,13 @@ public class ArithmosGameBase {
                 if (item.timeStamp > System.currentTimeMillis() - dayInMillis)
                     activityItems.add(item);
             }
-        } if (version >= 4)
+        }
+        if (version >= 4)
             timeStamp = in.readLong();
         if (version >= 5)
             intData = (HashMap<String, Integer>)in.readObject();
+        if (version >= 6)
+            autoPickCount = in.readInt();
 
         needsSaving = false;
     }

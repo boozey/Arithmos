@@ -592,6 +592,8 @@ public class ArithmosGame {
         if (meetsGoal(exp, true)){
             result.result = GameResult.SUCCESS;
             result.value = lastValue;
+            result.length = run.size();
+            result.numOps = operations.size();
 
             // Find bonuses in selection
             ArrayList<String> bonusNames = new ArrayList<>(1);
@@ -1445,6 +1447,8 @@ public class ArithmosGame {
         public int score = 0;
         public int numStars = 0;
         public int value = 0;
+        public int length = 0;
+        public int numOps = 0;
         public boolean isLevelPassed = false;
         public boolean noMorePossiblePlays = false;
         public ArrayList<int[]> bonusLocations;

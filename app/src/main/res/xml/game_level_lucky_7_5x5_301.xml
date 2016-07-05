@@ -1,0 +1,21 @@
+<Level challenge_name="LUCKY_7"
+    challenge_level="3"
+    gridsize="5"
+    leaderboardid="CgkImpOZm4YQEAIQHA"
+    goalType="301">
+    <GridBaseNumbers>7, 11</GridBaseNumbers>
+    <GridSpecialNumbers>1, 2, 3, 17, 77</GridSpecialNumbers>
+    <StarLevels>3000, 4500, 8500</StarLevels>
+    <!-- 56 bonus locations -->
+    <Run>2, ?, 7, bonus_red_jewel, 7, ?, 2</Run> <!-- 28 -->
+    <Run>2, bonus_lock*, 3, bonus_balloons, 7</Run> <!-- 42 -->
+    <Run>77, bonus_red_jewel, 11, ?, 3</Run> <!-- 21 -->
+    <Run>17, ?, 7, ?, 3</Run> <!-- 21 -->
+    <Run>3, ?, 7, ?, 7</Run>
+    <Bonus name="bananas">10</Bonus>
+    <Bonus name="apple">31</Bonus>
+    <Bonus name="red_jewel">4</Bonus>
+    <Bonus name="bomb">5</Bonus>
+    <Bonus name="lock+">1</Bonus>
+    <Bonus name="lock-">1</Bonus>
+</Level>

@@ -300,6 +300,7 @@ public class GameActivity extends AppCompatActivity implements
 
     private void setupGameUi(){
         gameBoard.setGame(game);
+        gameBoard.setAutoPickMax(gameBase.getAutoPickLevel());
 
         TextView scoreTextView = (TextView)rootLayout.findViewById(R.id.score_textview);
         scoreTextView.setText(NumberFormat.getIntegerInstance().format(game.getScore(game.getCurrentPlayer())));
@@ -1227,9 +1228,21 @@ public class GameActivity extends AppCompatActivity implements
         if (result.result == ArithmosGame.GameResult.SUCCESS) {
             hasBeenPlayed = true;
             cacheLevel();
+
+            // Update auto-pick level
+            if (game.getGoalType() != ArithmosLevel.GOAL_301) {
+                if (gameBase.updateAutoPickLevel(result.numOps)) {
+                    gameBoard.setAutoPickMax(gameBase.getAutoPickLevel());
+                    cacheGame();
+                    showQuickPopup(getString(R.string.auto_pick_level_up, gameBase.getAutoPickLevel()));
+                }
+            }
+
             // Animate score
             Animations.CountTo(scoreTextView, prevScore, prevScore + result.score);
             prevScore += result.score;
+
+            // Update UI according to goal type
             if (game.getGoalType() == ArithmosLevel.GOAL_301) {
                 TextView three01 = (TextView) rootLayout.findViewById(R.id.three01_textview);
                 String value = String.valueOf(game.get301Total());
@@ -2369,6 +2382,7 @@ public class GameActivity extends AppCompatActivity implements
             @Override
             public void run() {
                 AnimatorSet set = Animations.slideInDownAndOutUp(layout, 3000, animStartDelay + gameBoard.getAnimDelay(), layout.getMeasuredHeight());
+                animStartDelay += 3000;
                 set.addListener(new Animator.AnimatorListener() {
                     @Override
                     public void onAnimationStart(Animator animation) {
@@ -2377,6 +2391,7 @@ public class GameActivity extends AppCompatActivity implements
 
                     @Override
                     public void onAnimationEnd(Animator animation) {
+                        animStartDelay -= 3000;
                         rootLayout.removeView(layout);
                     }
 

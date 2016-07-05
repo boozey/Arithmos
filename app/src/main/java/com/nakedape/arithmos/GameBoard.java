@@ -1026,6 +1026,7 @@ public class GameBoard extends View {
     private RectF rectF;
     public static int AUTO_PICK = 911, MANUAL_PICK = 912;
     private int opPickMode = AUTO_PICK;
+    private int autoPickMax = 0;
 
     private boolean handleSelectionTouch(MotionEvent event){
         if (!isProcessing) {
@@ -1061,8 +1062,8 @@ public class GameBoard extends View {
                         return true;
                     }
                     else if (fillSelection(getTileLocation(x, y))) {
-                        // Over 5 tiles (3 numbers)
-                        if (opPickMode == MANUAL_PICK || selectedPieces.size() > 5 || game.getGoalType() == ArithmosLevel.GOAL_301) {
+                        // Manual mode, Over autoPickMax, or 301
+                        if (opPickMode == MANUAL_PICK || selectedPieces.size() > autoPickMax || game.getGoalType() == ArithmosLevel.GOAL_301) {
                             opIndex = 1;
                             TouchMode = OP_POPUP_TOUCH;
                             showOpPopup = true;
@@ -1265,6 +1266,9 @@ public class GameBoard extends View {
     }
     public void setOperationPickMode(int mode){
         opPickMode = mode;
+    }
+    public void setAutoPickMax(int numOperations){
+        autoPickMax = 2*numOperations + 1;
     }
 
 
