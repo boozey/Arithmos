@@ -11,6 +11,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
@@ -27,10 +28,12 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
@@ -223,9 +226,13 @@ public class GameActivity extends AppCompatActivity implements
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        switch (id){
+            case R.id.action_start_tutorial:
+                // Record Firebase Event
+                Bundle bundle = new Bundle();
+                mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.TUTORIAL_BEGIN, bundle);
+                nextLesson(Tutorial.GOAL_TYPES);
+                return true;
         }
 
         return super.onOptionsItemSelected(item);
@@ -615,14 +622,16 @@ public class GameActivity extends AppCompatActivity implements
         TextView subTitleView = (TextView)layout.findViewById(R.id.subtitle_textview);
         subTitleView.setText(level.getLevelDisplayNameId());
 
+        TextView descView = (TextView) layout.findViewById(R.id.description_textview);
+        descView.setVisibility(View.VISIBLE);
         if (level.getGoalType() != ArithmosLevel.GOAL_301) {
-            TextView descView = (TextView) layout.findViewById(R.id.description_textview);
-            descView.setVisibility(View.VISIBLE);
             if (level.getNumGoalsToWin() < level.getGoalNumbers().length) {
                 descView.setText(getString(R.string.find_x_of_x_numbers, level.getNumGoalsToWin(), level.getGoalNumbers().length));
             } else {
                 descView.setText(getString(R.string.find_x_numbers, level.getNumGoalsToWin()));
             }
+        } else {
+            descView.setText(R.string.three01_description);
         }
 
         TextView oneStarView = (TextView)layout.findViewById(R.id.one_star);
@@ -664,6 +673,10 @@ public class GameActivity extends AppCompatActivity implements
                         int levelPlays = gameBase.getInt(ArithmosGameBase.LEVEL_START_COUNT, 0);
                         gameBase.putInt(ArithmosGameBase.LEVEL_START_COUNT, ++levelPlays);
                         if (!showAds) showAds();
+                        // Continue if appropriate
+                        if (generalPrefs.getBoolean(GAME_PLAY_TUTORIAL_STARTED, true) &&
+                                !generalPrefs.getBoolean(GAME_PLAY_TUTORIAL_FINISHED, false))
+                            nextLesson(Tutorial.GOAL_TYPES);
                     }
 
                     @Override
@@ -681,7 +694,36 @@ public class GameActivity extends AppCompatActivity implements
         });
 
         rootLayout.addView(layout);
-        Animations.slideUp(layout, 200, 200, rootLayout.getHeight() / 3).start();
+        AnimatorSet set = Animations.slideUp(layout, 200, 200, rootLayout.getHeight() / 3);
+        // Start tutorial, if appropriate
+        if (generalPrefs.getBoolean(GAME_PLAY_TUTORIAL_STARTED, true) &&
+                !generalPrefs.getBoolean(GAME_PLAY_TUTORIAL_FINISHED, false)) {
+            // Record Firebase Event
+            Bundle bundle = new Bundle();
+            mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.TUTORIAL_BEGIN, bundle);
+            set.addListener(new Animator.AnimatorListener() {
+                @Override
+                public void onAnimationStart(Animator animation) {
+
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    nextLesson(Tutorial.LEVEL_TYPES);
+                }
+
+                @Override
+                public void onAnimationCancel(Animator animation) {
+
+                }
+
+                @Override
+                public void onAnimationRepeat(Animator animation) {
+
+                }
+            });
+        }
+        set.start();
     }
 
     private void cacheGame(){
@@ -1233,6 +1275,10 @@ public class GameActivity extends AppCompatActivity implements
             calc.setBackground(null);
             game.setEvalLeftToRight(false);
         }
+
+        // Continue tutorial if appropriate
+        if (isTutorialMode && generalPrefs.getString(MainActivity.TUTORIAL_LESSON_NAME, "blah").equals(Tutorial.SELECTION))
+            nextLesson(Tutorial.AUTO_SELECTION);
     }
 
     @Override
@@ -1503,7 +1549,32 @@ public class GameActivity extends AppCompatActivity implements
         });
 
         rootLayout.addView(layout);
-        Animations.slideUp(layout, 200, animStartDelay + gameBoard.getAnimDelay(), rootLayout.getHeight() / 3).start();
+        AnimatorSet set = Animations.slideUp(layout, 200, animStartDelay + gameBoard.getAnimDelay(), rootLayout.getHeight() / 3);
+        // Continue tutorial if appropriate
+        if (generalPrefs.getBoolean(GAME_PLAY_TUTORIAL_STARTED, true) &&
+                !generalPrefs.getBoolean(GAME_PLAY_TUTORIAL_FINISHED, false))
+            set.addListener(new Animator.AnimatorListener() {
+                @Override
+                public void onAnimationStart(Animator animation) {
+
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    nextLesson(Tutorial.GAME_OVER);
+                }
+
+                @Override
+                public void onAnimationCancel(Animator animation) {
+
+                }
+
+                @Override
+                public void onAnimationRepeat(Animator animation) {
+
+                }
+            });
+        set.start();
     }
 
     @Override
@@ -1971,6 +2042,274 @@ public class GameActivity extends AppCompatActivity implements
                     .build();
             mInterstitialAd.loadAd(intstAdRequest);
         }
+    }
+
+
+    // Tutorial
+    private static final String GAME_PLAY_TUTORIAL_STARTED = "GAME_PLAY_TUTORIAL_STARTED";
+    public static final String GAME_PLAY_TUTORIAL_FINISHED = "GAME_PLAY_TUTORIAL_FINISHED";
+    private RelativeLayout tutorialPopup;
+    private boolean isTutorialMode = false;
+    private View.OnLayoutChangeListener layoutChangeListener;
+    private Tutorial tutorial;
+
+    public void nextLesson(final String lessonName){
+        rootLayout.post(new Runnable() {
+            @Override
+            public void run() {
+                isTutorialMode = true;
+                if (tutorial == null)
+                    tutorial = new Tutorial();
+                SharedPreferences.Editor editor = generalPrefs.edit();
+                editor.putString(MainActivity.TUTORIAL_LESSON_NAME, lessonName);
+                editor.apply();
+
+                if (tutorialPopup == null){
+                    // Prepare popup window
+                    tutorialPopup = (RelativeLayout)getLayoutInflater().inflate(R.layout.tutorial_popup, null);
+                    RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+                    tutorialPopup.setLayoutParams(params);
+                    rootLayout.addView(tutorialPopup);
+                }
+
+                final Tutorial.Lesson lesson = tutorial.getLesson(lessonName);
+                // Setup tutorial message popup
+                Log.d(LOG_TAG, "Lesson: " + lessonName);
+                Log.d(LOG_TAG, "Next Lesson: " + lesson.nextLesson);
+
+                // Set message
+                TextView messageView = (TextView)tutorialPopup.findViewById(R.id.textview1);
+                messageView.setText(lesson.textResId);
+
+                // position popup and select background
+                View popupForeground = tutorialPopup.findViewById(R.id.pop_up_foreground);
+                final View anchorView = rootLayout.findViewById(lesson.anchorId);
+                final Rect anchorViewRect = new Rect();
+                anchorView.getGlobalVisibleRect(anchorViewRect);
+                final Rect rootLayoutRect = new Rect();
+                rootLayout.getGlobalVisibleRect(rootLayoutRect);
+                RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams)popupForeground.getLayoutParams();
+                switch (lesson.placementRelToAnchor){
+                    case Tutorial.Lesson.BELOW_CENTER:
+                        popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_top_center_anchor, null));
+                        params.setMargins(anchorViewRect.centerX() - popupForeground.getMeasuredWidth() / 2, anchorViewRect.bottom - rootLayoutRect.top, 0, 0);
+                        break;
+                    case Tutorial.Lesson.ABOVE_CENTER:
+                        popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_bottom_center_anchor, null));
+                        params.setMargins(anchorViewRect.centerX() - popupForeground.getMeasuredWidth() / 2, anchorViewRect.top - rootLayoutRect.top - popupForeground.getMeasuredHeight(), 0, 0);
+                        break;
+                    case Tutorial.Lesson.RIGHT:
+                        popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_left_center_anchor, null));
+                        params.setMargins(anchorViewRect.right, anchorViewRect.centerY() - rootLayoutRect.top - popupForeground.getMeasuredHeight() / 2, 0, 0);
+                        break;
+                    case Tutorial.Lesson.ABOVE_RIGHT:
+                        popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_bottom_left_anchor, null));
+                        params.setMargins(anchorViewRect.centerX(), anchorViewRect.top - rootLayoutRect.top - popupForeground.getMeasuredHeight(), 0, 0);
+                        break;
+                    case Tutorial.Lesson.CENTER:
+                        popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_no_anchor, null));
+                        params.setMargins(anchorViewRect.centerX() - popupForeground.getMeasuredWidth() / 2, anchorViewRect.centerY() - rootLayoutRect.top - popupForeground.getMeasuredHeight() / 2, 0, 0);
+                        break;
+                    case Tutorial.Lesson.ABOVE_LEFT:
+                        popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_bottom_right_anchor, null));
+                        params.setMargins(anchorViewRect.centerX() - popupForeground.getMeasuredWidth(), anchorViewRect.top - rootLayoutRect.top - popupForeground.getMeasuredHeight(), 0, 0);
+                        break;
+                    default:
+                        popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_top_left_anchor, null));
+                        params.setMargins(anchorViewRect.centerX(), anchorViewRect.bottom - rootLayoutRect.top, 0, 0);
+                        break;
+                }
+                popupForeground.setLayoutParams(params);
+
+
+                layoutChangeListener = new View.OnLayoutChangeListener() {
+                    @Override
+                    public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                        if (tutorialPopup == null) {
+                            v.removeOnLayoutChangeListener(this);
+                            return;
+                        }
+                        Rect newViewRect = new Rect();
+                        v.getGlobalVisibleRect(newViewRect);
+                            Rect rootLayoutRect = new Rect();
+                            rootLayout.getGlobalVisibleRect(rootLayoutRect);
+                            View popupForeground = tutorialPopup.findViewById(R.id.pop_up_foreground);
+                            RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams)popupForeground.getLayoutParams();
+                            switch (lesson.placementRelToAnchor){
+                                case Tutorial.Lesson.BELOW_CENTER:
+                                    popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_top_center_anchor, null));
+                                    params.setMargins(anchorViewRect.centerX() - popupForeground.getMeasuredWidth() / 2, anchorViewRect.bottom - rootLayoutRect.top, 0, 0);
+                                    break;
+                                case Tutorial.Lesson.ABOVE_CENTER:
+                                    popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_bottom_center_anchor, null));
+                                    params.setMargins(anchorViewRect.centerX() - popupForeground.getMeasuredWidth() / 2, anchorViewRect.top - rootLayoutRect.top - popupForeground.getMeasuredHeight(), 0, 0);
+                                    break;
+                                case Tutorial.Lesson.RIGHT:
+                                    popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_left_center_anchor, null));
+                                    params.setMargins(anchorViewRect.right, anchorViewRect.centerY() - rootLayoutRect.top - popupForeground.getMeasuredHeight() / 2, 0, 0);
+                                    break;
+                                case Tutorial.Lesson.ABOVE_RIGHT:
+                                    popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_bottom_left_anchor, null));
+                                    params.setMargins(anchorViewRect.centerX(), anchorViewRect.top - rootLayoutRect.top - popupForeground.getMeasuredHeight(), 0, 0);
+                                    break;
+                                case Tutorial.Lesson.CENTER:
+                                    popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_no_anchor, null));
+                                    params.setMargins(anchorViewRect.centerX() - popupForeground.getMeasuredWidth() / 2, anchorViewRect.centerY() - rootLayoutRect.top - popupForeground.getMeasuredHeight() / 2, 0, 0);
+                                    break;
+                                case Tutorial.Lesson.ABOVE_LEFT:
+                                    popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_bottom_right_anchor, null));
+                                    params.setMargins(anchorViewRect.centerX() - popupForeground.getMeasuredWidth(), anchorViewRect.top - rootLayoutRect.top - popupForeground.getMeasuredHeight(), 0, 0);
+                                    break;
+                                default:
+                                    popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_top_left_anchor, null));
+                                    params.setMargins(anchorViewRect.centerX(), anchorViewRect.bottom - rootLayoutRect.top, 0, 0);
+                                    break;
+                            }
+                            popupForeground.setLayoutParams(params);
+                            anchorViewRect.set(newViewRect);
+                            tutorialPopup.bringToFront();
+                    }
+                };
+                anchorView.addOnLayoutChangeListener(layoutChangeListener);
+
+                // Update what lesson shows next and what layoutChangeListener to remove
+                TextView gotItView = (TextView)tutorialPopup.findViewById(R.id.right_button);
+                if (lesson.showButton) {
+                    gotItView.setText(lesson.buttonTextResId);
+                    gotItView.setVisibility(View.VISIBLE);
+                    gotItView.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            anchorView.removeOnLayoutChangeListener(layoutChangeListener);
+                            AnimatorSet set = Animations.fadeOut(tutorialPopup, 200, 0);
+                            set.addListener(new Animator.AnimatorListener() {
+                                @Override
+                                public void onAnimationStart(Animator animation) {
+
+                                }
+
+                                @Override
+                                public void onAnimationEnd(Animator animation) {
+                                    if (lessonName.equals(Tutorial.GAME_OVER)) {
+                                        isTutorialMode = false;
+                                        // Record prefs
+                                        SharedPreferences.Editor editor = generalPrefs.edit();
+                                        editor.putBoolean(GAME_PLAY_TUTORIAL_FINISHED, true);
+                                        editor.apply();
+
+                                        // Record Firebase Event
+                                        Bundle bundle = new Bundle();
+                                        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.TUTORIAL_BEGIN, bundle);
+                                    }
+                                    if (lesson.nextLesson.equals(Tutorial.WAIT_FOR_USER)) {
+                                        rootLayout.removeView(tutorialPopup);
+                                        tutorialPopup = null;
+                                    } else
+                                        nextLesson(lesson.nextLesson);
+                                }
+
+                                @Override
+                                public void onAnimationCancel(Animator animation) {
+
+                                }
+
+                                @Override
+                                public void onAnimationRepeat(Animator animation) {
+
+                                }
+                            });
+                            set.start();
+                        }
+                    });
+                } else
+                    gotItView.setVisibility(View.GONE);
+
+                // Update what layoutChangeListener to remove
+                View exitView = tutorialPopup.findViewById(R.id.left_button);
+                exitView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        isTutorialMode = false;
+                        SharedPreferences.Editor editor = generalPrefs.edit();
+                        editor.putBoolean(GAME_PLAY_TUTORIAL_FINISHED, true);
+                        editor.apply();
+                        Toast.makeText(context, R.string.quit_tutorial_message, Toast.LENGTH_LONG).show();
+                        anchorView.removeOnLayoutChangeListener(layoutChangeListener);
+                        AnimatorSet set = Animations.fadeOut(tutorialPopup, 200, 0);
+                        set.addListener(new Animator.AnimatorListener() {
+                            @Override
+                            public void onAnimationStart(Animator animation) {
+
+                            }
+
+                            @Override
+                            public void onAnimationEnd(Animator animation) {
+                                rootLayout.removeView(tutorialPopup);
+                                tutorialPopup = null;
+                            }
+
+                            @Override
+                            public void onAnimationCancel(Animator animation) {
+
+                            }
+
+                            @Override
+                            public void onAnimationRepeat(Animator animation) {
+
+                            }
+                        });
+                        set.start();
+                    }
+                });
+
+                // Should the popup allow click events to the anchor view?
+                if (lesson.allowTouch){
+                    tutorialPopup.setOnTouchListener(new View.OnTouchListener() {
+                        @Override
+                        public boolean onTouch(View v, MotionEvent event) {
+                            Rect targetViewRect = new Rect();
+                            View targetView = rootLayout.findViewById(lesson.targetId);
+                            targetView.getGlobalVisibleRect(targetViewRect);
+                            if (targetViewRect.contains((int)event.getRawX(), (int)event.getRawY()))
+                                return false;
+                            else
+                                return true;
+                        }
+                    });
+                } else {
+                    tutorialPopup.setOnTouchListener(new View.OnTouchListener() {
+                        @Override
+                        public boolean onTouch(View v, MotionEvent event) {
+                            return true;
+                        }
+                    });
+                }
+
+                AnimatorSet set = Animations.fadeIn(tutorialPopup, 200, 0);
+                set.addListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+                        tutorialPopup.bringToFront();
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+
+                    }
+                });
+                set.start();
+            }
+        });
     }
 
 

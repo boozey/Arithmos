@@ -143,14 +143,14 @@
 
         </LinearLayout>
 
-        <LinearLayout
+        <LinearLayout android:id="@+id/special_layout"
             android:layout_width="wrap_content"
             android:minWidth="200dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:gravity="center_vertical"
             android:background="@drawable/pencil_border_horizontal">
-            <ImageButton
+            <ImageButton android:id="@+id/show_work_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="4dp"

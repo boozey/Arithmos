@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/tutorial_popup">
+    <LinearLayout android:id="@+id/pop_up_foreground"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/popup_top_left_anchor">
+
+
+        <ImageButton android:id="@+id/left_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:background="@drawable/ic_action_close"
+            android:visibility="visible"/>
+        <ScrollView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent">
+        <TextView android:id="@+id/textview1"
+            android:layout_width="wrap_content"
+            android:maxWidth="200dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:textColor="@color/text_primary_light"
+            android:text="@string/welcome_message"
+            android:visibility="visible"/>
+        </ScrollView>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginTop="4dp">
+            <TextView android:id="@+id/right_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_primary_light"
+                android:text="@string/got_it"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</RelativeLayout>

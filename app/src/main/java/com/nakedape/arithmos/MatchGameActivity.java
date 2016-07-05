@@ -225,11 +225,6 @@ public class MatchGameActivity extends AppCompatActivity implements
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
         return super.onOptionsItemSelected(item);
     }
 
@@ -480,14 +475,16 @@ public class MatchGameActivity extends AppCompatActivity implements
         TextView subTitleView = (TextView)layout.findViewById(R.id.subtitle_textview);
         subTitleView.setText(ArithmosGameBase.getLevelDisplayNameResIds(game.getChallengeName())[game.getChallengeLevel()]);
 
+        TextView descView = (TextView)layout.findViewById(R.id.description_textview);
+        descView.setVisibility(View.VISIBLE);
         if (game.getGoalType() != ArithmosLevel.GOAL_301) {
-            TextView descView = (TextView)layout.findViewById(R.id.description_textview);
-            descView.setVisibility(View.VISIBLE);
             if (game.getNumGoalsToWin() < game.getGoalList().size()){
                 descView.setText(getString(R.string.find_x_of_x_numbers, game.getNumGoalsToWin(), game.getGoalList().size()));
             } else {
                 descView.setText(getString(R.string.find_x_numbers, game.getNumGoalsToWin()));
             }
+        }else {
+            descView.setText(R.string.three01_description);
         }
 
         TextView oneStarView = (TextView)layout.findViewById(R.id.one_star);

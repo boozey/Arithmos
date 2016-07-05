@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.BitmapFactory;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
@@ -111,7 +112,7 @@ public class MainActivity extends AppCompatActivity implements
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
 
         generalPrefs = getSharedPreferences(GENERAL_PREFS, MODE_PRIVATE);
-        mAutoStartSignInFlow = generalPrefs.getBoolean(AUTO_SIGN_IN, true);
+        mAutoStartSignInFlow = generalPrefs.getBoolean(AUTO_SIGN_IN, false);
 
         // Create the Google Api Client with access to the Play Games services
         mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -163,6 +164,18 @@ public class MainActivity extends AppCompatActivity implements
                 Intent intent = new Intent(this, GameActivity.class);
                 startActivityForResult(intent, REQUEST_LEVEL_PLAYED);
             }
+        }
+
+        // Show welcome message
+        if (generalPrefs.getBoolean(SHOW_WELCOME, true)) {
+            rootLayout.findViewById(R.id.achievements_button).setVisibility(View.GONE);
+            rootLayout.findViewById(R.id.sign_in_button).setVisibility(View.VISIBLE);
+            showWelcomePopup();
+        } else if (generalPrefs.getBoolean(TUTORIAL_STARTED, false) && !generalPrefs.getBoolean(TUTORIAL_FINISHED, false)){
+            if (generalPrefs.getBoolean(GameActivity.GAME_PLAY_TUTORIAL_FINISHED, false))
+                nextLesson(Tutorial.CHALLENGES);
+            else
+                nextLesson(Tutorial.ACTIVITY);
         }
 
     }
@@ -222,6 +235,15 @@ public class MainActivity extends AppCompatActivity implements
                 return true;
             case R.id.action_order_history:
                 showOrderHistoryPopup();
+                return true;
+            case R.id.action_start_tutorial:
+                // Record Firebase Event
+                Bundle bundle = new Bundle();
+                mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.TUTORIAL_BEGIN, bundle);
+                if (!mAutoStartSignInFlow)
+                    nextLesson(Tutorial.SIGN_IN_LESSON);
+                else
+                    nextLesson(Tutorial.CHALLENGES);
                 return true;
         }
 
@@ -304,6 +326,14 @@ public class MainActivity extends AppCompatActivity implements
                     Snackbar snackbar = Snackbar.make(findViewById(R.id.myCoordinatorLayout), R.string.game_saved_message, Snackbar.LENGTH_SHORT);
                     snackbar.show();
                 }
+            }
+
+            // Continue tutorial if appropriate
+            if (generalPrefs.getBoolean(TUTORIAL_STARTED, true) &&
+                    !generalPrefs.getBoolean(TUTORIAL_FINISHED, false)){
+                rootLayout.removeView(tutorialPopup);
+                tutorialPopup = null;
+                nextLesson(Tutorial.ACTIVITY);
             }
         }
 
@@ -1220,7 +1250,31 @@ public class MainActivity extends AppCompatActivity implements
                 Animations.fadeOut(rootLayout.findViewById(R.id.special_store_listview), 200, 0).start();
             if (rootLayout.findViewById(R.id.achievement_listview).getAlpha() > 0)
                 Animations.fadeOut(rootLayout.findViewById(R.id.achievement_listview), 200, 0).start();
-            Animations.slideUp(listView, 200, 100, rootLayout.getHeight() / 3).start();
+            AnimatorSet set = Animations.slideUp(listView, 200, 100, rootLayout.getHeight() / 3);
+            if (isTutorialMode &&
+                    generalPrefs.getString(TUTORIAL_LESSON_NAME, Tutorial.SIGN_IN_LESSON).equals(Tutorial.CHALLENGES))
+            set.addListener(new Animator.AnimatorListener() {
+                @Override
+                public void onAnimationStart(Animator animation) {
+
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                        nextLesson(Tutorial.LEVELS);
+                }
+
+                @Override
+                public void onAnimationCancel(Animator animation) {
+
+                }
+
+                @Override
+                public void onAnimationRepeat(Animator animation) {
+
+                }
+            });
+            set.start();
         }
 
     }
@@ -1241,7 +1295,10 @@ public class MainActivity extends AppCompatActivity implements
 
     private void playLevel(int levelXmlId){
         Intent intent = new Intent(this, GameActivity.class);
-        intent.putExtra(GameActivity.LEVEL_XML_RES_ID, levelXmlId);
+        if (isTutorialMode)
+            intent.putExtra(GameActivity.LEVEL_XML_RES_ID, ArithmosGameBase.getLevelXmlIds(ArithmosGameBase.challenges[0])[0]);
+        else
+            intent.putExtra(GameActivity.LEVEL_XML_RES_ID, levelXmlId);
         startActivityForResult(intent, REQUEST_LEVEL_PLAYED);
     }
 
@@ -1523,7 +1580,8 @@ public class MainActivity extends AppCompatActivity implements
                 Animations.fadeOut(rootLayout.findViewById(R.id.challenge_listview), 200, 0).start();
             if (rootLayout.findViewById(R.id.achievement_listview).getAlpha() > 0)
                 Animations.fadeOut(rootLayout.findViewById(R.id.achievement_listview), 200, 0).start();
-            Animations.slideUp(listView, 200, 100, rootLayout.getHeight() / 3).start();
+            AnimatorSet set = Animations.slideUp(listView, 200, 100, rootLayout.getHeight() / 3);
+            set.start();
         }
     }
 
@@ -2129,7 +2187,9 @@ public class MainActivity extends AppCompatActivity implements
                 Animations.fadeOut(rootLayout.findViewById(R.id.challenge_listview), 200, 0).start();
             if (rootLayout.findViewById(R.id.special_store_listview).getAlpha() > 0)
                 Animations.fadeOut(rootLayout.findViewById(R.id.special_store_listview), 200, 0).start();
-            Animations.slideUp(listView, 200, 100, rootLayout.getHeight() / 3).start();
+
+            AnimatorSet set = Animations.slideUp(listView, 200, 100, rootLayout.getHeight() / 3);
+            set.start();
         }
     }
 
@@ -2598,6 +2658,12 @@ public class MainActivity extends AppCompatActivity implements
         showGoogleUi();
         updatePlayerInfo();
 
+        if (isTutorialMode &&
+                generalPrefs.getString(TUTORIAL_LESSON_NAME, Tutorial.SIGN_IN_LESSON).equals(Tutorial.SIGN_IN_LESSON)) {
+            nextLesson(Tutorial.AUTO_SIGN_IN);
+        }
+
+
         Games.TurnBasedMultiplayer.registerMatchUpdateListener(mGoogleApiClient, this);
         Games.Invitations.registerInvitationListener(mGoogleApiClient, this);
 
@@ -2943,6 +3009,394 @@ public class MainActivity extends AppCompatActivity implements
             mInterstitialAd.setAdUnitId(getString(R.string.interstitial_ad_unit_id));
             mInterstitialAd.loadAd(intstAdRequest);
         }
+    }
+
+    // Tutorial
+    private static final String SHOW_WELCOME = "SHOW_WELCOME";
+    public static final String TUTORIAL_STARTED = "TUTORIAL_STARTED";
+    public static final String TUTORIAL_FINISHED = "TUTORIAL_FINISHED";
+    public static final String TUTORIAL_LESSON_NAME = "TUTORIAL_LESSON_NAME";
+    private RelativeLayout tutorialPopup;
+    private boolean isTutorialMode = false;
+    private View.OnLayoutChangeListener layoutChangeListener;
+    private Tutorial tutorial;
+
+    private void showWelcomePopup(){
+        if (rootLayout.findViewById(R.id.welcome_popup) == null){
+            // Prepare popup window
+            final View layout = getLayoutInflater().inflate(R.layout.welcome_popup, null);
+            RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            layout.setLayoutParams(params);
+            layout.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    return true;
+                }
+            });
+
+            Button exitButton = (Button)layout.findViewById(R.id.left_button);
+            exitButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    AppCompatCheckBox checkBox = (AppCompatCheckBox)layout.findViewById(R.id.checkBox);
+                    SharedPreferences.Editor editor = generalPrefs.edit();
+                    editor.putBoolean(SHOW_WELCOME, !checkBox.isChecked());
+                    editor.apply();
+                    AnimatorSet set = Animations.slideOutDown(layout, 200, 0, rootLayout.getHeight() / 3);
+                    set.addListener(new Animator.AnimatorListener() {
+                        @Override
+                        public void onAnimationStart(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            rootLayout.removeView(layout);
+                        }
+
+                        @Override
+                        public void onAnimationCancel(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationRepeat(Animator animation) {
+
+                        }
+                    });
+                    set.start();
+                }
+            });
+
+            Button goButton = (Button)layout.findViewById(R.id.right_button);
+            goButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    // Record prefs
+                    AppCompatCheckBox checkBox = (AppCompatCheckBox)layout.findViewById(R.id.checkBox);
+                    SharedPreferences.Editor editor = generalPrefs.edit();
+                    editor.putBoolean(SHOW_WELCOME, !checkBox.isChecked());
+                    editor.putBoolean(TUTORIAL_STARTED, true);
+                    editor.apply();
+
+                    // Record Firebase Event
+                    Bundle bundle = new Bundle();
+                    mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.TUTORIAL_BEGIN, bundle);
+
+                    AnimatorSet set = Animations.slideOutDown(layout, 200, 0, rootLayout.getHeight() / 3);
+                    set.addListener(new Animator.AnimatorListener() {
+                        @Override
+                        public void onAnimationStart(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            rootLayout.removeView(layout);
+                            if (!mAutoStartSignInFlow)
+                                nextLesson(Tutorial.SIGN_IN_LESSON);
+                            else
+                                nextLesson(Tutorial.CHALLENGES);
+
+                        }
+
+                        @Override
+                        public void onAnimationCancel(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationRepeat(Animator animation) {
+
+                        }
+                    });
+                    set.start();
+                }
+            });
+
+            rootLayout.addView(layout);
+            Animations.slideUp(layout, 200, 200, rootLayout.getHeight() / 3).start();
+        }
+    }
+
+    public void nextLesson(final String lessonName){
+        rootLayout.post(new Runnable() {
+            @Override
+            public void run() {
+                isTutorialMode = true;
+                if (tutorial == null) {
+                    tutorial = new Tutorial();
+                    SharedPreferences.Editor editor = generalPrefs.edit();
+                    editor.putString(TUTORIAL_LESSON_NAME, lessonName);
+                    editor.putBoolean(TUTORIAL_FINISHED, false);
+                    editor.apply();
+                }
+
+                if (tutorialPopup == null){
+                    // Prepare popup window
+                    tutorialPopup = (RelativeLayout)getLayoutInflater().inflate(R.layout.tutorial_popup, null);
+                    RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+                    tutorialPopup.setLayoutParams(params);
+                    rootLayout.addView(tutorialPopup);
+                }
+
+                final Tutorial.Lesson lesson = tutorial.getLesson(lessonName);
+                // Setup tutorial message popup
+
+                // Set message
+                TextView messageView = (TextView)tutorialPopup.findViewById(R.id.textview1);
+                messageView.setText(lesson.textResId);
+
+                // position popup and select background
+                View popupForeground = tutorialPopup.findViewById(R.id.pop_up_foreground);
+                View tempView;
+                if (lesson.anchorId == R.id.challenge_listview) {
+                    ExpandableListView listView = (ExpandableListView)rootLayout.findViewById(R.id.challenge_listview);
+                    tempView = listView.getChildAt(0);
+                    if (tempView == null || tempView.getVisibility() != View.VISIBLE) {
+                        tempView = rootLayout.findViewById(R.id.challenges_button);
+                        lesson.placementRelToAnchor = Tutorial.Lesson.BELOW_CENTER;
+                    }
+                } else {
+                    tempView = rootLayout.findViewById(lesson.anchorId);
+                }
+                final View anchorView = tempView;
+                final Rect anchorViewRect = new Rect();
+                anchorView.getGlobalVisibleRect(anchorViewRect);
+                final Rect rootLayoutRect = new Rect();
+                rootLayout.getGlobalVisibleRect(rootLayoutRect);
+                RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams)popupForeground.getLayoutParams();
+                // Adjust layout positions to account for no space above the button bar
+                if (!mAutoStartSignInFlow
+                        && (lesson.placementRelToAnchor == Tutorial.Lesson.ABOVE_CENTER || lesson.placementRelToAnchor == Tutorial.Lesson.ABOVE_RIGHT) )
+                    lesson.placementRelToAnchor = Tutorial.Lesson.BELOW_CENTER;
+                switch (lesson.placementRelToAnchor){
+                    case Tutorial.Lesson.BELOW_CENTER:
+                        popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_top_center_anchor, null));
+                        params.setMargins(anchorViewRect.centerX() - popupForeground.getMeasuredWidth() / 2, anchorViewRect.bottom - rootLayoutRect.top, 0, 0);
+                        break;
+                    case Tutorial.Lesson.ABOVE_CENTER:
+                        popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_bottom_center_anchor, null));
+                        params.setMargins(anchorViewRect.centerX() - popupForeground.getMeasuredWidth() / 2, anchorViewRect.top - rootLayoutRect.top - popupForeground.getMeasuredHeight(), 0, 0);
+                        break;
+                    case Tutorial.Lesson.RIGHT:
+                        popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_left_center_anchor, null));
+                        params.setMargins(anchorViewRect.right, anchorViewRect.centerY() - rootLayoutRect.top - popupForeground.getMeasuredHeight() / 2, 0, 0);
+                        break;
+                    case Tutorial.Lesson.ABOVE_RIGHT:
+                        popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_bottom_left_anchor, null));
+                        params.setMargins(anchorViewRect.centerX(), anchorViewRect.top - rootLayoutRect.top - popupForeground.getMeasuredHeight(), 0, 0);
+                        break;
+                    case Tutorial.Lesson.CENTER:
+                        popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_no_anchor, null));
+                        params.setMargins(anchorViewRect.centerX() - popupForeground.getMeasuredWidth() / 2, anchorViewRect.centerY() - rootLayoutRect.top - popupForeground.getMeasuredHeight() / 2, 0, 0);
+                        break;
+                    case Tutorial.Lesson.ABOVE_LEFT:
+                        popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_bottom_right_anchor, null));
+                        params.setMargins(anchorViewRect.centerX() - popupForeground.getMeasuredWidth(), anchorViewRect.top - rootLayoutRect.top - popupForeground.getMeasuredHeight(), 0, 0);
+                        break;
+                    default:
+                        popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_top_left_anchor, null));
+                        params.setMargins(anchorViewRect.centerX(), anchorViewRect.bottom - rootLayoutRect.top, 0, 0);
+                        break;
+                }
+                popupForeground.setLayoutParams(params);
+
+
+                layoutChangeListener = new View.OnLayoutChangeListener() {
+                    @Override
+                    public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                        if (tutorialPopup == null) {
+                            v.removeOnLayoutChangeListener(this);
+                            return;
+                        }
+                        Rect newViewRect = new Rect();
+                        v.getGlobalVisibleRect(newViewRect);
+                            Rect rootLayoutRect = new Rect();
+                            rootLayout.getGlobalVisibleRect(rootLayoutRect);
+                            View popupForeground = tutorialPopup.findViewById(R.id.pop_up_foreground);
+                            RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams)popupForeground.getLayoutParams();
+                            switch (lesson.placementRelToAnchor){
+                                case Tutorial.Lesson.BELOW_CENTER:
+                                    popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_top_center_anchor, null));
+                                    params.setMargins(anchorViewRect.centerX() - popupForeground.getMeasuredWidth() / 2, anchorViewRect.bottom - rootLayoutRect.top, 0, 0);
+                                    break;
+                                case Tutorial.Lesson.ABOVE_CENTER:
+                                    popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_bottom_center_anchor, null));
+                                    params.setMargins(anchorViewRect.centerX() - popupForeground.getMeasuredWidth() / 2, anchorViewRect.top - rootLayoutRect.top - popupForeground.getMeasuredHeight(), 0, 0);
+                                    break;
+                                case Tutorial.Lesson.RIGHT:
+                                    popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_left_center_anchor, null));
+                                    params.setMargins(anchorViewRect.right, anchorViewRect.centerY() - rootLayoutRect.top - popupForeground.getMeasuredHeight() / 2, 0, 0);
+                                    break;
+                                case Tutorial.Lesson.ABOVE_RIGHT:
+                                    popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_bottom_left_anchor, null));
+                                    params.setMargins(anchorViewRect.centerX(), anchorViewRect.top - rootLayoutRect.top - popupForeground.getMeasuredHeight(), 0, 0);
+                                    break;
+                                case Tutorial.Lesson.CENTER:
+                                    popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_no_anchor, null));
+                                    params.setMargins(anchorViewRect.centerX() - popupForeground.getMeasuredWidth() / 2, anchorViewRect.centerY() - rootLayoutRect.top - popupForeground.getMeasuredHeight() / 2, 0, 0);
+                                    break;
+                                case Tutorial.Lesson.ABOVE_LEFT:
+                                    popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_bottom_right_anchor, null));
+                                    params.setMargins(anchorViewRect.centerX() - popupForeground.getMeasuredWidth(), anchorViewRect.top - rootLayoutRect.top - popupForeground.getMeasuredHeight(), 0, 0);
+                                    break;
+                                default:
+                                    popupForeground.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.popup_top_left_anchor, null));
+                                    params.setMargins(anchorViewRect.centerX(), anchorViewRect.bottom - rootLayoutRect.top, 0, 0);
+                                    break;
+                            }
+                            popupForeground.setLayoutParams(params);
+                            anchorViewRect.set(newViewRect);
+                            tutorialPopup.bringToFront();
+                    }
+                };
+                anchorView.addOnLayoutChangeListener(layoutChangeListener);
+
+                // Update what lesson shows next and what layoutChangeListener to remove
+                TextView gotItView = (TextView)tutorialPopup.findViewById(R.id.right_button);
+                if (lesson.showButton) {
+                    gotItView.setText(lesson.buttonTextResId);
+                    gotItView.setVisibility(View.VISIBLE);
+                    gotItView.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            anchorView.removeOnLayoutChangeListener(layoutChangeListener);
+                            AnimatorSet set = Animations.fadeOut(tutorialPopup, 200, 0);
+                            set.addListener(new Animator.AnimatorListener() {
+                                @Override
+                                public void onAnimationStart(Animator animation) {
+
+                                }
+
+                                @Override
+                                public void onAnimationEnd(Animator animation) {
+                                    if (lessonName.equals(Tutorial.END_TUTORIAL)) {
+                                        isTutorialMode = false;
+                                        SharedPreferences.Editor editor = generalPrefs.edit();
+                                        editor.putBoolean(TUTORIAL_FINISHED, true);
+                                        editor.apply();
+
+                                        // Record Firebase Event
+                                        Bundle bundle = new Bundle();
+                                        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.TUTORIAL_COMPLETE, bundle);
+                                    }
+                                    if (lesson.nextLesson.equals(Tutorial.WAIT_FOR_USER)) {
+                                        anchorView.removeOnLayoutChangeListener(layoutChangeListener);
+                                        rootLayout.removeView(tutorialPopup);
+                                        tutorialPopup = null;
+                                    } else {
+                                        if (lesson.nextLesson.equals(Tutorial.LEVELS)){
+                                            ChallengesButtonClick(rootLayout.findViewById(R.id.challenges_button));
+                                        } else
+                                            nextLesson(lesson.nextLesson);
+                                    }
+                                }
+
+                                @Override
+                                public void onAnimationCancel(Animator animation) {
+
+                                }
+
+                                @Override
+                                public void onAnimationRepeat(Animator animation) {
+
+                                }
+                            });
+                            set.start();
+                        }
+                    });
+                } else
+                    gotItView.setVisibility(View.GONE);
+
+                // Update what layoutChangeListener to remove
+                View exitView = tutorialPopup.findViewById(R.id.left_button);
+                exitView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        SharedPreferences.Editor editor = generalPrefs.edit();
+                        editor.putBoolean(TUTORIAL_FINISHED, true);
+                        editor.apply();
+                        isTutorialMode = false;
+                        Toast.makeText(context, R.string.quit_tutorial_message, Toast.LENGTH_LONG).show();
+                        anchorView.removeOnLayoutChangeListener(layoutChangeListener);
+                        AnimatorSet set = Animations.fadeOut(tutorialPopup, 200, 0);
+                        set.addListener(new Animator.AnimatorListener() {
+                            @Override
+                            public void onAnimationStart(Animator animation) {
+
+                            }
+
+                            @Override
+                            public void onAnimationEnd(Animator animation) {
+                                anchorView.removeOnLayoutChangeListener(layoutChangeListener);
+                                rootLayout.removeView(tutorialPopup);
+                                tutorialPopup = null;
+                            }
+
+                            @Override
+                            public void onAnimationCancel(Animator animation) {
+
+                            }
+
+                            @Override
+                            public void onAnimationRepeat(Animator animation) {
+
+                            }
+                        });
+                        set.start();
+                    }
+                });
+
+                // Should the popup allow click events to the anchor view?
+                if (lesson.allowTouch){
+                    tutorialPopup.setOnTouchListener(new View.OnTouchListener() {
+                        @Override
+                        public boolean onTouch(View v, MotionEvent event) {
+                            Rect targetViewRect = new Rect();
+                            View targetView = rootLayout.findViewById(lesson.targetId);
+                            targetView.getGlobalVisibleRect(targetViewRect);
+                            if (targetViewRect.contains((int)event.getRawX(), (int)event.getRawY())) {
+                                return false;
+                            }
+                            else
+                                return true;
+                        }
+                    });
+                } else {
+                    tutorialPopup.setOnTouchListener(new View.OnTouchListener() {
+                        @Override
+                        public boolean onTouch(View v, MotionEvent event) {
+                            return true;
+                        }
+                    });
+                }
+
+                AnimatorSet set = Animations.fadeIn(tutorialPopup, 200, 0);
+                set.addListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+                        tutorialPopup.bringToFront();
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+
+                    }
+                });
+                set.start();
+            }
+        });
     }
 
 
