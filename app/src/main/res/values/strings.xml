@@ -52,7 +52,7 @@
     with some combination of +, −, ×, and ÷ to equal one of these numbers.
     \nTry it now.</string>
     <string name="auto_selection_lesson">By default the game will automatically find a combination
-    of operations that works for any selection less than five numbers.</string>
+    of operations that works for a selection that is three numbers or less.</string>
     <string name="manual_selection_lesson">For longer expressions you will have to choose the operations yourself.
         \nYou can switch to and from manual mode with this button.</string>
     <string name="specials_lesson">These are specials that allow you to get a little advantage when you need it.

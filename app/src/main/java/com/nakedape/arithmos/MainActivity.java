@@ -2325,14 +2325,6 @@ public class MainActivity extends AppCompatActivity implements
         Intent intent =
                 Games.TurnBasedMultiplayer.getSelectOpponentsIntent(mGoogleApiClient, 1, 1, true);
         startActivityForResult(intent, RC_SELECT_PLAYERS);
-        /*Intent intent = new Intent(this, MatchGameActivity.class);
-        intent.putExtra(MatchGameActivity.LEVEL_XML_RES_ID, levelXmlId);
-        SharedPreferences prefs = getSharedPreferences(GAME_PREFS, MODE_PRIVATE);
-        String gameFileName = prefs.getString(GAME_FILE_NAME, null);
-        if (gameFileName != null)
-            intent.putExtra(GameActivity.GAME_BASE_FILE_NAME, gameFileName);
-        intent.putExtra(MatchGameActivity.CREATE_MATCH, true);
-        startActivityForResult(intent, REQUEST_TAKE_MATCH_TURN);*/
     }
 
     private void refreshMatchList(){
@@ -2691,6 +2683,10 @@ public class MainActivity extends AppCompatActivity implements
         refreshSavedGames();
         refreshAchievementList();
 
+        // Record Firebase event
+        Bundle bundle = new Bundle();
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.LOGIN, bundle);
+
     }
 
     @Override
@@ -2744,6 +2740,11 @@ public class MainActivity extends AppCompatActivity implements
 
     public void signInClicked(View v) {
         Log.d(LOG_TAG, "Sign-in clicked");
+        // Record Firebase event
+        Bundle bundle = new Bundle();
+        bundle.putString(FirebaseAnalytics.Param.SIGN_UP_METHOD, "Sign-in button");
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SIGN_UP, bundle);
+
             // start the asynchronous sign in flow
             mSignInClicked = true;
             mAutoStartSignInFlow = true;

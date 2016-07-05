@@ -1061,8 +1061,8 @@ public class GameBoard extends View {
                         return true;
                     }
                     else if (fillSelection(getTileLocation(x, y))) {
-                        // Over 7 tiles (4 numbers)
-                        if (opPickMode == MANUAL_PICK || selectedPieces.size() > 7 || game.getGoalType() == ArithmosLevel.GOAL_301) {
+                        // Over 5 tiles (3 numbers)
+                        if (opPickMode == MANUAL_PICK || selectedPieces.size() > 5 || game.getGoalType() == ArithmosLevel.GOAL_301) {
                             opIndex = 1;
                             TouchMode = OP_POPUP_TOUCH;
                             showOpPopup = true;
