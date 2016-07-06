@@ -139,8 +139,7 @@ public class MatchGameActivity extends AppCompatActivity implements
             isGoalViewPlaying = savedInstanceState.getBoolean(IS_GOALVIEW_PLAYING, false);
         }
 
-        if (loadCachedGame())
-            gameBaseNeedsDownload = false;
+        if (!loadCachedGame()) gameBase = new ArithmosGameBase();
 
         if (loadCachedLevel() && match != null) {
             matchHasLoaded = true;
@@ -296,8 +295,7 @@ public class MatchGameActivity extends AppCompatActivity implements
     // Game saving and loading
     private ArithmosGameBase gameBase;
     private File levelCache, gameCache;
-    private boolean retrySaveGameState = false, gameBaseNeedsDownload = true,
-            retryFinishTurn = false, retryFinishMatch = false, matchHasLoaded = false;
+    private boolean retryFinishTurn = false, retryFinishMatch = false, matchHasLoaded = false;
     private int levelXmlId;
 
     private void setupGameUi(){
@@ -595,7 +593,6 @@ public class MatchGameActivity extends AppCompatActivity implements
                 if (inputStream.read(data) > 0) {
                     gameBase.loadByteData(data);
                     gameBase.setSaved(false);
-                    gameBaseNeedsDownload = false;
                     setupSpecials();
                     TextView jewelText = (TextView)rootLayout.findViewById(R.id.jewel_count);
                     Animations.CountTo(jewelText, 0, gameBase.getJewelCount());
@@ -697,58 +694,6 @@ public class MatchGameActivity extends AppCompatActivity implements
             } catch (Exception e) {
                 e.printStackTrace();
                 matchCacheFile.delete();
-            }
-        }
-    }
-
-    private void loadGameState(){
-        SharedPreferences prefs = getSharedPreferences(MainActivity.GAME_PREFS, MODE_PRIVATE);
-        String gameFileName = prefs.getString(MainActivity.GAME_PREFS, null);
-        if (mGoogleApiClient.isConnected() && gameFileName != null)
-        Games.Snapshots.open(mGoogleApiClient, gameFileName, false).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
-            @Override
-            public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
-                try {
-                    gameBase.loadByteData(openSnapshotResult.getSnapshot().getSnapshotContents().readFully());
-                    if (rootLayout.getVisibility() == View.VISIBLE) {
-                        setupSpecials();
-                        TextView jewelText = (TextView) rootLayout.findViewById(R.id.jewel_count);
-                        Animations.CountTo(jewelText, 0, gameBase.getJewelCount());
-                    }
-                    gameBaseNeedsDownload = false;
-
-                } catch (IOException | NullPointerException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-        else {
-            mGoogleApiClient.connect();
-            loadGameState();
-        }
-
-
-    }
-
-    private void saveGameState(){
-        if (gameBase.needsSaving()) {
-            if (mGoogleApiClient.isConnected()) {
-                retrySaveGameState = false;
-                SharedPreferences prefs = getSharedPreferences(MainActivity.GAME_PREFS, MODE_PRIVATE);
-                String gameFileName = prefs.getString(MainActivity.GAME_FILE_NAME, null);
-                if (gameFileName != null)
-                Games.Snapshots.open(mGoogleApiClient, gameFileName, true).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
-                    @Override
-                    public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
-                        String desc = "Arithmos Game Data";
-                        writeSnapshot(openSnapshotResult.getSnapshot(), gameBase.getByteData(), desc);
-                        gameBase.setSaved(true);
-                        Log.i(LOG_TAG, "Game state saved");
-                    }
-                });
-            } else if (!mGoogleApiClient.isConnected()){
-                retrySaveGameState = true;
-                mGoogleApiClient.connect();
             }
         }
     }
@@ -1033,21 +978,6 @@ public class MatchGameActivity extends AppCompatActivity implements
         }
     }
 
-    private PendingResult<Snapshots.CommitSnapshotResult> writeSnapshot(Snapshot snapshot, byte[] data, String desc) {
-
-        // Set the data payload for the snapshot
-        snapshot.getSnapshotContents().writeBytes(data);
-
-        // Create the change operation
-        SnapshotMetadataChange metadataChange = new SnapshotMetadataChange.Builder()
-                //.setCoverImage(coverImage)
-                .setDescription(desc)
-                .build();
-
-        // Commit the operation
-        return Games.Snapshots.commitAndClose(mGoogleApiClient, snapshot, metadataChange);
-    }
-
     public void finishTurn(){
         if (rootLayout.findViewById(R.id.loading_popup) == null) {
             View loadingPopup = Utils.progressPopup(context, R.string.saving_game_message);
@@ -1060,7 +990,7 @@ public class MatchGameActivity extends AppCompatActivity implements
             Games.TurnBasedMultiplayer.takeTurn(mGoogleApiClient, match.getMatchId(), game.getSaveGameData(), game.getNextPlayer()).setResultCallback(new ResultCallback<TurnBasedMultiplayer.UpdateMatchResult>() {
                 @Override
                 public void onResult(@NonNull TurnBasedMultiplayer.UpdateMatchResult updateMatchResult) {
-                    saveGameState();
+                    cacheGame();
                     if (levelCache != null) levelCache.delete();
                     File matchCache = new File(getCacheDir(), matchCacheFileName);
                     if (matchCache.exists()) {
@@ -1101,7 +1031,7 @@ public class MatchGameActivity extends AppCompatActivity implements
                 Games.TurnBasedMultiplayer.finishMatch(mGoogleApiClient, match.getMatchId(), game.getSaveGameData(), p1Result, p2Result).setResultCallback(new ResultCallback<TurnBasedMultiplayer.UpdateMatchResult>() {
                     @Override
                     public void onResult(@NonNull TurnBasedMultiplayer.UpdateMatchResult updateMatchResult) {
-                        saveGameState();
+                        cacheGame();
                         if (levelCache != null) levelCache.delete();
                         File matchCache = new File(getCacheDir(), matchCacheFileName);
                         if (matchCache.exists()) matchCache.delete();
@@ -1664,10 +1594,6 @@ public class MatchGameActivity extends AppCompatActivity implements
 
     @Override
     public void onConnected(Bundle connectionHint) {
-        if (retrySaveGameState) saveGameState();
-        else if (gameBaseNeedsDownload)
-            loadGameState();
-
         if (retryFinishTurn)
             finishTurn();
         else {
