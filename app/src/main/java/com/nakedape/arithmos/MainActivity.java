@@ -102,7 +102,6 @@ public class MainActivity extends AppCompatActivity implements
     private Context context;
     private RelativeLayout rootLayout;
     private SharedPreferences generalPrefs;
-    private int activityStartCount;
     private FirebaseAnalytics mFirebaseAnalytics;
 
     @Override
@@ -184,9 +183,6 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     protected void onStart() {
         super.onStart();
-        activityStartCount = gameBase.getInt(ArithmosGameBase.MAIN_START_COUNT, 1);
-        gameBase.putInt(ArithmosGameBase.MAIN_START_COUNT, ++activityStartCount);
-        Log.d(LOG_TAG, "MAIN_START_COUNT = " + activityStartCount);
         showAds();
         if (mAutoStartSignInFlow) {
             mGoogleApiClient.connect();
@@ -316,6 +312,8 @@ public class MainActivity extends AppCompatActivity implements
         if (requestCode == REQUEST_LEVEL_PLAYED){
             // Update UI
             loadCachedGame();
+            gameBaseNeedsSaving = true;
+            saveGameState();
             // Save or delete save as necessary
             if (resultCode == Activity.RESULT_OK) {
                 if (intent.hasExtra(GameActivity.SAVED_GAME)) {
@@ -374,6 +372,14 @@ public class MainActivity extends AppCompatActivity implements
             Games.TurnBasedMultiplayer
                     .createMatch(mGoogleApiClient, tbmc)
                     .setResultCallback(new MatchInitiatedCallback());
+        }
+
+        // Match turn finished
+        if (requestCode == REQUEST_TAKE_MATCH_TURN){
+            // Update UI
+            loadCachedGame();
+            gameBaseNeedsSaving = true;
+            saveGameState();
         }
 
         // In-app purchases
@@ -1131,11 +1137,37 @@ public class MainActivity extends AppCompatActivity implements
             Games.Snapshots.open(mGoogleApiClient, gameFileName, true).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
                 @Override
                 public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
-                    String desc = "Arithmos Game Data";
-                    writeSnapshot(openSnapshotResult.getSnapshot(), gameBase.getByteData(), desc);
-                    gameBase.setSaved(true);
-                    cacheGame();
-                    Log.d(LOG_TAG, "Game state saved");
+                    int status = openSnapshotResult.getStatus().getStatusCode();
+                    Log.i(LOG_TAG, "Load Result status: " + status);
+                    Snapshot snapshot = openSnapshotResult.getSnapshot(), resolvedSnapshot;
+                    resolvedSnapshot = snapshot;
+                    if (status == GamesStatusCodes.STATUS_SNAPSHOT_CONFLICT) {
+                        showLoadingPopup(R.string.loading, 0);
+                        Snapshot conflictSnapshot = openSnapshotResult.getConflictingSnapshot();
+                        if (snapshot.getMetadata().getLastModifiedTimestamp() <=
+                                conflictSnapshot.getMetadata().getLastModifiedTimestamp()) {
+                            resolvedSnapshot = conflictSnapshot;
+                        }
+                        Games.Snapshots.resolveConflict(mGoogleApiClient, openSnapshotResult.getConflictId(), resolvedSnapshot).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
+                            @Override
+                            public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
+                                saveGameState();
+                            }
+                        });
+
+                    } else {
+                        hideLoadingPopup();
+                        String desc = "Arithmos Game Data";
+                        writeSnapshot(resolvedSnapshot, gameBase.getByteData(), desc).setResultCallback(new ResultCallback<Snapshots.CommitSnapshotResult>() {
+                            @Override
+                            public void onResult(@NonNull Snapshots.CommitSnapshotResult commitSnapshotResult) {
+                                gameBase.setSaved(true);
+                                gameBaseNeedsSaving = false;
+                                cacheGame();
+                                Log.d(LOG_TAG, "Game state saved");
+                            }
+                        });
+                    }
                 }
             });
         } else if (mAutoStartSignInFlow){
@@ -1173,28 +1205,31 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    private void loadGameState(String gameFileName){
+    private void loadGameState(final String gameFileName){
         if (gameFileName != null && mGoogleApiClient.isConnected()) {
             Games.Snapshots.open(mGoogleApiClient, gameFileName, false).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
                 @Override
                 public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
                     int status = openSnapshotResult.getStatus().getStatusCode();
                     Log.i(LOG_TAG, "Load Result status: " + status);
-                    Snapshot snapshot = openSnapshotResult.getSnapshot(),resolvedSnapshot;
+                    Snapshot snapshot = openSnapshotResult.getSnapshot(), resolvedSnapshot;
                     resolvedSnapshot = snapshot;
                     if (status == GamesStatusCodes.STATUS_SNAPSHOT_CONFLICT) {
+                        showLoadingPopup(R.string.loading, 0);
                         Snapshot conflictSnapshot = openSnapshotResult.getConflictingSnapshot();
                         if (snapshot.getMetadata().getLastModifiedTimestamp() <=
                                 conflictSnapshot.getMetadata().getLastModifiedTimestamp()) {
                             resolvedSnapshot = conflictSnapshot;
-                            Games.Snapshots.resolveConflict(mGoogleApiClient, openSnapshotResult.getConflictId(), resolvedSnapshot).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
-                                @Override
-                                public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
-                                    loadGameState(openSnapshotResult.getSnapshot());
-                                }
-                            });
                         }
+                        Games.Snapshots.resolveConflict(mGoogleApiClient, openSnapshotResult.getConflictId(), resolvedSnapshot).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
+                            @Override
+                            public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
+                                loadGameState(gameFileName);
+                            }
+                        });
+
                     } else {
+                        hideLoadingPopup();
                         loadGameState(resolvedSnapshot);
                     }
 
@@ -1217,10 +1252,7 @@ public class MainActivity extends AppCompatActivity implements
             // Update recent activity
             activityListAdapter.addItems(gameBase.getActivityItems());
             activityListAdapter.sort();
-            gameBaseNeedsRefresh = false;
             consumePurchases();
-            activityStartCount = gameBase.getInt(ArithmosGameBase.MAIN_START_COUNT, --activityStartCount);
-            gameBase.putInt(ArithmosGameBase.MAIN_START_COUNT, ++activityStartCount);
             showAds();
             cacheGame();
             Log.d(LOG_TAG, "Game refreshed from Google");
@@ -1251,7 +1283,7 @@ public class MainActivity extends AppCompatActivity implements
     private ArithmosGameBase gameBase;
     private File gameCacheFile;
     private boolean retrySaveGameBase = false, retryGameReset = false;
-    private boolean gameBaseNeedsRefresh = true;
+    private boolean gameBaseNeedsSaving = false;
     private ChallengeListAdapter challengeListAdapter;
 
     public void ChallengesButtonClick(View v){
@@ -2689,7 +2721,7 @@ public class MainActivity extends AppCompatActivity implements
         Games.Invitations.registerInvitationListener(mGoogleApiClient, this);
 
         // Retry saving game state
-        if (retrySaveGameBase)
+        if (retrySaveGameBase || gameBaseNeedsSaving)
             saveGameState();
         else
             refreshGameState();
@@ -2987,7 +3019,7 @@ public class MainActivity extends AppCompatActivity implements
     private InterstitialAd mInterstitialAd;
     private boolean showAds = true;
     public static String SHOW_ADS = "SHOW_ADS";
-    public static final int COUNT_TO_SHOW_ADS = 10;
+    public static final int COUNT_TO_SHOW_ADS = 5;
 
     private void loadInterstitialAd(){
         if (showAds && !mInterstitialAd.isLoaded()) {
@@ -3018,10 +3050,9 @@ public class MainActivity extends AppCompatActivity implements
 
     private void showAds(){
         // Setup Ads
-        activityStartCount = gameBase.getInt(ArithmosGameBase.MAIN_START_COUNT, 1);
         int levelStartCount = gameBase.getInt(ArithmosGameBase.LEVEL_START_COUNT, 0);
-        Log.d(LOG_TAG, "Start count = " + (activityStartCount + levelStartCount));
-        showAds = generalPrefs.getBoolean(MainActivity.SHOW_ADS, true) && activityStartCount + levelStartCount >= MainActivity.COUNT_TO_SHOW_ADS;
+        Log.d(LOG_TAG, "Level start count = " + levelStartCount);
+        showAds = generalPrefs.getBoolean(MainActivity.SHOW_ADS, true) && levelStartCount >= MainActivity.COUNT_TO_SHOW_ADS;
         if (showAds) {
             MobileAds.initialize(getApplicationContext(), "ca-app-pub-4640479150069852~3029191523");
             AdView mAdView = (AdView) rootLayout.findViewById(R.id.adView);
