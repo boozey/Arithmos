@@ -1175,9 +1175,18 @@ public class GameActivity extends AppCompatActivity implements
             // Update auto-pick level
             if (game.getGoalType() != ArithmosLevel.GOAL_301) {
                 if (gameBase.updateAutoPickLevel(result.numOps)) {
-                    gameBoard.setAutoPickMax(gameBase.getAutoPickLevel());
+                    int level = gameBase.getAutoPickLevel();
+                    gameBoard.setAutoPickMax(level);
                     cacheGame();
-                    showQuickPopup(getString(R.string.auto_pick_level_up, gameBase.getAutoPickLevel()));
+                    showQuickPopup(getString(R.string.auto_pick_level_up, level));
+                    if (useGooglePlay && mGoogleApiClient.isConnected()){
+                        if (level >= 1)
+                            Games.Achievements.unlock(mGoogleApiClient, getString(R.string.achievement_autopick_level_1));
+                        if (level >= 2)
+                            Games.Achievements.unlock(mGoogleApiClient, getString(R.string.achievement_autopick_level_2));
+                        if (level >= 3)
+                            Games.Achievements.unlock(mGoogleApiClient, getString(R.string.achievement_autopick_level_3));
+                    }
                 }
             }
 

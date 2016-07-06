@@ -1397,11 +1397,6 @@ public class GameBoard extends View {
                         positionOpPopup(r.centerX(), r.centerY());
                     } else {
                         processManualSelection();
-                        if (lastGameResult.result == ArithmosGame.GameResult.SUCCESS){
-                            // Call achievement listener
-                            if (onAchievementListener != null)
-                                onAchievementListener.OnAchievement(getResources().getString(R.string.achievement_arithmetic_master));
-                        }
                     }
                 } else {
                     showOpPopup = false;

@@ -1066,6 +1066,25 @@ public class MatchGameActivity extends AppCompatActivity implements
             // Animate score
             Animations.CountTo(scoreTextView, prevScore, prevScore + result.score);
             prevScore += result.score;
+
+            // Update auto-pick level
+            if (game.getGoalType() != ArithmosLevel.GOAL_301) {
+                if (gameBase.updateAutoPickLevel(result.numOps)) {
+                    int level = gameBase.getAutoPickLevel();
+                    gameBoard.setAutoPickMax(level);
+                    cacheGame();
+                    showQuickPopup(getString(R.string.auto_pick_level_up, level));
+                    if (mGoogleApiClient.isConnected()){
+                        if (level >= 1)
+                            Games.Achievements.unlock(mGoogleApiClient, getString(R.string.achievement_autopick_level_1));
+                        if (level >= 2)
+                            Games.Achievements.unlock(mGoogleApiClient, getString(R.string.achievement_autopick_level_2));
+                        if (level >= 3)
+                            Games.Achievements.unlock(mGoogleApiClient, getString(R.string.achievement_autopick_level_3));
+                    }
+                }
+            }
+
             if (game.getGoalType() == ArithmosLevel.GOAL_301) {
                 TextView three01 = (TextView)rootLayout.findViewById(R.id.three01_textview);
                 String value = String.valueOf(game.get301Total()), finalValue = "";

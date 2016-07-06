@@ -146,7 +146,7 @@ public class ArithmosGameBase {
             autoPickCount++;
             Log.d(LOG_TAG, "Auto-pick count: " + autoPickCount);
             Log.d(LOG_TAG, "Auto-pick level: " + Math.min(autoPickCount / 4, 3));
-            return getAutoPickLevel() > autoPickCount;
+            return getAutoPickLevel() > current;
         }
         return false;
     }
