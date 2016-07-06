@@ -28,7 +28,6 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
@@ -46,6 +45,7 @@ import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.drive.Drive;
 import com.google.android.gms.games.Games;
+import com.google.android.gms.games.GamesStatusCodes;
 import com.google.android.gms.games.snapshot.Snapshot;
 import com.google.android.gms.games.snapshot.SnapshotMetadataChange;
 import com.google.android.gms.games.snapshot.Snapshots;
@@ -59,7 +59,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Locale;
 import java.util.Random;
 
 public class GameActivity extends AppCompatActivity implements
@@ -255,6 +254,7 @@ public class GameActivity extends AppCompatActivity implements
                         return true;
                     }
                     else {
+                        isSaved = true;
                         finishLevelIncomplete();
                         return true;
                     }
@@ -295,7 +295,8 @@ public class GameActivity extends AppCompatActivity implements
     private ArithmosGameBase gameBase;
     private File levelCache, gameCache;
     private String levelSnapShotName;
-    private boolean loadSavedGame = false, gameBaseNeedsDownload = true, hasBeenPlayed = false;
+    private boolean loadSavedGame = false, gameBaseNeedsDownload = true, hasBeenPlayed = false,
+                    isSaved = false, shouldFinish = false;
     private Bitmap thumbNail;
 
     private void setupGameUi(){
@@ -467,6 +468,7 @@ public class GameActivity extends AppCompatActivity implements
         animStartDelay = 0;
         hasLevelPassedShown = false;
         hasBeenPlayed = false;
+        isSaved = false;
         elapsedMillis = 0;
         setupGameUi();
         gameBoard.startGame();
@@ -841,8 +843,19 @@ public class GameActivity extends AppCompatActivity implements
             Games.Snapshots.open(mGoogleApiClient, gameFileName, false).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
                 @Override
                 public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
+                    int status = openSnapshotResult.getStatus().getStatusCode();
+                    Log.i(LOG_TAG, "Load Result status: " + status);
+                    Snapshot snapshot = openSnapshotResult.getSnapshot(),resolvedSnapshot;
+                    resolvedSnapshot = snapshot;
+                    if (status == GamesStatusCodes.STATUS_SNAPSHOT_CONFLICT) {
+                        Snapshot conflictSnapshot = openSnapshotResult.getConflictingSnapshot();
+                        if (snapshot.getMetadata().getLastModifiedTimestamp() <=
+                                conflictSnapshot.getMetadata().getLastModifiedTimestamp()) {
+                            resolvedSnapshot = conflictSnapshot;
+                        }
+                    }
                     try {
-                            gameBase.loadByteData(openSnapshotResult.getSnapshot().getSnapshotContents().readFully());
+                            gameBase.loadByteData(resolvedSnapshot.getSnapshotContents().readFully());
                             cacheGame();
                             Log.d(LOG_TAG, "Game base updated from Google");
                             setupSpecials();
@@ -867,15 +880,56 @@ public class GameActivity extends AppCompatActivity implements
                         Games.Snapshots.open(mGoogleApiClient, gameFileName, true).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
                     @Override
                     public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
-                        String desc = "Arithmos Game Data";
-                        writeSnapshot(openSnapshotResult.getSnapshot(), gameBase.getByteData(), desc, null).setResultCallback(new ResultCallback<Snapshots.CommitSnapshotResult>() {
-                            @Override
-                            public void onResult(@NonNull Snapshots.CommitSnapshotResult commitSnapshotResult) {
-                                gameBase.setSaved(true);
-                                Log.i(LOG_TAG, "Game state saved: " + Utils.getDate(commitSnapshotResult.getSnapshotMetadata().getLastModifiedTimestamp(), "MM/dd/yy hh:mm:ss") );
-                                cacheGame();
+                        int status = openSnapshotResult.getStatus().getStatusCode();
+                        Log.i(LOG_TAG, "Save Result status: " + status);
+                        Snapshot snapshot = openSnapshotResult.getSnapshot(),resolvedSnapshot;
+                        resolvedSnapshot = snapshot;
+                        final String desc = "Arithmos Game Data";
+                        if (status == GamesStatusCodes.STATUS_SNAPSHOT_CONFLICT) {
+                            Snapshot conflictSnapshot = openSnapshotResult.getConflictingSnapshot();
+                            if (snapshot.getMetadata().getLastModifiedTimestamp() <=
+                                    conflictSnapshot.getMetadata().getLastModifiedTimestamp()) {
+                                resolvedSnapshot = conflictSnapshot;
+                                Games.Snapshots.resolveConflict(mGoogleApiClient, openSnapshotResult.getConflictId(), resolvedSnapshot).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
+                                    @Override
+                                    public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
+                                        writeSnapshot(openSnapshotResult.getSnapshot(), gameBase.getByteData(), desc, null).setResultCallback(new ResultCallback<Snapshots.CommitSnapshotResult>() {
+                                            @Override
+                                            public void onResult(@NonNull Snapshots.CommitSnapshotResult commitSnapshotResult) {
+                                                isSaved = true;
+                                                gameBase.setSaved(true);
+                                                Log.i(LOG_TAG, "Game state saved: " + Utils.getDate(commitSnapshotResult.getSnapshotMetadata().getLastModifiedTimestamp(), "MM/dd/yy hh:mm:ss"));
+                                                cacheGame();
+
+                                                if (shouldFinish) {
+                                                    if (game.isLevelPassed())
+                                                        finishLevelComplete();
+                                                    else
+                                                        finishLevelIncomplete();
+                                                }
+                                            }
+                                        });
+                                    }
+                                });
                             }
-                        });
+                        } else {
+                            writeSnapshot(resolvedSnapshot, gameBase.getByteData(), desc, null).setResultCallback(new ResultCallback<Snapshots.CommitSnapshotResult>() {
+                                @Override
+                                public void onResult(@NonNull Snapshots.CommitSnapshotResult commitSnapshotResult) {
+                                    isSaved = true;
+                                    gameBase.setSaved(true);
+                                    Log.i(LOG_TAG, "Game state saved: " + Utils.getDate(commitSnapshotResult.getSnapshotMetadata().getLastModifiedTimestamp(), "MM/dd/yy hh:mm:ss"));
+                                    cacheGame();
+
+                                    if (shouldFinish) {
+                                        if (game.isLevelPassed())
+                                            finishLevelComplete();
+                                        else
+                                            finishLevelIncomplete();
+                                    }
+                                }
+                            });
+                        }
                     }
                 });
             } else if (!mGoogleApiClient.isConnected() && useGooglePlay && connectAttempts++ < maxAttempts){
@@ -1092,23 +1146,34 @@ public class GameActivity extends AppCompatActivity implements
     }
 
     private void finishLevelComplete(){
-        Intent data = new Intent();
-        if (levelSnapShotName != null) {
-            data.putExtra(SAVED_GAME, levelSnapShotName);
-        }
-        if (levelCache != null) levelCache.delete();
-        setResult(Activity.RESULT_OK, data);
-        finish();
-    }
-
-    private void finishLevelIncomplete(){
-        Intent data = new Intent();
+        if ((useGooglePlay && isSaved) || !useGooglePlay) {
+            Intent data = new Intent();
             if (levelSnapShotName != null) {
                 data.putExtra(SAVED_GAME, levelSnapShotName);
             }
-        if (levelCache != null) levelCache.delete();
-        setResult(Activity.RESULT_CANCELED, data);
-        finish();
+            if (levelCache != null) levelCache.delete();
+            setResult(Activity.RESULT_OK, data);
+            finish();
+        } else {
+            shouldFinish = true;
+            showLoadingPopup();
+        }
+
+    }
+
+    private void finishLevelIncomplete(){
+        if ((useGooglePlay && isSaved) || !useGooglePlay) {
+            Intent data = new Intent();
+            if (levelSnapShotName != null) {
+                data.putExtra(SAVED_GAME, levelSnapShotName);
+            }
+            if (levelCache != null) levelCache.delete();
+            setResult(Activity.RESULT_CANCELED, data);
+            finish();
+        } else {
+            shouldFinish = true;
+            showLoadingPopup();
+        }
     }
 
     private void recordActivityTurnFinished(ArithmosGame.GameResult result){
@@ -1173,11 +1238,10 @@ public class GameActivity extends AppCompatActivity implements
     }
 
     public void ExitButtonClick(View v){
-        //Animations.slideOutDown(findViewById(R.id.game_over_popup), 200, 0, rootLayout.getHeight() / 3).start();
-        if (game.isLevelPassed())
-            finishLevelComplete();
-        else
-            finishLevelIncomplete();
+            if (game.isLevelPassed())
+                finishLevelComplete();
+            else
+                finishLevelIncomplete();
     }
 
     // Game events

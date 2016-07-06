@@ -48,6 +48,7 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.common.images.ImageManager;
 import com.google.android.gms.drive.Drive;
 import com.google.android.gms.games.Games;
+import com.google.android.gms.games.GamesStatusCodes;
 import com.google.android.gms.games.Player;
 import com.google.android.gms.games.achievement.Achievement;
 import com.google.android.gms.games.achievement.Achievements;
@@ -240,6 +241,7 @@ public class MainActivity extends AppCompatActivity implements
                 // Record Firebase Event
                 Bundle bundle = new Bundle();
                 mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.TUTORIAL_BEGIN, bundle);
+                Log.d(LOG_TAG, "mAutoStartSignInFlow = " + mAutoStartSignInFlow);
                 if (!mAutoStartSignInFlow)
                     nextLesson(Tutorial.SIGN_IN_LESSON);
                 else
@@ -1176,40 +1178,63 @@ public class MainActivity extends AppCompatActivity implements
             Games.Snapshots.open(mGoogleApiClient, gameFileName, false).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
                 @Override
                 public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
-                    try {
-                        // Load data
-                        gameBase.loadByteData(openSnapshotResult.getSnapshot().getSnapshotContents().readFully());
-                        // Update jewel count and challenges
-                        TextView jewelText = (TextView)rootLayout.findViewById(R.id.jewel_count);
-                        int prevCount = jewelText.getTag() == null ? 0 : (int)jewelText.getTag();
-                        Animations.CountTo(getResources(), R.string.number_after_x, jewelText, prevCount, gameBase.getJewelCount());
-                        jewelText.setTag(gameBase.getJewelCount());
-                        // Update challenge list if it has already been displayed
-                        if (challengeListAdapter != null) challengeListAdapter.notifyDataSetChanged();
-                        // Update recent activity
-                        activityListAdapter.addItems(gameBase.getActivityItems());
-                        activityListAdapter.sort();
-                        gameBaseNeedsRefresh = false;
-                        consumePurchases();
-                        activityStartCount = gameBase.getInt(ArithmosGameBase.MAIN_START_COUNT, --activityStartCount);
-                        gameBase.putInt(ArithmosGameBase.MAIN_START_COUNT, ++activityStartCount);
-                        showAds();
-                        cacheGame();
-                        Log.d(LOG_TAG, "Game refreshed from Google");
-                    } catch (IOException | NullPointerException | ClassCastException e) {
-                        e.printStackTrace();
-                        if (e instanceof NullPointerException) {
-                            SharedPreferences.Editor editor = getSharedPreferences(GAME_PREFS, MODE_PRIVATE).edit();
-                            editor.remove(GAME_FILE_NAME);
-                            editor.apply();
+                    int status = openSnapshotResult.getStatus().getStatusCode();
+                    Log.i(LOG_TAG, "Load Result status: " + status);
+                    Snapshot snapshot = openSnapshotResult.getSnapshot(),resolvedSnapshot;
+                    resolvedSnapshot = snapshot;
+                    if (status == GamesStatusCodes.STATUS_SNAPSHOT_CONFLICT) {
+                        Snapshot conflictSnapshot = openSnapshotResult.getConflictingSnapshot();
+                        if (snapshot.getMetadata().getLastModifiedTimestamp() <=
+                                conflictSnapshot.getMetadata().getLastModifiedTimestamp()) {
+                            resolvedSnapshot = conflictSnapshot;
+                            Games.Snapshots.resolveConflict(mGoogleApiClient, openSnapshotResult.getConflictId(), resolvedSnapshot).setResultCallback(new ResultCallback<Snapshots.OpenSnapshotResult>() {
+                                @Override
+                                public void onResult(@NonNull Snapshots.OpenSnapshotResult openSnapshotResult) {
+                                    loadGameState(openSnapshotResult.getSnapshot());
+                                }
+                            });
                         }
-                        if (e instanceof ClassCastException) {
-                            gameBase.resetActivityList();
-                            saveGameState();
-                        }
+                    } else {
+                        loadGameState(resolvedSnapshot);
                     }
+
                 }
             });
+        }
+    }
+
+    private void loadGameState(Snapshot snapshot){
+        try {
+            // Load data
+            gameBase.loadByteData(snapshot.getSnapshotContents().readFully());
+            // Update jewel count and challenges
+            TextView jewelText = (TextView)rootLayout.findViewById(R.id.jewel_count);
+            int prevCount = jewelText.getTag() == null ? 0 : (int)jewelText.getTag();
+            Animations.CountTo(getResources(), R.string.number_after_x, jewelText, prevCount, gameBase.getJewelCount());
+            jewelText.setTag(gameBase.getJewelCount());
+            // Update challenge list if it has already been displayed
+            if (challengeListAdapter != null) challengeListAdapter.notifyDataSetChanged();
+            // Update recent activity
+            activityListAdapter.addItems(gameBase.getActivityItems());
+            activityListAdapter.sort();
+            gameBaseNeedsRefresh = false;
+            consumePurchases();
+            activityStartCount = gameBase.getInt(ArithmosGameBase.MAIN_START_COUNT, --activityStartCount);
+            gameBase.putInt(ArithmosGameBase.MAIN_START_COUNT, ++activityStartCount);
+            showAds();
+            cacheGame();
+            Log.d(LOG_TAG, "Game refreshed from Google");
+        } catch (IOException | NullPointerException | ClassCastException e) {
+            e.printStackTrace();
+            if (e instanceof NullPointerException) {
+                SharedPreferences.Editor editor = getSharedPreferences(GAME_PREFS, MODE_PRIVATE).edit();
+                editor.remove(GAME_FILE_NAME);
+                editor.apply();
+            }
+            if (e instanceof ClassCastException) {
+                gameBase.resetActivityList();
+                saveGameState();
+            }
         }
     }
 
@@ -2652,6 +2677,7 @@ public class MainActivity extends AppCompatActivity implements
         rootLayout.findViewById(R.id.sign_out_button).setVisibility(View.VISIBLE);
         showGoogleUi();
         updatePlayerInfo();
+        mAutoStartSignInFlow = true;
 
         if (isTutorialMode &&
                 generalPrefs.getString(TUTORIAL_LESSON_NAME, Tutorial.SIGN_IN_LESSON).equals(Tutorial.SIGN_IN_LESSON)) {
@@ -2748,14 +2774,17 @@ public class MainActivity extends AppCompatActivity implements
         bundle.putString(FirebaseAnalytics.Param.SIGN_UP_METHOD, "Sign-in button");
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SIGN_UP, bundle);
 
-            // start the asynchronous sign in flow
-            mSignInClicked = true;
-            mAutoStartSignInFlow = true;
+        // start the asynchronous sign in flow
+        mSignInClicked = true;
+        mAutoStartSignInFlow = true;
+        if (mGoogleApiClient.isConnected() || mGoogleApiClient.isConnecting())
+            mGoogleApiClient.reconnect();
+        else
             mGoogleApiClient.connect();
-            SharedPreferences prefs = getSharedPreferences(GENERAL_PREFS, MODE_PRIVATE);
-            SharedPreferences.Editor editor = prefs.edit();
-            editor.putBoolean(AUTO_SIGN_IN, true);
-            editor.apply();
+        SharedPreferences prefs = getSharedPreferences(GENERAL_PREFS, MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean(AUTO_SIGN_IN, true);
+        editor.apply();
     }
 
     public void signOutClicked(View v){
