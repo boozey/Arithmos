@@ -243,6 +243,10 @@ public class MainActivity extends AppCompatActivity implements
                 else
                     nextLesson(Tutorial.CHALLENGES);
                 return true;
+            case R.id.action_open_level_designer:
+                Intent intent = new Intent(this, LevelDesignerActivity.class);
+                startActivity(intent);
+                return true;
         }
 
         return super.onOptionsItemSelected(item);

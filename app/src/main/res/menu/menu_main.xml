@@ -5,6 +5,9 @@
     <item android:id="@+id/action_start_tutorial"
         android:title="@string/action_start_tutorial"
         app:showAsAction="never" />
+    <item android:id="@+id/action_open_level_designer"
+        android:title="@string/action_open_level_designer"
+        app:showAsAction="never"/>
     <item android:id="@+id/action_order_history"
         android:title="@string/order_history_popup_title"
         app:showAsAction="never"/>
