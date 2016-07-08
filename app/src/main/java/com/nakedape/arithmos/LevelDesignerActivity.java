@@ -1,11 +1,14 @@
 package com.nakedape.arithmos;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,9 +16,7 @@ import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -29,17 +30,20 @@ public class LevelDesignerActivity extends AppCompatActivity {
     private static final String LOG_TAG = "LevelDesignerActivity";
 
     private RelativeLayout rootLayout;
-    private int gridSize, goalMode;
-    private ArrayList<String> runs;
+    private int gridSize = 4, goalMode = ArithmosLevel.GOAL_MULT_NUM;
+    private ArrayList<String> goalList;
+    private ArrayList<String[]> runs;
     private ArrayList<String[]> goalLists;
-    private ArrayList<String> runDisplayStrings;
+    private String[] gridNumbers;
     private int runIndex = 0;
     private Timer timer;
+    private Context context;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_level_designer);
+        context = this;
         rootLayout = (RelativeLayout)findViewById(R.id.root_layout);
 
         // Setup defaults
@@ -51,16 +55,27 @@ public class LevelDesignerActivity extends AppCompatActivity {
         Spinner gridSizeSpinner = (Spinner)rootLayout.findViewById(R.id.grid_size_spinner);
         GridSizeAdapter gridSizeAdapter = new GridSizeAdapter();
         gridSizeSpinner.setAdapter(gridSizeAdapter);
+        gridSizeSpinner.setOnItemSelectedListener(gridSizeSelectListener);
 
         EditText gridEditText = (EditText)rootLayout.findViewById(R.id.grid_numbers);
-        gridEditText.addTextChangedListener(commaListWatcher);
+        gridEditText.addTextChangedListener(gridTextWatcher);
 
         EditText goalEditText = (EditText)rootLayout.findViewById(R.id.goal_numbers);
-        goalEditText.addTextChangedListener(commaListWatcher);
+        goalEditText.addTextChangedListener(goalTextWatcher);
 
         runs = new ArrayList<>();
-        runDisplayStrings = new ArrayList<>();
         goalLists = new ArrayList<>();
+
+        EditText bonusEditText = (EditText)rootLayout.findViewById(R.id.apple_count);
+        bonusEditText.addTextChangedListener(bonusWatcher);
+        bonusEditText = (EditText)rootLayout.findViewById(R.id.banana_count);
+        bonusEditText.addTextChangedListener(bonusWatcher);
+        bonusEditText = (EditText)rootLayout.findViewById(R.id.bomb_count);
+        bonusEditText.addTextChangedListener(bonusWatcher);
+        bonusEditText = (EditText)rootLayout.findViewById(R.id.cherry_count);
+        bonusEditText.addTextChangedListener(bonusWatcher);
+        bonusEditText = (EditText)rootLayout.findViewById(R.id.balloon_count);
+        bonusEditText.addTextChangedListener(bonusWatcher);
 
     }
 
@@ -186,6 +201,7 @@ public class LevelDesignerActivity extends AppCompatActivity {
                     gridSize = 10;
                     break;
             }
+            generatePreview();
         }
 
         @Override
@@ -194,7 +210,7 @@ public class LevelDesignerActivity extends AppCompatActivity {
         }
     };
 
-    private TextWatcher commaListWatcher = new TextWatcher() {
+    private TextWatcher gridTextWatcher = new TextWatcher() {
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 
@@ -209,7 +225,7 @@ public class LevelDesignerActivity extends AppCompatActivity {
         @Override
         public void afterTextChanged(final Editable s) {
             if (s.length() > 0) {
-
+                if (timer != null) timer.cancel();
                 timer = new Timer();
                 timer.schedule(new TimerTask() {
                     @Override
@@ -230,6 +246,64 @@ public class LevelDesignerActivity extends AppCompatActivity {
                                     text += " ";
                                 if (!text.endsWith(", "))
                                     text += ", ";
+                                if (text.startsWith(" "))
+                                    text = text.substring(1, text.length() - 1);
+                                if (text.startsWith(","))
+                                    text = text.substring(1, text.length() - 1);
+                                if (!text.equals(origText)) {
+                                    s.replace(0, s.length(), text);
+                                    timer.cancel();
+                                    generatePreview();
+                                }
+                            }
+                        });
+                    }
+
+                }, 1000);
+            }
+        }
+    };
+
+    private TextWatcher goalTextWatcher = new TextWatcher() {
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            if(timer != null)
+                timer.cancel();
+        }
+
+        @Override
+        public void afterTextChanged(final Editable s) {
+            if (s.length() > 0) {
+                if (timer != null) timer.cancel();
+                timer = new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                String text = s.toString().trim();
+                                String origText = text;
+                                text = text.replaceAll("\\D", ", ");
+                                while (text.contains("  "))
+                                    text = text.replace("  ", " ");
+                                while (text.contains(" ,"))
+                                    text = text.replace(" ,", ",");
+                                while (text.contains(",,"))
+                                    text = text.replace(",,", ",");
+                                if (text.endsWith(","))
+                                    text += " ";
+                                if (!text.endsWith(", "))
+                                    text += ", ";
+                                if (text.startsWith(" "))
+                                    text = text.substring(1, text.length() - 1);
+                                if (text.startsWith(","))
+                                    text = text.substring(1, text.length() - 1);
                                 if (!text.equals(origText)) {
                                     s.replace(0, s.length(), text);
                                     timer.cancel();
@@ -243,18 +317,56 @@ public class LevelDesignerActivity extends AppCompatActivity {
         }
     };
 
+    private boolean updateGridNumList(){
+        EditText gridNumEditText = (EditText)rootLayout.findViewById(R.id.grid_numbers);
+        String text = gridNumEditText.getText().toString().trim();
+        text = text.replace(" ", "");
+        String[] elements = text.split(",");
+        ArrayList<String> numList = new ArrayList<>(elements.length);
+        for (String s : elements) {
+            if (!s.equals(" ") && !s.equals("")) {
+                numList.add(s);
+            }
+        }
+        gridNumbers = new String[numList.size()];
+        for (int i = 0; i < numList.size(); i++){
+            gridNumbers[i] = numList.get(i);
+        }
+
+        if (gridNumbers.length < 1) gridNumEditText.setError(getString(R.string.error_goal_list_length));
+
+        return gridNumbers.length > 0;
+    }
+
+    // Bonuses
+    private TextWatcher bonusWatcher = new TextWatcher() {
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+        }
+
+        @Override
+        public void afterTextChanged(Editable s) {
+            generatePreview();
+        }
+    };
+
     // Pre-defined runs
     public void AddRunClick(View v){
         addNewRunItem();
     }
+
     private void addNewRunItem(){
         LinearLayout runsLayout = (LinearLayout)rootLayout.findViewById(R.id.runs_linearlayout);
         View runView = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.predefined_run_list_item, null);
 
-        String run ="";
+        String[] run = new String[]{""};
         runs.add(run);
-        String runDisplay = "";
-        runDisplayStrings.add(runDisplay);
         goalLists.add(null);
 
         EditText runEditText = (EditText)runView.findViewById(R.id.run_edittext);
@@ -267,6 +379,7 @@ public class LevelDesignerActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 checkRun((int)v.getTag());
+                generatePreview();
             }
         });
 
@@ -317,6 +430,7 @@ public class LevelDesignerActivity extends AppCompatActivity {
                                     s.clear();
                                     s.append(text);
                                     timer.cancel();
+                                    updateRunList();
                                 }
                             }
                         });
@@ -327,19 +441,58 @@ public class LevelDesignerActivity extends AppCompatActivity {
         }
     }
 
-    private String formatGoalList(String[] goals){
-        String goalListText = "";
-        if (goals != null) {
-            for (String s : goals)
-                goalListText += s + ", ";
-            goalListText = goalListText.substring(0, goalListText.length() - 2);
+    private boolean updateGoalList(){
+        EditText goalListEditText = (EditText)rootLayout.findViewById(R.id.goal_numbers);
+        String goalListText = goalListEditText.getText().toString().trim();
+        goalListText = goalListText.replace(" ", "");
+        String[] elements = goalListText.split(",");
+        goalList = new ArrayList<>(elements.length);
+        for (String s : elements) {
+            if (!s.equals(" ") && !s.equals("")) {
+                goalList.add(s);
+            }
         }
-        return goalListText;
+        return goalList.size() > 0;
+    }
+
+    private void addRemoveGoal(String goal){
+        // Add or remove goal to lists as appropriate
+        updateGoalList();
+        EditText goalsEditText = (EditText)rootLayout.findViewById(R.id.goal_numbers);
+        String text = goalsEditText.getText().toString();
+        if (goalList.contains(goal)){
+            goalList.remove(goal);
+            text = text.replace(goal, "");
+            goalsEditText.setText(text);
+        } else {
+            goalList.add(goal);
+            text += goal + ", ";
+            goalsEditText.setText(text);
+        }
+        // Update color coding in pre-defined runs
+        updateGoalList();
+        LinearLayout runsLayout = (LinearLayout)rootLayout.findViewById(R.id.runs_linearlayout);
+        for (int i = 0; i < runsLayout.getChildCount(); i++){
+            View v = runsLayout.getChildAt(i);
+            LinearLayout goalsLayout = (LinearLayout)v.findViewById(R.id.goal_layout);
+            for (int j = 0; j < goalsLayout.getChildCount(); j++){
+                TextView textView = (TextView)goalsLayout.getChildAt(j);
+                String number = textView.getText().toString();
+                if (goalList.contains(number)) {
+                    textView.setTextColor(Color.GREEN);
+                }
+                else {
+                    textView.setTextColor(Color.RED);
+                }
+            }
+        }
     }
 
     private void checkRun(int index){
+        // Get goal string and format it
         View runView = ((LinearLayout)rootLayout.findViewById(R.id.runs_linearlayout)).getChildAt(index);
         EditText runEditText = (EditText)runView.findViewById(R.id.run_edittext);
+        runEditText.setError(null);
         String runText = runEditText.getText().toString();
         runText = runText.replace("+", ArithmosLevel.BONUS_LOCK_ADD);
         runText = runText.replace("-", ArithmosLevel.BONUS_LOCK_SUB);
@@ -348,14 +501,17 @@ public class LevelDesignerActivity extends AppCompatActivity {
         runText = runText.replace(" ", "");
         String[] elements = runText.split(",");
         if (!elements[0].replaceAll("[^0-9]", "").equals(elements[0])){
-            // Toast must start with a number
+            // Error must start with a number
+            runEditText.setError(getString(R.string.error_start_with_number));
             return;
         } else {
             Log.d(LOG_TAG, runText);
             ArrayList<String> run = new ArrayList<>(elements.length * 2);
             for (int i = 0, j = 0; i < elements.length; i++){
-                if (i < elements.length - 1 && elements[i].contains(ArithmosLevel.BONUS_OP_LOCK) && elements[i+1].contains(ArithmosLevel.BONUS_OP_LOCK)) {
-                    //Toast Bonus locks must be between two numbers
+                if ((i < elements.length - 1 && elements[i].contains(ArithmosLevel.BONUS_OP_LOCK) && elements[i+1].contains(ArithmosLevel.BONUS_OP_LOCK))
+                        || (i == elements.length - 1 && elements[i].contains(ArithmosLevel.BONUS_OP_LOCK))) {
+                    //Error Bonus locks must be between two numbers
+                    runEditText.setError(getString(R.string.error_lock_between));
                     return;
                 }
                 else {
@@ -364,17 +520,98 @@ public class LevelDesignerActivity extends AppCompatActivity {
                     run.add(elements[i]);
                 }
             }
+
+            // Find possible goal numbers and record
+            if (run.size() < 3) {
+                runEditText.setError(getString(R.string.error_run_length));
+                return;
+            }
             String[] goals = findGoalNumbers(run);
             goalLists.set(index, goals);
-            runText = "Possible goals: ";
-            for (String s : goals)
-                runText += s + ", ";
 
-            EditText goalsEditText = (EditText)runView.findViewById(R.id.goals_edittext);
-            goalsEditText.setText(runText);
+            // Update level goal list
+            updateGoalList();
+
+            // Display and color code possible goal numbers for the run
+            LinearLayout goalLayout = (LinearLayout)runView.findViewById(R.id.goal_layout);
+            goalLayout.removeAllViews();
+            for (final String goal : goals){
+                TextView goalView = new TextView(context);
+                goalView.setText(goal);
+                goalView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24);
+                goalView.setPaintFlags(Paint.UNDERLINE_TEXT_FLAG);
+                if (goalList.contains(goal))
+                    goalView.setTextColor(Color.GREEN);
+                else
+                    goalView.setTextColor(Color.RED);
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                params.setMargins(8, 0, 0, 0);
+                goalView.setLayoutParams(params);
+                goalView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        addRemoveGoal(goal);
+                    }
+                });
+                goalLayout.addView(goalView);
+            }
         }
     }
-    public String[] findGoalNumbers(ArrayList<String> run){
+
+    private void updateRunList(){
+        runs = new ArrayList<>();
+        LinearLayout runsLayout = (LinearLayout)rootLayout.findViewById(R.id.runs_linearlayout);
+        for (int i = 0; i < runsLayout.getChildCount(); i++){
+            // Get goal string and format it
+            View runView = ((LinearLayout)rootLayout.findViewById(R.id.runs_linearlayout)).getChildAt(i);
+            EditText runEditText = (EditText)runView.findViewById(R.id.run_edittext);
+            runEditText.setError(null);
+            String runText = runEditText.getText().toString();
+            runText = runText.replace("+", ArithmosLevel.BONUS_LOCK_ADD);
+            runText = runText.replace("-", ArithmosLevel.BONUS_LOCK_SUB);
+            runText = runText.replace("*", ArithmosLevel.BONUS_LOCK_MULT);
+            runText = runText.replace("/", ArithmosLevel.BONUS_LOCK_DIV);
+            runText = runText.replace(" ", "");
+            String[] elements = runText.split(",");
+            if (elements.length < 1){
+                return;
+            }
+            else if (!elements[0].replaceAll("[^0-9]", "").equals(elements[0])){
+                // Error must start with a number
+                runEditText.setError(getString(R.string.error_start_with_number));
+            } else {
+                boolean addToList = true;
+                Log.d(LOG_TAG, runText);
+                ArrayList<String> runList = new ArrayList<>(elements.length * 2);
+                for (int j = 0; j < elements.length; j++) {
+                    if ((j < elements.length - 1 && elements[j].contains(ArithmosLevel.BONUS_OP_LOCK) && elements[j + 1].contains(ArithmosLevel.BONUS_OP_LOCK))
+                            || (j == elements.length - 1 && elements[j].contains(ArithmosLevel.BONUS_OP_LOCK))) {
+                        //Error Bonus locks must be between two numbers
+                        runEditText.setError(getString(R.string.error_lock_between));
+                        addToList = false;
+                        break;
+                    } else {
+                        if (j != 0 && !elements[j].contains(ArithmosLevel.BONUS_OP_LOCK) && !runList.get(runList.size() - 1).contains(ArithmosLevel.BONUS_OP_LOCK))
+                            runList.add("?");
+                        runList.add(elements[j]);
+                    }
+                }
+                if (addToList) {
+                    if (runList.size() >= 3) {
+                        String[] run = new String[runList.size()];
+                        for (int j = 0; j < runList.size(); j++) {
+                            run[j] = runList.get(j);
+                        }
+                        runs.add(run);
+                    } else {
+                        runEditText.setError(getString(R.string.error_run_length));
+                    }
+                }
+            }
+        }
+    }
+
+    private String[] findGoalNumbers(ArrayList<String> run){
 
         //
         // Create and check all possible expressions
@@ -443,7 +680,7 @@ public class LevelDesignerActivity extends AppCompatActivity {
         return goals;
     }
 
-    public static double eval(final String str) {
+    private static double eval(final String str) {
         return new Object() {
             int pos = -1, ch;
 
@@ -521,6 +758,47 @@ public class LevelDesignerActivity extends AppCompatActivity {
                 return x;
             }
         }.parse();
+    }
+
+    // Preview and Testing
+    private void generatePreview(){
+        EditText gridNumsEditText = (EditText)rootLayout.findViewById(R.id.grid_numbers);
+        gridNumsEditText.setError(null);
+        EditText goalsEditText = (EditText)rootLayout.findViewById(R.id.goal_numbers);
+        goalsEditText.setError(null);
+        if (updateGridNumList()) {
+            updateRunList();
+            // Create bonus hashmap
+            HashMap<String, Integer> bonuses = new HashMap<>(5);
+            EditText editText = (EditText) rootLayout.findViewById(R.id.apple_count);
+            String text = editText.getText().toString();
+            if (!text.equals(""))
+                bonuses.put(ArithmosLevel.BONUS_APPLE, Integer.valueOf(text));
+
+            editText = (EditText) rootLayout.findViewById(R.id.banana_count);
+            text = editText.getText().toString();
+            if (!text.equals(""))
+                bonuses.put(ArithmosLevel.BONUS_BANANAS, Integer.valueOf(text));
+
+            editText = (EditText) rootLayout.findViewById(R.id.bomb_count);
+            text = editText.getText().toString();
+            if (!text.equals(""))
+                bonuses.put(ArithmosLevel.BONUS_BOMB, Integer.valueOf(text));
+
+            editText = (EditText) rootLayout.findViewById(R.id.cherry_count);
+            text = editText.getText().toString();
+            if (!text.equals(""))
+                bonuses.put(ArithmosLevel.BONUS_CHERRIES, Integer.valueOf(text));
+
+            editText = (EditText) rootLayout.findViewById(R.id.balloon_count);
+            text = editText.getText().toString();
+            if (!text.equals(""))
+                bonuses.put(ArithmosLevel.BONUS_BALLOONS, Integer.valueOf(text));
+
+            GamePreview gamePreview = (GamePreview) rootLayout.findViewById(R.id.game_board_preview);
+            gamePreview.setupBoard(gridSize, gridNumbers, bonuses, runs);
+        }
+
     }
 
     private void testDesign(){

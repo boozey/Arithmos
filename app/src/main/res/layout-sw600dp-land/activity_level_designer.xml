@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="com.nakedape.arithmos.LevelDesignerActivity"
+    android:background="#c0c0c0"
+    android:id="@+id/root_layout">
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingBottom="@dimen/activity_vertical_margin"
+            android:paddingLeft="@dimen/activity_horizontal_margin"
+            android:paddingRight="@dimen/activity_horizontal_margin"
+            android:paddingTop="@dimen/activity_vertical_margin"
+            android:background="@drawable/rounded_corner_white">
+
+            <ScrollView
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent">
+                <LinearLayout
+                    android:orientation="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+                    <Spinner
+                        android:id="@+id/grid_size_spinner"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                    <EditText android:id="@+id/grid_numbers"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="phone"
+                        android:hint="@string/grid_numbers_hint"/>
+                    <LinearLayout android:id="@+id/bonus_layout"
+                        android:orientation="vertical"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+                            <EditText android:id="@+id/apple_count"
+                                android:layout_width="wrap_content"
+                                android:minWidth="100dp"
+                                android:layout_height="wrap_content"
+                                android:drawableStart="@drawable/ic_apple_32dp"
+                                android:drawablePadding="4dp"
+                                android:gravity="end"
+                                android:hint="\%"
+                                android:inputType="number"/>
+                            <EditText android:id="@+id/banana_count"
+                                android:layout_width="wrap_content"
+                                android:minWidth="100dp"
+                                android:layout_height="wrap_content"
+                                android:drawableStart="@drawable/ic_bananas_32dp"
+                                android:drawablePadding="4dp"
+                                android:gravity="end"
+                                android:hint="\%"
+                                android:inputType="number"/>
+
+                            <EditText android:id="@+id/bomb_count"
+                                android:layout_width="wrap_content"
+                                android:minWidth="100dp"
+                                android:layout_height="wrap_content"
+                                android:drawableStart="@drawable/ic_bomb_32dp"
+                                android:drawablePadding="4dp"
+                                android:gravity="end"
+                                android:hint="\%"
+                                android:inputType="number"/>
+                        </LinearLayout>
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+                            <EditText android:id="@+id/cherry_count"
+                                android:layout_width="wrap_content"
+                                android:minWidth="100dp"
+                                android:layout_height="wrap_content"
+                                android:drawableStart="@drawable/ic_cherries_32dp"
+                                android:drawablePadding="4dp"
+                                android:gravity="end"
+                                android:hint="\%"
+                                android:inputType="number"/>
+                            <EditText android:id="@+id/balloon_count"
+                                android:layout_width="wrap_content"
+                                android:minWidth="100dp"
+                                android:layout_height="wrap_content"
+                                android:drawableStart="@drawable/ic_balloon_32dp"
+                                android:drawablePadding="4dp"
+                                android:gravity="end"
+                                android:hint="\%"
+                                android:inputType="number"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                    <Spinner
+                        android:id="@+id/goal_mode_spinner"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"/>
+                    <EditText android:id="@+id/goal_numbers"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="phone"
+                        android:hint="@string/goal_numbers_hint"/>
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/add_jewel_button_bar"
+                        android:padding="8dp"
+                        android:gravity="center_vertical">
+                        <ImageButton android:id="@+id/add_run_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:onClick="AddRunClick"
+                            android:background="@drawable/ic_content_add_circle_32dp"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_height="wrap_content"
+                            android:text="@string/add_predefined_run"/>
+                    </LinearLayout>
+                    <LinearLayout android:id="@+id/runs_linearlayout"
+                        android:orientation="vertical"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"/>
+
+                </LinearLayout>
+            </ScrollView>
+
+            <com.nakedape.arithmos.GamePreview android:id="@+id/game_board_preview"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="match_parent"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="40dp"
+                android:visibility="visible"/>
+
+        </LinearLayout>
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true">
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="35dp"
+                android:text="@string/exit_button_text"
+                android:textColor="@color/text_primary_light"
+                android:background="@drawable/rounded_corner_primary"/>
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="35dp"
+                android:layout_marginStart="4dp"
+                android:text="@string/test_button_text"
+                android:textColor="@color/text_primary_light"
+                android:background="@drawable/rounded_corner_primary_accent"
+                android:focusable="true"
+                android:focusableInTouchMode="true">
+                <requestFocus/>
+            </Button>
+        </LinearLayout>
+</RelativeLayout>
