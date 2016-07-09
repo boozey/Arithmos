@@ -2,7 +2,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:padding="8dp">
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
@@ -14,13 +15,12 @@
             android:layout_height="wrap_content"
             android:layout_margin="4dp"
             android:inputType="textNoSuggestions"
-            android:hint="Numbers ex. 2, 3"/>
-        <Button android:id="@+id/check_button"
+            android:hint="@string/add_run_hint"/>
+        <ImageButton android:id="@+id/remove_button"
             android:layout_width="wrap_content"
-            android:layout_height="35dp"
-            android:background="@drawable/rounded_corner_primary"
-            android:textColor="@color/text_primary_light"
-            android:text="check"/>
+            android:layout_height="wrap_content"
+            android:background="@drawable/ic_action_close_dark"
+            android:layout_margin="4dp"/>
     </LinearLayout>
 
     <LinearLayout android:id="@+id/goal_layout"

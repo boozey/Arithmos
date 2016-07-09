@@ -164,8 +164,10 @@
     <string name="grid_size_8">Grid size 8x8</string>
     <string name="grid_size_9">Grid size 9x9</string>
     <string name="grid_size_10">Grid size 10x10</string>
-    <string name="add_bonus_type">Add bonus</string>
+    <string name="of_x_to_pass">of %d to pass</string>
     <string name="add_predefined_run">Add pre-defined run</string>
+    <string name="show_run">Show</string>
+    <string name="add_run_hint">Numbers, +, -, *, or /</string>
     <string name="error_start_with_number">Run must start with a number</string>
     <string name="error_lock_between">Lock bonus must be between numbers</string>
     <string name="error_run_length">Run must contain at least two numbers</string>

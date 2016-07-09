@@ -24,11 +24,20 @@ public class GamePreview extends View {
     private static final String LOG_TAG = "GamePreview";
     private static final String UNDEF = "?";
     private String[][] gameBoard;
-    private Paint txtPaint;
+    private Paint txtPaint, selectionPaint;
+    private ArrayList<ArrayList<int[]>> predefinedRuns;
+    private boolean showRuns;
+    private Path selectionPath;
 
     public GamePreview(Context context, AttributeSet attrs){
         super(context, attrs);
-
+        selectionPath = new Path();
+        selectionPaint = new Paint();
+        selectionPaint.setColor(ResourcesCompat.getColor(getResources(), R.color.run_color1, null));
+        selectionPaint.setStyle(Paint.Style.STROKE);
+        selectionPaint.setStrokeWidth(10);
+        selectionPaint.setStrokeCap(Paint.Cap.ROUND);
+        selectionPaint.setStrokeJoin(Paint.Join.ROUND);
     }
 
     public void setupBoard(int size, String[] numberList, HashMap<String, Integer> bonuses, ArrayList<String[]> runs){
@@ -85,12 +94,18 @@ public class GamePreview extends View {
                 else return false;
             }
             private void placeHoriz(String[] run, int r, int c){
+                ArrayList<int[]> newRun = new ArrayList<>(run.length);
                 if (random.nextDouble() < 0.5)
-                    for (int i = 0; i < run.length && c + i < gameBoard[r].length; i++)
+                    for (int i = 0; i < run.length && c + i < gameBoard[r].length; i++) {
                         gameBoard[r][c + i] = run[i];
+                        newRun.add(new int[]{r, c + i});
+                    }
                 else
-                    for (int i = 0; i < run.length && c + i < gameBoard[r].length; i++)
+                    for (int i = 0; i < run.length && c + i < gameBoard[r].length; i++) {
                         gameBoard[r][c + i] = run[run.length - 1 - i];
+                        newRun.add(new int[]{r, c + i});
+                    }
+                predefinedRuns.add(newRun);
             }
             private boolean checkVert(int r, int c, String[] run){
                 int i = 0;
@@ -104,12 +119,18 @@ public class GamePreview extends View {
                 else return false;
             }
             private void placeVert(String[] run, int r, int c){
+                ArrayList<int[]> newRun = new ArrayList<>(run.length);
                 if (random.nextDouble() < 0.5)
-                    for (int i = 0; i < run.length && r + i < gameBoard.length; i++)
+                    for (int i = 0; i < run.length && r + i < gameBoard.length; i++) {
                         gameBoard[r + i][c] = run[i];
+                        newRun.add(new int[]{r + i, c});
+                    }
                 else
-                    for (int i = 0; i < run.length && r + i < gameBoard.length; i++)
+                    for (int i = 0; i < run.length && r + i < gameBoard.length; i++){
                         gameBoard[r + i][c] = run[run.length - 1 - i];
+                        newRun.add(new int[]{r + i, c});
+                    }
+                predefinedRuns.add(newRun);
             }
             private boolean checkDiagRight(int r, int c, String[] run){
                 int i = 0;
@@ -123,12 +144,18 @@ public class GamePreview extends View {
                 else return false;
             }
             private void placeDiagRight(String[] run, int r, int c){
+                ArrayList<int[]> newRun = new ArrayList<>(run.length);
                 if (random.nextDouble() < 0.5)
-                    for (int i = 0; i < run.length && r + i < gameBoard.length && c + i < gameBoard[0].length; i++)
+                    for (int i = 0; i < run.length && r + i < gameBoard.length && c + i < gameBoard[0].length; i++){
                         gameBoard[r + i][c + i] = run[i];
+                        newRun.add(new int[]{r + i, c + i});
+                    }
                 else
-                    for (int i = 0; i < run.length && r + i < gameBoard.length && c + i < gameBoard[0].length; i++)
+                    for (int i = 0; i < run.length && r + i < gameBoard.length && c + i < gameBoard[0].length; i++){
                         gameBoard[r + i][c + i] = run[run.length - 1 - i];
+                        newRun.add(new int[]{r + i, c + i});
+                    }
+                predefinedRuns.add(newRun);
             }
             private boolean checkDiagLeft(int r, int c, String[] run){
                 int i = 0;
@@ -142,12 +169,18 @@ public class GamePreview extends View {
                 else return false;
             }
             private void placeDiagLeft(String[] run, int r, int c){
+                ArrayList<int[]> newRun = new ArrayList<>(run.length);
                 if (random.nextDouble() < 0.5)
-                    for (int i = 0; i < run.length && r + i < gameBoard.length && c - i >= 0; i++)
+                    for (int i = 0; i < run.length && r + i < gameBoard.length && c - i >= 0; i++){
                         gameBoard[r + i][c - i] = run[i];
+                        newRun.add(new int[]{r + i, c - i});
+                    }
                 else
-                    for (int i = 0; i < run.length && r + i < gameBoard.length && c - i >= 0; i++)
+                    for (int i = 0; i < run.length && r + i < gameBoard.length && c - i >= 0; i++){
                         gameBoard[r + i][c - i] = run[run.length - 1 - i];
+                        newRun.add(new int[]{r + i, c - i});
+                    }
+                predefinedRuns.add(newRun);
             }
         }
         Helper mHelper = new Helper();
@@ -156,6 +189,7 @@ public class GamePreview extends View {
 
         // Place pre-defined runs
         if (runs != null){
+            predefinedRuns = new ArrayList<>(runs.size());
             for (String[] run : runs){
                 mHelper.findPlaceForRun(run);
                 String log = "Pre-defined run: ";
@@ -209,6 +243,11 @@ public class GamePreview extends View {
         invalidate();
     }
 
+    public void setShowRuns(boolean showRuns){
+        this.showRuns = showRuns;
+        invalidate();
+    }
+
     private RectF[][] tileDimensions;
     private float pieceW, pieceH;
     private float horzMargin = 16, vertMargin = 16;
@@ -244,6 +283,7 @@ public class GamePreview extends View {
         float txtSize = Math.min(dimens.width(), dimens.height());
         txtPaint.setTextSize(txtSize);
         txtPaint.setTextAlign(Paint.Align.CENTER);
+        selectionPaint.setStrokeWidth(txtSize * 1.333f);
 
         // Draw each of the number tiles
         String tileText;
@@ -297,6 +337,7 @@ public class GamePreview extends View {
                     }
                 }
             }
+
 
         return bitmap;
     }
@@ -355,6 +396,17 @@ public class GamePreview extends View {
     protected void onDraw(Canvas canvas){
         if (gameBoardBitmap != null){
             canvas.drawBitmap(gameBoardBitmap, 0, 0, null);
+            if (showRuns){
+                // Draw pre-defined runs
+                for (ArrayList<int[]> run : predefinedRuns){
+                    int[] start = run.get(0), end = run.get(run.size() - 1);
+                    RectF startRect = tileDimensions[start[0]][start[1]], endRect = tileDimensions[end[0]][end[1]];
+                    selectionPath.moveTo(startRect.centerX(), startRect.centerY());
+                    selectionPath.lineTo(endRect.centerX(), endRect.centerY());
+                    canvas.drawPath(selectionPath, selectionPaint);
+                    selectionPath.rewind();
+                }
+            }
         }
     }
 }

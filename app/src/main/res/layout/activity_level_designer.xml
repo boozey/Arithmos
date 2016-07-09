@@ -102,6 +102,21 @@
             android:layout_height="wrap_content"
             android:inputType="phone"
             android:hint="@string/goal_numbers_hint"/>
+
+        <LinearLayout android:orientation="horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <EditText android:id="@+id/goals_to_win"
+                android:layout_width="wrap_content"
+                android:minWidth="60dp"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:inputType="number"/>
+            <TextView android:id="@+id/total_goals"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="of 0 to pass"/>
+        </LinearLayout>
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="wrap_content"
@@ -119,6 +134,14 @@
                 android:layout_marginStart="8dp"
                 android:layout_height="wrap_content"
                 android:text="@string/add_predefined_run"/>
+            <Button android:id="@+id/show_runs_button"
+                android:layout_width="wrap_content"
+                android:layout_height="35dp"
+                android:layout_marginStart="16dp"
+                android:background="@drawable/selectable_button_background"
+                android:textColor="@color/text_primary_light"
+                android:text="@string/show_run"
+                android:onClick="ShowRunsClick"/>
         </LinearLayout>
             <LinearLayout android:id="@+id/runs_linearlayout"
                 android:orientation="vertical"

@@ -3,6 +3,7 @@ package com.nakedape.arithmos;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
@@ -357,39 +358,19 @@ public class LevelDesignerActivity extends AppCompatActivity {
     };
 
     // Pre-defined runs
+    public void ShowRunsClick(View v){
+        v.setSelected(!v.isSelected());
+        GamePreview gamePreview = (GamePreview)rootLayout.findViewById(R.id.game_board_preview);
+        gamePreview.setShowRuns(v.isSelected());
+    }
+
     public void AddRunClick(View v){
         addNewRunItem();
     }
 
-    private void addNewRunItem(){
-        LinearLayout runsLayout = (LinearLayout)rootLayout.findViewById(R.id.runs_linearlayout);
-        View runView = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.predefined_run_list_item, null);
-
-        String[] run = new String[]{""};
-        runs.add(run);
-        goalLists.add(null);
-
-        EditText runEditText = (EditText)runView.findViewById(R.id.run_edittext);
-        runEditText.addTextChangedListener(runWatcher);
-        runEditText.setTag(runIndex);
-
-        Button checkButton = (Button)runView.findViewById(R.id.check_button);
-        checkButton.setTag(runIndex);
-        checkButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                checkRun((int)v.getTag());
-                generatePreview();
-            }
-        });
-
-        runsLayout.addView(runView);
-        runIndex++;
-    }
-
-    private RunWatcher runWatcher = new RunWatcher();
-
     private class RunWatcher implements TextWatcher {
+
+        int index;
 
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -430,7 +411,8 @@ public class LevelDesignerActivity extends AppCompatActivity {
                                     s.clear();
                                     s.append(text);
                                     timer.cancel();
-                                    updateRunList();
+                                    updateRun(s);
+                                    generatePreview();
                                 }
                             }
                         });
@@ -439,6 +421,43 @@ public class LevelDesignerActivity extends AppCompatActivity {
                 }, 1000);
             }
         }
+    }
+
+    private RunWatcher runWatcher = new RunWatcher();
+
+    private void addNewRunItem(){
+        final LinearLayout runsLayout = (LinearLayout)rootLayout.findViewById(R.id.runs_linearlayout);
+        int index = runsLayout.getChildCount();
+        final View runView = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.predefined_run_list_item, null);
+        runView.setTag(index);
+
+        String[] run = new String[]{""};
+        runs.add(run);
+        goalLists.add(null);
+
+        EditText runEditText = (EditText)runView.findViewById(R.id.run_edittext);
+
+        runEditText.addTextChangedListener(runWatcher);
+
+        View removeButton = runView.findViewById(R.id.remove_button);
+        removeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                runsLayout.removeView(runView);
+                indexRuns();
+            }
+        });
+
+        runsLayout.addView(runView);
+    }
+
+    private void indexRuns(){
+        LinearLayout runsLayout = (LinearLayout)rootLayout.findViewById(R.id.runs_linearlayout);
+        for (int i = 0; i < runsLayout.getChildCount(); i++){
+            runsLayout.getChildAt(i).setTag(i);
+        }
+        generatePreview();
+        updateGoalList();
     }
 
     private boolean updateGoalList(){
@@ -479,11 +498,25 @@ public class LevelDesignerActivity extends AppCompatActivity {
                 TextView textView = (TextView)goalsLayout.getChildAt(j);
                 String number = textView.getText().toString();
                 if (goalList.contains(number)) {
-                    textView.setTextColor(Color.GREEN);
+                    textView.setSelected(true);
+                    textView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.text_primary_light, null));
                 }
                 else {
-                    textView.setTextColor(Color.RED);
+                    textView.setSelected(false);
+                    textView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.text_primary_dark, null));
                 }
+            }
+        }
+    }
+
+    private void updateRun(Editable s){
+        LinearLayout runsLayout = (LinearLayout)rootLayout.findViewById(R.id.runs_linearlayout);
+        for (int i = 0; i < runsLayout.getChildCount(); i++){
+            View runView = runsLayout.getChildAt(i);
+            EditText editText = (EditText)runView.findViewById(R.id.run_edittext);
+            if (editText.getText().hashCode() == s.hashCode()) {
+                checkRun((int)runView.getTag());
+                return;
             }
         }
     }
@@ -537,13 +570,19 @@ public class LevelDesignerActivity extends AppCompatActivity {
             goalLayout.removeAllViews();
             for (final String goal : goals){
                 TextView goalView = new TextView(context);
+                goalView.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.goal_suggestion_background, null));
+                goalView.setPadding(8, 0, 8, 0);
+                goalView.setMinWidth(40);
                 goalView.setText(goal);
-                goalView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24);
-                goalView.setPaintFlags(Paint.UNDERLINE_TEXT_FLAG);
-                if (goalList.contains(goal))
-                    goalView.setTextColor(Color.GREEN);
-                else
-                    goalView.setTextColor(Color.RED);
+                goalView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 22);
+                if (goalList.contains(goal)) {
+                    goalView.setSelected(true);
+                    goalView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.text_primary_light, null));
+                }
+                else {
+                    goalView.setSelected(false);
+                    goalView.setTextColor(ResourcesCompat.getColor(getResources(), R.color.text_primary_dark, null));
+                }
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                 params.setMargins(8, 0, 0, 0);
                 goalView.setLayoutParams(params);
@@ -611,69 +650,80 @@ public class LevelDesignerActivity extends AppCompatActivity {
         }
     }
 
-    private String[] findGoalNumbers(ArrayList<String> run){
+    private String[] findGoalNumbers(ArrayList<String> run1){
 
-        //
-        // Create and check all possible expressions
-        //
+        ArrayList<String> run2 = new ArrayList<>(run1.size());
+        for (int i = run1.size() - 1; i >= 0; i--)
+            run2.add(run1.get(i));
 
-        // Total number of combinations is the number of OPERATIONS to the power of the number of
-        // places an operation can be placed
-        String[] availableOperations = ArithmosGame.OPERATIONS;
+        ArrayList<ArrayList<String>> runs = new ArrayList<>(2);
+        runs.add(run1);
+        runs.add(run2);
 
-        int numCombinations = (int)Math.pow(availableOperations.length, run.size() - 1);
-        ArrayList<String> result = new ArrayList<>(numCombinations);
-        // Array of values selected with space to insert OPERATIONS in between each pair of values
-        String[] baseExp = new String[run.size()];
-        // One counter for each location an operation can be placed.  Num OPERATIONS is one less
-        // than the number of values selected
-        int[] counters = new int[(run.size() - 1) / 2];
+        ArrayList<String> result = new ArrayList<>(10);
 
-        // Loop until all possible combinations have been checked
-        for (int count = 0; count < numCombinations; count++) {
-            // Loop through selected values and insert next combination of OPERATIONS
-            for (int i = 0, j = 0; i < baseExp.length; i += 2) {
-                baseExp[i] = run.get(i);
-                // Fill position with operation
-                if (j < counters.length) {
-                    baseExp[i + 1] = availableOperations[counters[j]];
+        for (ArrayList<String> run : runs) {
 
-                    // Replace operation if it is a lock bonus
-                    if (run.get(i + 1).contains(ArithmosLevel.BONUS_OP_LOCK)) {
-                        baseExp[i + 1] = run.get(i + 1).replace(ArithmosLevel.BONUS_OP_LOCK, "");
+            //
+            // Create and check all possible expressions
+            //
+
+            // Total number of combinations is the number of OPERATIONS to the power of the number of
+            // places an operation can be placed
+            String[] availableOperations = ArithmosGame.OPERATIONS;
+
+            int numCombinations = (int) Math.pow(availableOperations.length, run.size() - 1);
+            // Array of values selected with space to insert OPERATIONS in between each pair of values
+            String[] baseExp = new String[run.size()];
+            // One counter for each location an operation can be placed.  Num OPERATIONS is one less
+            // than the number of values selected
+            int[] counters = new int[(run.size() - 1) / 2];
+
+            // Loop until all possible combinations have been checked
+            for (int count = 0; count < numCombinations; count++) {
+                // Loop through selected values and insert next combination of OPERATIONS
+                for (int i = 0, j = 0; i < baseExp.length; i += 2) {
+                    baseExp[i] = run.get(i);
+                    // Fill position with operation
+                    if (j < counters.length) {
+                        baseExp[i + 1] = availableOperations[counters[j]];
+
+                        // Replace operation if it is a lock bonus
+                        if (run.get(i + 1).contains(ArithmosLevel.BONUS_OP_LOCK)) {
+                            baseExp[i + 1] = run.get(i + 1).replace(ArithmosLevel.BONUS_OP_LOCK, "");
+                        }
+                        j++;
                     }
-                    j++;
                 }
-            }
 
-            // Build expression string to check from array
-            String exp = "";
-            for (String s : baseExp)
-                exp += s + " ";
+                // Build expression string to check from array
+                String exp = "";
+                for (String s : baseExp)
+                    exp += s + " ";
 
-            // Check if expression evaluates to a whole number and record if it does
-            Log.d(LOG_TAG, exp);
-            double value = eval(exp);
-            if (value == (int)value && value >= 0 && !result.contains(String.valueOf((int)value)))
-                result.add(String.valueOf((int)value));
+                // Check if expression evaluates to a whole number and record if it does
+                Log.d(LOG_TAG, exp);
+                double value = eval(exp);
+                if (value == (int) value && value >= 0 && value < 100 && !result.contains(String.valueOf((int) value)))
+                    result.add(String.valueOf((int) value));
 
-            // Increment counters to try next combination of OPERATIONS
-            // Counters increment modulo the number of OPERATIONS
-            int index = 0;
-            boolean carry = false;
-            do {
-                counters[index]++;
-                if (counters[index] == availableOperations.length) {
-                    counters[index] = 0;
-                    carry = true;
-                } else {
-                    carry = false;
-                }
-                index++;
-            } while (carry && index < counters.length);
-        } // End main loop
-
-        // If this statement is reached, all possible combinations of OPERATIONS failed
+                // Increment counters to try next combination of OPERATIONS
+                // Counters increment modulo the number of OPERATIONS
+                int index = 0;
+                boolean carry = false;
+                do {
+                    counters[index]++;
+                    if (counters[index] == availableOperations.length) {
+                        counters[index] = 0;
+                        carry = true;
+                    } else {
+                        carry = false;
+                    }
+                    index++;
+                } while (carry && index < counters.length);
+            } // End main loop
+        }
+        // When this statement is reached, all possible combinations of OPERATIONS have been checked
         String[] goals = new String[result.size()];
         for (int i = 0; i < result.size(); i++)
             goals[i] = result.get(i);
@@ -772,36 +822,39 @@ public class LevelDesignerActivity extends AppCompatActivity {
             HashMap<String, Integer> bonuses = new HashMap<>(5);
             EditText editText = (EditText) rootLayout.findViewById(R.id.apple_count);
             String text = editText.getText().toString();
-            if (!text.equals(""))
+            if (!text.equals("") && !text.equals("0"))
                 bonuses.put(ArithmosLevel.BONUS_APPLE, Integer.valueOf(text));
 
             editText = (EditText) rootLayout.findViewById(R.id.banana_count);
             text = editText.getText().toString();
-            if (!text.equals(""))
+            if (!text.equals("") && !text.equals("0"))
                 bonuses.put(ArithmosLevel.BONUS_BANANAS, Integer.valueOf(text));
 
             editText = (EditText) rootLayout.findViewById(R.id.bomb_count);
             text = editText.getText().toString();
-            if (!text.equals(""))
+            if (!text.equals("") && !text.equals("0"))
                 bonuses.put(ArithmosLevel.BONUS_BOMB, Integer.valueOf(text));
 
             editText = (EditText) rootLayout.findViewById(R.id.cherry_count);
             text = editText.getText().toString();
-            if (!text.equals(""))
+            if (!text.equals("") && !text.equals("0"))
                 bonuses.put(ArithmosLevel.BONUS_CHERRIES, Integer.valueOf(text));
 
             editText = (EditText) rootLayout.findViewById(R.id.balloon_count);
             text = editText.getText().toString();
-            if (!text.equals(""))
+            if (!text.equals("") && !text.equals("0"))
                 bonuses.put(ArithmosLevel.BONUS_BALLOONS, Integer.valueOf(text));
 
             GamePreview gamePreview = (GamePreview) rootLayout.findViewById(R.id.game_board_preview);
             gamePreview.setupBoard(gridSize, gridNumbers, bonuses, runs);
+
+            View showRunsView = rootLayout.findViewById(R.id.show_runs_button);
+            gamePreview.setShowRuns(showRunsView.isSelected());
         }
 
     }
 
-    private void testDesign(){
+    private void playGame(){
 
     }
 }

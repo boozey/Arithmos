@@ -32,12 +32,14 @@
                     <Spinner
                         android:id="@+id/grid_size_spinner"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"/>
+                        android:layout_height="wrap_content"
+                        android:nextFocusForward="@id/grid_numbers"/>
                     <EditText android:id="@+id/grid_numbers"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="phone"
-                        android:hint="@string/grid_numbers_hint"/>
+                        android:hint="@string/grid_numbers_hint"
+                        android:nextFocusForward="@id/apple_count"/>
                     <LinearLayout android:id="@+id/bonus_layout"
                         android:orientation="vertical"
                         android:layout_width="match_parent"
@@ -51,18 +53,22 @@
                                 android:layout_height="wrap_content"
                                 android:drawableStart="@drawable/ic_apple_32dp"
                                 android:drawablePadding="4dp"
-                                android:gravity="end"
-                                android:hint="\%"
-                                android:inputType="number"/>
+                                android:gravity="center"
+                                android:text="0"
+                                android:inputType="number"
+                                android:nextFocusForward="@id/banana_count"
+                                android:nextFocusDown="@id/banana_count"/>
                             <EditText android:id="@+id/banana_count"
                                 android:layout_width="wrap_content"
                                 android:minWidth="100dp"
                                 android:layout_height="wrap_content"
                                 android:drawableStart="@drawable/ic_bananas_32dp"
                                 android:drawablePadding="4dp"
-                                android:gravity="end"
-                                android:hint="\%"
-                                android:inputType="number"/>
+                                android:gravity="center"
+                                android:text="0"
+                                android:inputType="number"
+                                android:nextFocusForward="@id/bomb_count"
+                                android:nextFocusDown="@id/bomb_count"/>
 
                             <EditText android:id="@+id/bomb_count"
                                 android:layout_width="wrap_content"
@@ -70,9 +76,11 @@
                                 android:layout_height="wrap_content"
                                 android:drawableStart="@drawable/ic_bomb_32dp"
                                 android:drawablePadding="4dp"
-                                android:gravity="end"
-                                android:hint="\%"
-                                android:inputType="number"/>
+                                android:gravity="center"
+                                android:text="0"
+                                android:inputType="number"
+                                android:nextFocusForward="@id/cherry_count"
+                                android:nextFocusDown="@id/cherry_count"/>
                         </LinearLayout>
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -83,30 +91,52 @@
                                 android:layout_height="wrap_content"
                                 android:drawableStart="@drawable/ic_cherries_32dp"
                                 android:drawablePadding="4dp"
-                                android:gravity="end"
-                                android:hint="\%"
-                                android:inputType="number"/>
+                                android:gravity="center"
+                                android:text="0"
+                                android:inputType="number"
+                                android:nextFocusForward="@id/balloon_count"
+                                android:nextFocusDown="@id/balloon_count"/>
                             <EditText android:id="@+id/balloon_count"
                                 android:layout_width="wrap_content"
                                 android:minWidth="100dp"
                                 android:layout_height="wrap_content"
                                 android:drawableStart="@drawable/ic_balloon_32dp"
                                 android:drawablePadding="4dp"
-                                android:gravity="end"
-                                android:hint="\%"
-                                android:inputType="number"/>
+                                android:gravity="center"
+                                android:text="0"
+                                android:inputType="number"
+                                android:nextFocusForward="@id/goal_mode_spinner"
+                                android:nextFocusDown="@id/goal_mode_spinner"/>
                         </LinearLayout>
                     </LinearLayout>
                     <Spinner
                         android:id="@+id/goal_mode_spinner"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"/>
+                        android:layout_marginTop="8dp"
+                        android:nextFocusForward="@id/goal_numbers"/>
                     <EditText android:id="@+id/goal_numbers"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="phone"
-                        android:hint="@string/goal_numbers_hint"/>
+                        android:hint="@string/goal_numbers_hint"
+                        android:nextFocusForward="@id/goals_to_win"/>
+                    <LinearLayout android:orientation="horizontal"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content">
+                        <EditText android:id="@+id/goals_to_win"
+                            android:layout_width="wrap_content"
+                            android:minWidth="60dp"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_horizontal"
+                            android:inputType="number"
+                            android:nextFocusForward="@id/add_run_button"/>
+                        <TextView android:id="@+id/total_goals"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="of 0 to pass"/>
+                    </LinearLayout>
+
                     <LinearLayout
                         android:orientation="horizontal"
                         android:layout_width="wrap_content"
@@ -124,6 +154,14 @@
                             android:layout_marginStart="8dp"
                             android:layout_height="wrap_content"
                             android:text="@string/add_predefined_run"/>
+                        <Button android:id="@+id/show_runs_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="35dp"
+                            android:layout_marginStart="16dp"
+                            android:background="@drawable/selectable_button_background"
+                            android:textColor="@color/text_primary_light"
+                            android:text="@string/show_run"
+                            android:onClick="ShowRunsClick"/>
                     </LinearLayout>
                     <LinearLayout android:id="@+id/runs_linearlayout"
                         android:orientation="vertical"
@@ -138,6 +176,7 @@
                 android:layout_weight="1"
                 android:layout_height="match_parent"
                 android:layout_gravity="center_horizontal"
+                android:layout_marginStart="8dp"
                 android:layout_marginBottom="40dp"
                 android:visibility="visible"/>
 
@@ -147,7 +186,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
-            android:layout_alignParentBottom="true">
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="8dp"
+            android:layout_marginEnd="8dp">
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="35dp"
