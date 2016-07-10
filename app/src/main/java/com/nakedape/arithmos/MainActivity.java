@@ -744,8 +744,11 @@ public class MainActivity extends AppCompatActivity implements
 
             // Set challenge
             titleView.setVisibility(View.VISIBLE);
-            String text = getString(ArithmosGameBase.getChallengeDisplayNameResId(getItem(position).challengeName)) + " " +
+            String text;
+            if (ArithmosGameBase.getChallengeDisplayNameResId(getItem(position).challengeName) != -1)
+            text = getString(ArithmosGameBase.getChallengeDisplayNameResId(getItem(position).challengeName)) + " " +
                     getString(ArithmosGameBase.getLevelDisplayNameResIds(getItem(position).challengeName)[getItem(position).challengeLevel]);
+            else text = getItem(position).challengeName;
             titleView.setText(text);
 
             // Set description

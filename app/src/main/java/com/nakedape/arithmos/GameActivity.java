@@ -52,6 +52,8 @@ import com.google.android.gms.games.snapshot.Snapshots;
 import com.google.example.games.basegameutils.BaseGameUtils;
 import com.google.firebase.analytics.FirebaseAnalytics;
 
+import org.xmlpull.v1.XmlPullParserException;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -72,6 +74,7 @@ public class GameActivity extends AppCompatActivity implements
     // Intent Extra tags
     public static final String LEVEL_XML_RES_ID = "level_xml_res_id";
     public static final String SAVED_GAME = "saved_game";
+    public static final String LEVEL_FILE_PATH = "LEVEL_FILE_PATH";
 
     // Saving/recreating the activity state
     private static final String HAS_LEVEL_PASSED_SHOWN = "HAS_LEVEL_PASSED_SHOWN";
@@ -153,6 +156,10 @@ public class GameActivity extends AppCompatActivity implements
             else if (getIntent().hasExtra(LEVEL_XML_RES_ID)) {
                 LoadGameLevel(getIntent().getIntExtra(LEVEL_XML_RES_ID, R.xml.game_level_crazy_eights_6x6));
             }
+            else if (getIntent().hasExtra(LEVEL_FILE_PATH)){
+                LoadGameLevel(getIntent().getStringExtra(LEVEL_FILE_PATH));
+            }
+
         }
     }
 
@@ -295,6 +302,7 @@ public class GameActivity extends AppCompatActivity implements
     private String levelSnapShotName;
     private boolean loadSavedGame = false, hasBeenPlayed = false;
     private Bitmap thumbNail;
+    private boolean isUserLevel = false;
 
     private void setupGameUi(){
         gameBoard.setGame(game);
@@ -505,6 +513,55 @@ public class GameActivity extends AppCompatActivity implements
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
     }
 
+    private void LoadGameLevel(String filePath){
+        try {
+            isUserLevel = true;
+            File file = new File(filePath);
+            final ArithmosLevel level = new ArithmosLevel(file);
+            game = new ArithmosGame(level);
+            animStartDelay = 0;
+            hasLevelPassedShown = false;
+            hasBeenPlayed = false;
+            elapsedMillis = 0;
+            setupGameUi();
+            gameBoard.startGame();
+            rootLayout.post(new Runnable() {
+                @Override
+                public void run() {
+                    AnimatorSet set = Animations.fadeIn(gameBoard, 300, 0);
+                    set.addListener(new Animator.AnimatorListener() {
+                        @Override
+                        public void onAnimationStart(Animator animation) {
+                            gameBoard.setAlpha(0f);
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            showLevelInfoPopup(level);
+                        }
+
+                        @Override
+                        public void onAnimationCancel(Animator animation) {
+
+                        }
+
+                        @Override
+                        public void onAnimationRepeat(Animator animation) {
+
+                        }
+                    });
+                    set.start();
+                }
+            });
+
+            // Record Firebase Event
+            Bundle bundle = new Bundle();
+            bundle.putString(FirebaseAnalytics.Param.CONTENT_TYPE, "User Level");
+            bundle.putString(FirebaseAnalytics.Param.ITEM_ID, game.getChallengeName() + game.getChallengeLevel());
+            mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
+        } catch (XmlPullParserException | IOException e) {e.printStackTrace();}
+    }
+
     private void retryLevel() {
         if (showAds && mInterstitialAd.isLoaded() && Math.random() < 0.5){
             AnimatorSet set = Animations.fadeOut(gameBoard, 300, 0);
@@ -616,10 +673,16 @@ public class GameActivity extends AppCompatActivity implements
         });
 
         TextView titleView = (TextView)layout.findViewById(R.id.title_textview);
-        titleView.setText(level.getChallengeDisplayNameId());
+        if (level.getChallengeDisplayNameId() != -1)
+            titleView.setText(level.getChallengeDisplayNameId());
+        else
+            titleView.setText(level.getChallenge());
 
         TextView subTitleView = (TextView)layout.findViewById(R.id.subtitle_textview);
-        subTitleView.setText(level.getLevelDisplayNameId());
+        if (level.getLevelDisplayNameId() != -1)
+            subTitleView.setText(level.getLevelDisplayNameId());
+        else
+            subTitleView.setVisibility(View.GONE);
 
         TextView descView = (TextView) layout.findViewById(R.id.description_textview);
         descView.setVisibility(View.VISIBLE);
@@ -788,6 +851,8 @@ public class GameActivity extends AppCompatActivity implements
                     game = new ArithmosGame(data);
                     hasBeenPlayed = true;
                     elapsedMillis = game.getElapasedTime();
+                    if (ArithmosGameBase.getChallengeDisplayNameResId(game.getChallengeName()) == -1)
+                        isUserLevel = true;
                     setupGameUi();
                     gameBoard.startGame();
                     if (game.getGoalType() == ArithmosLevel.GOAL_SINGLE_NUM) {
@@ -1058,6 +1123,7 @@ public class GameActivity extends AppCompatActivity implements
     }
 
     private void recordActivityTurnFinished(ArithmosGame.GameResult result){
+        if (isUserLevel) return;
         GameActivityItem newItem;
         if (game.isLevelPassed()) {
             newItem = new GameActivityItem(GameActivityItem.COMPLETED_LEVEL);
@@ -1073,7 +1139,7 @@ public class GameActivity extends AppCompatActivity implements
     }
 
     private void recordAchievements(){
-        logPlayData();
+        if (isUserLevel) return;
         // Recorded locally
         if (game.isLevelPassed()) {
             gameBase.recordStars(game.getChallengeName(), game.getChallengeLevel(), game.getNumStars());
@@ -1370,19 +1436,21 @@ public class GameActivity extends AppCompatActivity implements
         if (game.isLevelPassed()) {
             TextView titleText = (TextView)layout.findViewById(R.id.title_textview);
             titleText.setText(R.string.you_won);
-            int numStars = gameBase.getNumStars(game.getChallengeName(), game.getChallengeLevel());
-            int[] nameId = gameBase.unlockNextLevel(game.getChallengeName(), game.getChallengeLevel());
-            if (nameId != null) {
-                TextView levelView1 = (TextView) layout.findViewById(R.id.textview1);
-                levelView1.setVisibility(View.VISIBLE);
-                levelView1.setText(getString(R.string.unlock_level_x_x, getString(nameId[0]), getString(nameId[1])));
-            }
-            if (numStars > 1) {
-                nameId = gameBase.unlockNextLevel(game.getChallengeName(), game.getChallengeLevel() + 1);
+            if (!isUserLevel) {
+                int numStars = gameBase.getNumStars(game.getChallengeName(), game.getChallengeLevel());
+                int[] nameId = gameBase.unlockNextLevel(game.getChallengeName(), game.getChallengeLevel());
                 if (nameId != null) {
-                    TextView levelView2 = (TextView) layout.findViewById(R.id.textview2);
-                    levelView2.setVisibility(View.VISIBLE);
-                    levelView2.setText(getString(R.string.unlock_level_x_x, getString(nameId[0]), getString(nameId[1])));
+                    TextView levelView1 = (TextView) layout.findViewById(R.id.textview1);
+                    levelView1.setVisibility(View.VISIBLE);
+                    levelView1.setText(getString(R.string.unlock_level_x_x, getString(nameId[0]), getString(nameId[1])));
+                }
+                if (numStars > 1) {
+                    nameId = gameBase.unlockNextLevel(game.getChallengeName(), game.getChallengeLevel() + 1);
+                    if (nameId != null) {
+                        TextView levelView2 = (TextView) layout.findViewById(R.id.textview2);
+                        levelView2.setVisibility(View.VISIBLE);
+                        levelView2.setText(getString(R.string.unlock_level_x_x, getString(nameId[0]), getString(nameId[1])));
+                    }
                 }
             }
         } else if (result.result == ArithmosGame.GameResult.TIME_UP){
@@ -2358,17 +2426,5 @@ public class GameActivity extends AppCompatActivity implements
                 set.start();
             }
         });
-    }
-
-    private void logPlayData(){
-        String log_tag = "Gameover";
-        Log.d(log_tag, getString(ArithmosGameBase.getChallengeDisplayNameResId(game.getChallengeName())) +
-            " " + getString(ArithmosGameBase.getLevelDisplayNameResIds(game.getChallengeName())[game.getChallengeLevel()]));
-        if (game.isLevelPassed()) {
-            Log.d(log_tag, "Level passed at " + game.getScore(game.getCurrentPlayer()));
-            Log.d(log_tag, "with " + game.getNumStars() + " stars");
-        } else {
-            Log.d(log_tag, "Level failed at " + game.getScore(game.getCurrentPlayer()));
-        }
     }
 }

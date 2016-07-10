@@ -281,6 +281,7 @@ public class GameBoard extends View {
             if (stopCheckBoardThread) Log.d(LOG_TAG, "Checkboard thread stopped");
             else if (playFound) Log.d(LOG_TAG, "There is a possible expression");
             else {
+                if (lastGameResult == null) lastGameResult = new ArithmosGame.GameResult(ArithmosGame.GameResult.FAILURE);
                 lastGameResult.noMorePossiblePlays = true;
                 if (onGameOverListener != null) {
                     thisView.post(new Runnable() {

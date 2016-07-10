@@ -54,7 +54,7 @@
                                 android:drawableStart="@drawable/ic_apple_32dp"
                                 android:drawablePadding="4dp"
                                 android:gravity="center"
-                                android:text="0"
+                                android:hint="0"
                                 android:inputType="number"
                                 android:nextFocusForward="@id/banana_count"
                                 android:nextFocusDown="@id/banana_count"/>
@@ -65,7 +65,7 @@
                                 android:drawableStart="@drawable/ic_bananas_32dp"
                                 android:drawablePadding="4dp"
                                 android:gravity="center"
-                                android:text="0"
+                                android:hint="0"
                                 android:inputType="number"
                                 android:nextFocusForward="@id/bomb_count"
                                 android:nextFocusDown="@id/bomb_count"/>
@@ -77,7 +77,7 @@
                                 android:drawableStart="@drawable/ic_bomb_32dp"
                                 android:drawablePadding="4dp"
                                 android:gravity="center"
-                                android:text="0"
+                                android:hint="0"
                                 android:inputType="number"
                                 android:nextFocusForward="@id/cherry_count"
                                 android:nextFocusDown="@id/cherry_count"/>
@@ -92,7 +92,7 @@
                                 android:drawableStart="@drawable/ic_cherries_32dp"
                                 android:drawablePadding="4dp"
                                 android:gravity="center"
-                                android:text="0"
+                                android:hint="0"
                                 android:inputType="number"
                                 android:nextFocusForward="@id/balloon_count"
                                 android:nextFocusDown="@id/balloon_count"/>
@@ -103,7 +103,7 @@
                                 android:drawableStart="@drawable/ic_balloon_32dp"
                                 android:drawablePadding="4dp"
                                 android:gravity="center"
-                                android:text="0"
+                                android:hint="0"
                                 android:inputType="number"
                                 android:nextFocusForward="@id/goal_mode_spinner"
                                 android:nextFocusDown="@id/goal_mode_spinner"/>
@@ -199,11 +199,12 @@
                 android:layout_width="wrap_content"
                 android:layout_height="35dp"
                 android:layout_marginStart="4dp"
-                android:text="@string/test_button_text"
+                android:text="@string/play_button_text"
                 android:textColor="@color/text_primary_light"
                 android:background="@drawable/rounded_corner_primary_accent"
                 android:focusable="true"
-                android:focusableInTouchMode="true">
+                android:focusableInTouchMode="true"
+                android:onClick="PlayButtonClick">
                 <requestFocus/>
             </Button>
         </LinearLayout>

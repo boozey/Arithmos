@@ -219,6 +219,10 @@ public class GamePreview extends View {
                 index++;
             }
         }
+        for (int i = 0; i < bonusStrings.length; i++){
+            Log.d(LOG_TAG, bonusStrings[i] + " " + bonusWeights[i]);
+        }
+        Log.d(LOG_TAG, "Total weight = " + bonusTotalWeight);
 
         // Fill empty places on board with randomly selected numbers and bonuses
         for (int r = 0; r < gameBoard.length; r++) {
@@ -229,7 +233,7 @@ public class GamePreview extends View {
                     if (gameBoard[r][c] == null) gameBoard[r][c] = num;
                 } else if (gameBoard[r][c] == null || gameBoard[r][c].equals(UNDEF)) {
                     // Odd row or col corresponds to a bonus space
-                    int p = random.nextInt(bonusTotalWeight);
+                    int p = random.nextInt(bonusTotalWeight + 1);
                     for (int i = 0; i < bonusStrings.length; i++) {
                         if (p <= bonusWeights[i]) {
                             gameBoard[r][c] = bonusStrings[i];

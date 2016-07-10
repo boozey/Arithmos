@@ -270,6 +270,7 @@
     <string name="level_8x8">8x8</string>
     <string name="level_8x8_301">8x8 301</string>
     <string name="level_8x8_timed">8x8 Timed</string>
+    <string name="level_9x9">9x9</string>
     <string name="level_10x10">10x10</string>
     <string name="level_301">301</string>
     <string name="level_timed">Time challenge</string>

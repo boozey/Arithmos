@@ -1,8 +1,10 @@
 package com.nakedape.arithmos;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.os.Environment;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -22,6 +24,10 @@ import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import org.xmlpull.v1.XmlPullParserException;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Timer;
@@ -533,7 +539,7 @@ public class LevelDesignerActivity extends AppCompatActivity {
         runText = runText.replace("/", ArithmosLevel.BONUS_LOCK_DIV);
         runText = runText.replace(" ", "");
         String[] elements = runText.split(",");
-        if (!elements[0].replaceAll("[^0-9]", "").equals(elements[0])){
+        if (elements.length > 0 && !elements[0].replaceAll("[^0-9]", "").equals(elements[0])){
             // Error must start with a number
             runEditText.setError(getString(R.string.error_start_with_number));
             return;
@@ -852,6 +858,74 @@ public class LevelDesignerActivity extends AppCompatActivity {
             gamePreview.setShowRuns(showRunsView.isSelected());
         }
 
+    }
+
+    public void PlayButtonClick(View v){
+        File levelFile = saveLevel();
+        if (levelFile.exists()){
+            Intent intent = new Intent(this, GameActivity.class);
+            intent.putExtra(GameActivity.LEVEL_FILE_PATH, levelFile.getAbsolutePath());
+            startActivity(intent);
+        }
+    }
+
+    private File saveLevel(){
+        File levelFile = null;
+        EditText gridNumsEditText = (EditText)rootLayout.findViewById(R.id.grid_numbers);
+        gridNumsEditText.setError(null);
+        EditText goalsEditText = (EditText)rootLayout.findViewById(R.id.goal_numbers);
+        goalsEditText.setError(null);
+        if (updateGridNumList()) {
+            updateRunList();
+            updateGoalList();
+            // Create bonus hashmap
+            HashMap<String, Integer> bonuses = new HashMap<>(5);
+            EditText editText = (EditText) rootLayout.findViewById(R.id.apple_count);
+            String text = editText.getText().toString();
+            if (!text.equals("") && !text.equals("0"))
+                bonuses.put(ArithmosLevel.BONUS_APPLE, Integer.valueOf(text));
+            Log.d(LOG_TAG, "Apple count = " + text);
+
+            editText = (EditText) rootLayout.findViewById(R.id.banana_count);
+            text = editText.getText().toString();
+            if (!text.equals("") && !text.equals("0"))
+                bonuses.put(ArithmosLevel.BONUS_BANANAS, Integer.valueOf(text));
+
+            editText = (EditText) rootLayout.findViewById(R.id.bomb_count);
+            text = editText.getText().toString();
+            if (!text.equals("") && !text.equals("0"))
+                bonuses.put(ArithmosLevel.BONUS_BOMB, Integer.valueOf(text));
+
+            editText = (EditText) rootLayout.findViewById(R.id.cherry_count);
+            text = editText.getText().toString();
+            if (!text.equals("") && !text.equals("0"))
+                bonuses.put(ArithmosLevel.BONUS_CHERRIES, Integer.valueOf(text));
+
+            editText = (EditText) rootLayout.findViewById(R.id.balloon_count);
+            text = editText.getText().toString();
+            if (!text.equals("") && !text.equals("0"))
+                bonuses.put(ArithmosLevel.BONUS_BALLOONS, Integer.valueOf(text));
+
+            String[] goalNumbers = new String[goalList.size()];
+            for (int i = 0; i < goalList.size(); i++){
+                goalNumbers[i] = goalList.get(i);
+            }
+
+            ArithmosLevel level = new ArithmosLevel(gridSize, gridNumbers, goalNumbers, bonuses, runs);
+            try {
+                File storageDir = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+                if (storageDir != null && storageDir.exists()) {
+                    levelFile = new File(storageDir, "my_level.xml");
+                    if (levelFile.exists()) levelFile.delete();
+                    if (levelFile.createNewFile()) {
+                        Log.d(LOG_TAG, "Level file created: " + levelFile.getAbsolutePath());
+                        level.Serialize(levelFile);
+                    } else
+                        Log.d(LOG_TAG, "Error creating file");
+                }
+            } catch (IOException | XmlPullParserException e){e.printStackTrace();}
+        }
+        return levelFile;
     }
 
     private void playGame(){

@@ -249,15 +249,24 @@ public class ArithmosGame {
         }
 
         // Determine total bonus count and probability weights
-        int bonusTotalWeight = 0;
-        int[] bonusWeights = new int[bonuses.size()];
-        String[] bonusStrings = new String[bonuses.size()];
-        int index = 0;
-        for (String s : bonuses.keySet()){
-            bonusStrings[index] = s;
-            bonusTotalWeight += bonuses.get(s);
-            bonusWeights[index] = bonusTotalWeight;
-            index++;
+        int bonusTotalWeight = 1;
+        int[] bonusWeights;
+        String[] bonusStrings;
+        if (bonuses == null || bonuses.size() < 1) {
+            bonuses = new HashMap<>();
+            bonusWeights = new int[]{1};
+            bonusStrings = new String[]{"?"};
+        } else {
+            bonusTotalWeight = 0;
+            bonusWeights = new int[bonuses.size()];
+            bonusStrings = new String[bonuses.size()];
+            int index = 0;
+            for (String s : bonuses.keySet()) {
+                bonusStrings[index] = s;
+                bonusTotalWeight += bonuses.get(s);
+                bonusWeights[index] = bonusTotalWeight;
+                index++;
+            }
         }
 
         // Fill empty places on board with randomly selected numbers and bonuses
@@ -273,7 +282,7 @@ public class ArithmosGame {
                     if (gameBoard[r][c] == null) gameBoard[r][c] = String.valueOf(num) + SEPARATOR + UNDEF;
                 } else if (gameBoard[r][c] == null || getPiece(r, c).equals(UNDEF)){
                     // Odd row or col corresponds to a bonus space
-                    int p = random.nextInt(bonusTotalWeight);
+                    int p = random.nextInt(bonusTotalWeight + 1);
                     for (int i = 0; i < bonusStrings.length; i++) {
                         if (p <= bonusWeights[i]) {
                             gameBoard[r][c] = bonusStrings[i] + SEPARATOR + UNDEF;
