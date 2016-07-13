@@ -306,6 +306,7 @@ public class MainActivity extends AppCompatActivity implements
         if (requestCode == RC_SIGN_IN) {
             mSignInClicked = false;
             mResolvingConnectionFailure = false;
+            hideLoadingPopup();
             if (resultCode == RESULT_OK) {
                 mGoogleApiClient.connect();
             } else if (resultCode == RESULT_CANCELED){
@@ -2860,6 +2861,7 @@ public class MainActivity extends AppCompatActivity implements
 
     public void signInClicked(View v) {
         Log.d(LOG_TAG, "Sign-in clicked");
+        showLoadingPopup(R.string.loading, 0);
         // Record Firebase event
         Bundle bundle = new Bundle();
         bundle.putString(FirebaseAnalytics.Param.SIGN_UP_METHOD, "Sign-in button");

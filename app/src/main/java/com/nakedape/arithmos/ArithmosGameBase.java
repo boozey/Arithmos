@@ -26,9 +26,7 @@ public class ArithmosGameBase {
     transient public static final String SPECIAL_ZERO = "SPECIAL_ZERO";
     transient public static final String SPECIAL_AUTO_RUN = "SPECIAL_AUTO_RUN";
 
-    transient public static final String MAIN_START_COUNT = "MAIN_START_COUNT";
     transient public static final String LEVEL_START_COUNT = "LEVEL_START_COUNT";
-    transient public static final String MATCH_START_COUNT = "MATCH_START_COUNT";
 
     // Order of challenges is that of the array
     transient public static final String[] challenges = {CRAZY_EIGHTS, EASY_123, LUCKY_7};
@@ -101,6 +99,8 @@ public class ArithmosGameBase {
         jewelCount = 0;
         specials = new HashMap<>(1);
         specials.put(SPECIAL_SKIP, 1);
+        specials.put(SPECIAL_AUTO_RUN, 1);
+        specials.put(SPECIAL_ZERO, 1);
         activityItems = new ArrayList<>();
         needsSaving = true;
     }
@@ -136,8 +136,8 @@ public class ArithmosGameBase {
 
     // Advancement
     public int getAutoPickLevel(){
-        Log.d(LOG_TAG, "Auto-pick count: " + autoPickCount);
-        Log.d(LOG_TAG, "Auto-pick level: " + Math.min(autoPickCount / 4, 3));
+        //Log.d(LOG_TAG, "Auto-pick count: " + autoPickCount);
+        //Log.d(LOG_TAG, "Auto-pick level: " + Math.min(autoPickCount / 4, 3));
         return Math.min(autoPickCount / 4, 3);
     }
     public boolean updateAutoPickLevel(int level){
