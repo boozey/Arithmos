@@ -236,7 +236,13 @@ public class GameActivity extends AppCompatActivity implements
                 // Record Firebase Event
                 Bundle bundle = new Bundle();
                 mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.TUTORIAL_BEGIN, bundle);
-                nextLesson(Tutorial.GOAL_TYPES);
+                if (rootLayout.findViewById(R.id.level_info_popup) != null)
+                    nextLesson(Tutorial.LEVEL_TYPES);
+                else
+                    nextLesson(Tutorial.SELECTION);
+                return true;
+            case R.id.action_show_scoring:
+                showScoringPopup();
                 return true;
         }
 
@@ -736,9 +742,8 @@ public class GameActivity extends AppCompatActivity implements
                         gameBase.putInt(ArithmosGameBase.LEVEL_START_COUNT, ++levelPlays);
                         if (!showAds) showAds();
                         // Continue if appropriate
-                        if (generalPrefs.getBoolean(GAME_PLAY_TUTORIAL_STARTED, true) &&
-                                !generalPrefs.getBoolean(GAME_PLAY_TUTORIAL_FINISHED, false))
-                            nextLesson(Tutorial.GOAL_TYPES);
+                        if (isTutorialMode && generalPrefs.getString(MainActivity.TUTORIAL_LESSON_NAME, "blah").equals(Tutorial.LEVEL_TYPES))
+                            nextLesson(Tutorial.SELECTION);
                     }
 
                     @Override
@@ -785,6 +790,78 @@ public class GameActivity extends AppCompatActivity implements
                 }
             });
         }
+        set.start();
+    }
+
+    private void showScoringPopup(){
+        final View layout = getLayoutInflater().inflate(R.layout.scoring_breakdown_popup, null);
+
+        // Prepare popup window
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        layout.setLayoutParams(params);
+        layout.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                return true;
+            }
+        });
+
+        View closeButton = layout.findViewById(R.id.popup_close_button);
+        closeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AnimatorSet set = Animations.slideOutDown(layout, 200, 0, rootLayout.getHeight() / 3);
+                set.addListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        rootLayout.removeView(layout);
+                        if (isTutorialMode && generalPrefs.getString(MainActivity.TUTORIAL_LESSON_NAME, "blah").equals(Tutorial.SCORING))
+                            nextLesson(Tutorial.AUTO_SELECTION);
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+
+                    }
+                });
+                set.start();
+            }
+        });
+
+        rootLayout.addView(layout);
+        AnimatorSet set = Animations.slideUp(layout, 200, 0, rootLayout.getHeight() / 3);
+        set.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                if (isTutorialMode && generalPrefs.getString(MainActivity.TUTORIAL_LESSON_NAME, "blah").equals(Tutorial.SELECTION))
+                    nextLesson(Tutorial.SCORING);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+
+            }
+        });
         set.start();
     }
 
@@ -1309,7 +1386,7 @@ public class GameActivity extends AppCompatActivity implements
 
         // Continue tutorial if appropriate
         if (isTutorialMode && generalPrefs.getString(MainActivity.TUTORIAL_LESSON_NAME, "blah").equals(Tutorial.SELECTION))
-            nextLesson(Tutorial.AUTO_SELECTION);
+            showScoringPopup();
     }
 
     @Override

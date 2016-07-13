@@ -49,6 +49,7 @@
     <string name="selection_lesson">To make a play, drag to select two or more numbers on the gameboard that can be used
     with some combination of +, −, ×, and ÷ to equal one of these numbers.
     \nTry it now.</string>
+    <string name="scoring_lesson">This popup shows how runs are scored</string>
     <string name="auto_selection_lesson">To start, you have to select the operations yourself.  After you correctly
         use a given number of operations four times, you will unlock auto-pick for that number of operations.</string>
     <string name="manual_selection_lesson">You can switch to and from auto-pick mode with this button.  In 301 games, auto-pick is
@@ -178,6 +179,22 @@
     <!-- Game Activity Strings -->
     <string name="bomb_message">for 3 turns</string>
     <string name="auto_pick_level_up">Unlocked auto-pick level %d</string>
+
+    <!-- Scoring Info strings -->
+    <string name="scoring_popup_title">Scoring</string>
+    <string name="five_points">0&#8211;5 = 5 pts</string>
+    <string name="ten_points">6&#8211;10 = 10 pts</string>
+    <string name="twenty_points">11&#8211;20 = 20 pts</string>
+    <string name="fifty_points">21&#8211;50 = 50 pts</string>
+    <string name="hundred_points">over 50 = 100 pts</string>
+    <string name="operation_points">Total multiplied by the number of operations used</string>
+    <string name="lock_scoring">score X 3</string>
+    <string name="jewel_points">= 25 pts</string>
+    <string name="apple_points">= 50 pts</string>
+    <string name="bananas_points">= 100 pts</string>
+    <string name="cherries_points">= 150 pts</string>
+    <string name="balloons_points">= 200 pts</string>
+    <string name="action_show_scoring">Scoring info</string>
 
     <!-- Game over popup strings -->
     <string name="times_up">TIME\'S UP!</string>

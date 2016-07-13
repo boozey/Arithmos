@@ -1238,11 +1238,9 @@ public class ArithmosGame {
             switch (s){
                 case ArithmosLevel.BONUS_LOCK_SUB:
                 case ArithmosLevel.BONUS_LOCK_ADD:
-                    score *= 3;
-                    break;
                 case ArithmosLevel.BONUS_LOCK_DIV:
                 case ArithmosLevel.BONUS_LOCK_MULT:
-                    score *= 5;
+                    score *= 3;
                     break;
                 case ArithmosLevel.BONUS_RED_JEWEL:
                     score += 25;

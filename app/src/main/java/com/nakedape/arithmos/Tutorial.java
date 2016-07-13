@@ -18,6 +18,7 @@ public class Tutorial {
     public static final String GOAL_TYPES = "GOAL_TYPES";
     public static final String WAIT_FOR_USER = "WAIT_FOR_USER";
     public static final String SELECTION = "SELECTION";
+    public static final String SCORING = "SCORING";
     public static final String AUTO_SELECTION = "AUTO_SELECTION";
     public static final String MANUAL_SELECTION = "MANUAL_SELECTION";
     public static final String SPECIALS = "SPECIALS";
@@ -32,9 +33,9 @@ public class Tutorial {
 
     public Tutorial(){
         lessons = new HashMap<>(6);
-        lessons.put(SIGN_IN_LESSON, new Lesson(R.string.sign_in_lesson, R.string.skip, R.id.sign_in_button, Lesson.BELOW_RIGHT, true, true, MANUAL_SIGN_IN));
-        lessons.put(MANUAL_SIGN_IN, new Lesson(R.string.manual_sign_in_lesson, R.id.sign_in_button, true, true, CHALLENGES));
-        lessons.put(AUTO_SIGN_IN, new Lesson(R.string.auto_sign_in_lesson, R.id.sign_out_button, true, true, CHALLENGES));
+        lessons.put(SIGN_IN_LESSON, new Lesson(R.string.sign_in_lesson, R.string.skip, R.id.sign_in_button, Lesson.BELOW_RIGHT, true, true, CHALLENGES));
+        //lessons.put(MANUAL_SIGN_IN, new Lesson(R.string.manual_sign_in_lesson, R.id.sign_in_button, true, true, CHALLENGES));
+        //lessons.put(AUTO_SIGN_IN, new Lesson(R.string.auto_sign_in_lesson, R.id.sign_out_button, true, true, CHALLENGES));
         lessons.put(CHALLENGES, new Lesson(R.string.challenges_button_lesson, R.id.challenges_button, Lesson.BELOW_CENTER, true, true, LEVELS));
         Lesson selectLevelLesson = new Lesson(R.string.level_selection_lesson, R.id.challenges_button, Lesson.BELOW_CENTER, true, true, WAIT_FOR_USER);
         selectLevelLesson.targetId = R.id.challenge_listview;
@@ -43,8 +44,9 @@ public class Tutorial {
         Lesson levelInfoLesson = new Lesson(R.string.level_types_lesson, R.id.description_textview, Lesson.BELOW_CENTER, true, true, WAIT_FOR_USER);
         levelInfoLesson.targetId = R.id.ok_button;
         lessons.put(LEVEL_TYPES, levelInfoLesson);
-        lessons.put(GOAL_TYPES, new Lesson(R.string.goal_types_lesson, R.id.goal_view, Lesson.RIGHT, false, true, SELECTION));
+        //lessons.put(GOAL_TYPES, new Lesson(R.string.goal_types_lesson, R.id.goal_view, Lesson.RIGHT, false, true, SELECTION));
         lessons.put(SELECTION, new Lesson(R.string.selection_lesson, R.string.ok_underlined, R.id.goal_view, Lesson.RIGHT, false, true, WAIT_FOR_USER));
+        lessons.put(SCORING, new Lesson(R.string.scoring_lesson, R.string.got_it, R.id.popup_close_button, Lesson.BELOW_CENTER, true, true, WAIT_FOR_USER));
         lessons.put(AUTO_SELECTION, new Lesson(R.string.auto_selection_lesson, R.id.game_board, Lesson.CENTER, false, true, MANUAL_SELECTION));
         lessons.put(MANUAL_SELECTION, new Lesson(R.string.manual_selection_lesson, R.id.show_work_button, Lesson.ABOVE_RIGHT, false, true, SPECIALS));
         lessons.put(SPECIALS, new Lesson(R.string.specials_lesson, R.id.special_layout, Lesson.ABOVE_RIGHT, false, true, PLAY_LEVEL));

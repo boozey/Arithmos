@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/scoring_popup">
+    <LinearLayout android:id="@+id/pop_up_foreground"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="28dp"
+        android:paddingBottom="36dp"
+        android:orientation="vertical"
+        android:background="@drawable/rounded_corner_white_black_outline">
+
+    <LinearLayout android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_gravity="center">
+        <LinearLayout android:orientation="vertical"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/five_points"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/ten_points"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/twenty_points"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/fifty_points"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/hundred_points"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxWidth="150dp"
+                android:layout_marginTop="8dp"
+                android:text="@string/operation_points"/>
+
+        </LinearLayout>
+        <LinearLayout android:id="@+id/bonus_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:orientation="vertical">
+            <TextView android:id="@+id/jewel_count"
+                android:layout_width="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:layout_height="wrap_content"
+                android:drawableStart="@drawable/ic_red_jewel_32dp"
+                android:drawablePadding="4dp"
+                android:gravity="center_vertical"
+                android:text="@string/jewel_points"/>
+
+            <TextView android:id="@+id/apple_count"
+                android:layout_width="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:layout_height="wrap_content"
+                android:drawableStart="@drawable/ic_apple_32dp"
+                android:drawablePadding="4dp"
+                android:gravity="center_vertical"
+                android:visibility="visible"
+                android:text="@string/apple_points"/>
+            <TextView android:id="@+id/banana_count"
+                android:layout_width="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:layout_height="wrap_content"
+                android:drawablePadding="4dp"
+                android:drawableStart="@drawable/ic_bananas_32dp"
+                android:gravity="center_vertical"
+                android:visibility="visible"
+                android:text="@string/bananas_points"/>
+            <TextView android:id="@+id/cherry_count"
+                android:layout_width="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:layout_height="wrap_content"
+                android:drawableStart="@drawable/ic_cherries_32dp"
+                android:drawablePadding="4dp"
+                android:gravity="center_vertical"
+                android:visibility="visible"
+                android:text="@string/cherries_points"/>
+
+            <TextView android:id="@+id/balloon_count"
+                android:layout_width="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:layout_height="wrap_content"
+                android:drawableStart="@drawable/ic_balloon_32dp"
+                android:drawablePadding="4dp"
+                android:gravity="center_vertical"
+                android:visibility="visible"
+                android:text="@string/balloons_points"/>
+
+            <TextView android:id="@+id/lock_count"
+                android:layout_width="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:layout_height="wrap_content"
+                android:drawableStart="@drawable/ic_lock_image_32dp"
+                android:drawablePadding="4dp"
+                android:gravity="center_vertical"
+                android:visibility="visible"
+                android:text="@string/lock_scoring"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    </LinearLayout>
+
+    <TextView android:id="@+id/title_textview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/rounded_corner_primary_accent"
+        android:padding="16dp"
+        android:layout_centerHorizontal="true"
+        android:layout_above="@id/pop_up_foreground"
+        android:layout_marginBottom="-36dp"
+        android:elevation="8dp"
+        android:textColor="@color/text_primary_light"
+        android:textSize="@dimen/game_popup_small_text_size"
+        android:text="@string/scoring_popup_title"/>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/pop_up_foreground"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="-20dp"
+        android:layout_marginEnd="-8dp">
+        <Button android:id="@+id/next_level_button"
+            android:layout_width="wrap_content"
+            android:layout_height="30dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/rounded_corner_primary_accent"
+            android:textColor="@color/text_primary_light"
+            android:text="@string/next_level"
+            android:visibility="gone"/>
+        <Button android:id="@+id/retry_button"
+            android:layout_width="wrap_content"
+            android:layout_height="30dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/rounded_corner_primary_accent"
+            android:textColor="@color/text_primary_light"
+            android:text="@string/retry"
+            android:visibility="gone"/>
+        <Button android:id="@+id/popup_close_button"
+            android:layout_width="wrap_content"
+            android:layout_height="30dp"
+            android:background="@drawable/rounded_corner_primary_accent"
+            android:textColor="@color/text_primary_light"
+            android:text="@string/got_it"/>
+
+    </LinearLayout>
+</RelativeLayout>
