@@ -173,7 +173,7 @@
     <string name="error_goal_list_length">Need at least one number</string>
     <string name="play_button_text">Play</string>
     <string name="error_loading_level">Error loading custom level</string>
-    <string name="designer_purchase_toast">The Level Designer can be accessed from the menu bar</string>
+    <string name="designer_purchase_toast">The Level Designer can be accessed from the action bar menu</string>
 
 
     <!-- Game Activity Strings -->
@@ -195,6 +195,7 @@
     <string name="cherries_points">= 150 pts</string>
     <string name="balloons_points">= 200 pts</string>
     <string name="action_show_scoring">Scoring info</string>
+    <string name="scoring_info_toast">Scoring info can be accessed from the action bar menu</string>
 
     <!-- Game over popup strings -->
     <string name="times_up">TIME\'S UP!</string>

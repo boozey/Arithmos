@@ -820,8 +820,10 @@ public class GameActivity extends AppCompatActivity implements
                     @Override
                     public void onAnimationEnd(Animator animation) {
                         rootLayout.removeView(layout);
-                        if (isTutorialMode && generalPrefs.getString(MainActivity.TUTORIAL_LESSON_NAME, "blah").equals(Tutorial.SCORING))
+                        if (isTutorialMode && generalPrefs.getString(MainActivity.TUTORIAL_LESSON_NAME, "blah").equals(Tutorial.SCORING)) {
+                            Toast.makeText(context, R.string.scoring_info_toast, Toast.LENGTH_LONG).show();
                             nextLesson(Tutorial.AUTO_SELECTION);
+                        }
                     }
 
                     @Override
@@ -2166,9 +2168,12 @@ public class GameActivity extends AppCompatActivity implements
             @Override
             public void run() {
                 isTutorialMode = true;
-                if (tutorial == null)
-                    tutorial = new Tutorial();
                 SharedPreferences.Editor editor = generalPrefs.edit();
+                if (tutorial == null) {
+                    tutorial = new Tutorial();
+                    editor.putBoolean(GAME_PLAY_TUTORIAL_STARTED, true);
+                    editor.putBoolean(GAME_PLAY_TUTORIAL_FINISHED, false);
+                }
                 editor.putString(MainActivity.TUTORIAL_LESSON_NAME, lessonName);
                 editor.apply();
 
@@ -2341,7 +2346,12 @@ public class GameActivity extends AppCompatActivity implements
                         SharedPreferences.Editor editor = generalPrefs.edit();
                         editor.putBoolean(GAME_PLAY_TUTORIAL_FINISHED, true);
                         editor.apply();
-                        Toast.makeText(context, R.string.quit_tutorial_message, Toast.LENGTH_LONG).show();
+                        if (lessonName.equals(Tutorial.END_TUTORIAL)) {
+                            // Record Firebase Event
+                            Bundle bundle = new Bundle();
+                            mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.TUTORIAL_COMPLETE, bundle);
+                        } else
+                            Toast.makeText(context, R.string.quit_tutorial_message, Toast.LENGTH_LONG).show();
                         anchorView.removeOnLayoutChangeListener(layoutChangeListener);
                         AnimatorSet set = Animations.fadeOut(tutorialPopup, 200, 0);
                         set.addListener(new Animator.AnimatorListener() {

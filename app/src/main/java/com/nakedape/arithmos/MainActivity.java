@@ -2786,7 +2786,7 @@ public class MainActivity extends AppCompatActivity implements
 
         if (isTutorialMode &&
                 generalPrefs.getString(TUTORIAL_LESSON_NAME, Tutorial.SIGN_IN_LESSON).equals(Tutorial.SIGN_IN_LESSON)) {
-            nextLesson(Tutorial.AUTO_SIGN_IN);
+            nextLesson(Tutorial.CHALLENGES);
         }
 
 
@@ -3265,13 +3265,14 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void run() {
                 isTutorialMode = true;
+                SharedPreferences.Editor editor = generalPrefs.edit();
+                editor.putString(TUTORIAL_LESSON_NAME, lessonName);
                 if (tutorial == null) {
                     tutorial = new Tutorial();
-                    SharedPreferences.Editor editor = generalPrefs.edit();
-                    editor.putString(TUTORIAL_LESSON_NAME, lessonName);
+                    editor.putBoolean(TUTORIAL_STARTED, true);
                     editor.putBoolean(TUTORIAL_FINISHED, false);
-                    editor.apply();
                 }
+                editor.apply();
 
                 if (tutorialPopup == null){
                     // Prepare popup window
@@ -3448,7 +3449,12 @@ public class MainActivity extends AppCompatActivity implements
                         editor.putBoolean(TUTORIAL_FINISHED, true);
                         editor.apply();
                         isTutorialMode = false;
-                        Toast.makeText(context, R.string.quit_tutorial_message, Toast.LENGTH_LONG).show();
+                        if (lessonName.equals(Tutorial.END_TUTORIAL)) {
+                            // Record Firebase Event
+                            Bundle bundle = new Bundle();
+                            mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.TUTORIAL_COMPLETE, bundle);
+                        } else
+                            Toast.makeText(context, R.string.quit_tutorial_message, Toast.LENGTH_LONG).show();
                         anchorView.removeOnLayoutChangeListener(layoutChangeListener);
                         AnimatorSet set = Animations.fadeOut(tutorialPopup, 200, 0);
                         set.addListener(new Animator.AnimatorListener() {
