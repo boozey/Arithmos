@@ -508,7 +508,7 @@ public class GameActivity extends AppCompatActivity implements
 
         // Record Firebase Event
         Bundle bundle = new Bundle();
-        bundle.putString(FirebaseAnalytics.Param.CONTENT_TYPE, "Game Level");
+        bundle.putString(FirebaseAnalytics.Param.CONTENT_TYPE, level.getChallenge() + level.getChallengeLevel());
         bundle.putString(FirebaseAnalytics.Param.ITEM_ID, game.getChallengeName() + game.getChallengeLevel());
         mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
     }
@@ -1381,9 +1381,9 @@ public class GameActivity extends AppCompatActivity implements
             stopTimer = true;
             GoalView goalView = (GoalView)rootLayout.findViewById(R.id.goal_view);
             goalView.stopGoalAnimation();
+            showGameOverPopup(result);
             recordActivityTurnFinished(result);
             recordAchievements();
-            showGameOverPopup(result);
         }
     }
 
