@@ -7,6 +7,7 @@
         app:showAsAction="never" />
     <item android:id="@+id/action_open_level_designer"
         android:title="@string/action_open_level_designer"
+        android:enabled="false"
         app:showAsAction="never"/>
     <item android:id="@+id/action_order_history"
         android:title="@string/order_history_popup_title"

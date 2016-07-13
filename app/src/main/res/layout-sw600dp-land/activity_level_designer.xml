@@ -33,7 +33,9 @@
                         android:id="@+id/grid_size_spinner"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:nextFocusForward="@id/grid_numbers"/>
+                        android:nextFocusForward="@id/grid_numbers">
+                        <requestFocus/>
+                    </Spinner>
                     <EditText android:id="@+id/grid_numbers"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -194,7 +196,16 @@
                 android:layout_height="35dp"
                 android:text="@string/exit_button_text"
                 android:textColor="@color/text_primary_light"
-                android:background="@drawable/rounded_corner_primary"/>
+                android:background="@drawable/rounded_corner_primary"
+                android:onClick="ExitButtonClick"/>
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="35dp"
+                android:layout_marginStart="4dp"
+                android:textColor="@color/text_primary_light"
+                android:text="@string/match_button_text"
+                android:background="@drawable/rounded_corner_primary"
+                android:onClick="MatchButtonClick"/>
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="35dp"
@@ -204,8 +215,6 @@
                 android:background="@drawable/rounded_corner_primary_accent"
                 android:focusable="true"
                 android:focusableInTouchMode="true"
-                android:onClick="PlayButtonClick">
-                <requestFocus/>
-            </Button>
+                android:onClick="PlayButtonClick"/>
         </LinearLayout>
 </RelativeLayout>

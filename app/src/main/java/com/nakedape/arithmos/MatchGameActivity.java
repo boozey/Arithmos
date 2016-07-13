@@ -300,6 +300,7 @@ public class MatchGameActivity extends AppCompatActivity implements
 
     private void setupGameUi(){
         gameBoard.setGame(game);
+        gameBoard.setAutoPickMax(gameBase.getAutoPickLevel());
 
         TextView p1NameView = (TextView)rootLayout.findViewById(R.id.p1_name_textview);
         TextView p2NameView = (TextView)rootLayout.findViewById(R.id.p2_name_textview);
@@ -468,10 +469,16 @@ public class MatchGameActivity extends AppCompatActivity implements
         });
 
         TextView titleView = (TextView)layout.findViewById(R.id.title_textview);
-        titleView.setText(ArithmosGameBase.getChallengeDisplayNameResId(game.getChallengeName()));
+        if (ArithmosGameBase.getChallengeDisplayNameResId(game.getChallengeName()) != -1)
+            titleView.setText(ArithmosGameBase.getChallengeDisplayNameResId(game.getChallengeName()));
+        else
+            titleView.setText(game.getChallengeName());
 
         TextView subTitleView = (TextView)layout.findViewById(R.id.subtitle_textview);
-        subTitleView.setText(ArithmosGameBase.getLevelDisplayNameResIds(game.getChallengeName())[game.getChallengeLevel()]);
+        if (ArithmosGameBase.getChallengeDisplayNameResId(game.getChallengeName()) != -1)
+            subTitleView.setText(ArithmosGameBase.getLevelDisplayNameResIds(game.getChallengeName())[game.getChallengeLevel()]);
+        else
+            subTitleView.setVisibility(View.GONE);
 
         TextView descView = (TextView)layout.findViewById(R.id.description_textview);
         descView.setVisibility(View.VISIBLE);

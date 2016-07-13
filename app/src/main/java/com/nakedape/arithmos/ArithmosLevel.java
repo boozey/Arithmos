@@ -3,6 +3,7 @@ package com.nakedape.arithmos;
 import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.XmlResourceParser;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -294,14 +295,18 @@ public class ArithmosLevel {
     }
 
     // Xml serialization
-    public ArithmosLevel(int size, String[] gridNumberList, String[] goalNumberList, HashMap<String, Integer> bonuses, ArrayList<String[]> runs){
+    public ArithmosLevel(int size, String[] gridNumberList, @Nullable String[] goalNumberList, int goalCount, int goalType, HashMap<String, Integer> bonuses, ArrayList<String[]> runs){
         this.gridSize = size;
         this.gridNumbers = new int[gridNumberList.length];
         for (int i = 0; i < gridNumberList.length; i++)
             gridNumbers[i] = Integer.valueOf(gridNumberList[i]);
-        this.goalNumbers = new int[goalNumberList.length];
-        for (int i = 0; i < goalNumberList.length; i++)
-            goalNumbers[i] = Integer.valueOf(goalNumberList[i]);
+        if (goalNumberList != null) {
+            this.goalNumbers = new int[goalNumberList.length];
+            for (int i = 0; i < goalNumberList.length; i++)
+                goalNumbers[i] = Integer.valueOf(goalNumberList[i]);
+        }
+        this.numGoalsToWin = goalCount;
+        this.goalType = goalType;
         this.bonuses = bonuses;
         this.runs = runs;
     }
@@ -345,17 +350,19 @@ public class ArithmosLevel {
         xmlSerializer.endTag("", "GridSpecialNumbers");
 
         // Add <GoalNumbers> tag
-        xmlSerializer.startTag("", "GoalNumbers");
-        xmlSerializer.attribute("", "count", String.valueOf(numGoalsToWin));
-        text = "";
-        for (int i = 0; i < goalNumbers.length; i++){
-            if (i != goalNumbers.length - 1)
-                text += goalNumbers[i] + ", ";
-            else
-                text += goalNumbers[i];
+        if (goalNumbers != null) {
+            xmlSerializer.startTag("", "GoalNumbers");
+            xmlSerializer.attribute("", "count", String.valueOf(numGoalsToWin));
+            text = "";
+            for (int i = 0; i < goalNumbers.length; i++) {
+                if (i != goalNumbers.length - 1)
+                    text += goalNumbers[i] + ", ";
+                else
+                    text += goalNumbers[i];
+            }
+            xmlSerializer.text(text);
+            xmlSerializer.endTag("", "GoalNumbers");
         }
-        xmlSerializer.text(text);
-        xmlSerializer.endTag("", "GoalNumbers");
 
         // Add <Run> tags
         for (String[] run : runs){
@@ -391,6 +398,5 @@ public class ArithmosLevel {
 
         // End document
         xmlSerializer.endDocument();
-        Log.d(LOG_TAG, "Xml written");
     }
 }

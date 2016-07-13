@@ -74,6 +74,8 @@ import com.nakedape.arithmos.purchaseUtils.Inventory;
 import com.nakedape.arithmos.purchaseUtils.Purchase;
 import com.nakedape.arithmos.purchaseUtils.SkuDetails;
 
+import org.xmlpull.v1.XmlPullParserException;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -96,6 +98,7 @@ public class MainActivity extends AppCompatActivity implements
     // Activity Result request codes
     public static int REQUEST_LEVEL_PLAYED = 300;
     public static int REQUEST_TAKE_MATCH_TURN = 301;
+    private static final int REQUEST_LEVEL_DESIGN = 302;
 
     public static final String GENERAL_PREFS = "GENERAL_PREFS";
 
@@ -220,6 +223,14 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
+    public boolean onPrepareOptionsMenu (Menu menu) {
+        if (generalPrefs.getBoolean(HAS_DESIGNER, false)){
+            menu.findItem(R.id.action_open_level_designer).setEnabled(true);
+        }
+        return true;
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
@@ -245,7 +256,7 @@ public class MainActivity extends AppCompatActivity implements
                 return true;
             case R.id.action_open_level_designer:
                 Intent intent = new Intent(this, LevelDesignerActivity.class);
-                startActivity(intent);
+                startActivityForResult(intent, REQUEST_LEVEL_DESIGN);
                 return true;
         }
 
@@ -392,7 +403,17 @@ public class MainActivity extends AppCompatActivity implements
                 iabHelper.handleActivityResult(requestCode, resultCode, intent);
         }
 
+        // Level designer
+        if (requestCode == REQUEST_LEVEL_DESIGN){
+            if (resultCode == Activity.RESULT_OK){
+                // Start match turn from custom level xml
+                startMatchClick(-1);
+            }
+        }
     }
+
+    // Level Designer
+    private static final String HAS_DESIGNER = "HAS_DESIGNER";
 
     // Game Activity List
     private ActivityListAdapter activityListAdapter;
@@ -1734,7 +1755,8 @@ public class MainActivity extends AppCompatActivity implements
 
     // Purchasing API and purchase processing
     private static final int PURCHASE_REQUEST = 7001;
-    private static final String SKU_1000_JEWELS = "jewels_1000", SKU_SPECIAL_PKG = "special_set_2", SKU_REMOVE_ADS = "remove_ads";
+    private static final String SKU_1000_JEWELS = "jewels_1000", SKU_SPECIAL_PKG = "special_set_2", SKU_REMOVE_ADS = "remove_ads",
+                        SKU_DESIGNER = "level_designer";
     private static final String ORDER_HISTORY_FILENAME = "order_history";
     private IabHelper iabHelper;
     private IabListAdapter iabListAdapter;
@@ -1809,6 +1831,7 @@ public class MainActivity extends AppCompatActivity implements
                 iabListAdapter = new IabListAdapter();
                 iabListView.setAdapter(iabListAdapter);
                 final ArrayList<String> skuList = new ArrayList<>();
+                skuList.add(SKU_DESIGNER);
                 skuList.add(SKU_1000_JEWELS);
                 skuList.add(SKU_SPECIAL_PKG);
                 skuList.add(SKU_REMOVE_ADS);
@@ -2055,7 +2078,14 @@ public class MainActivity extends AppCompatActivity implements
         if (purchase.getSku().equals(SKU_REMOVE_ADS))
         {
             removeAds();
-        } else {
+        } else if (purchase.getSku().equals(SKU_DESIGNER)){
+            SharedPreferences.Editor editor = generalPrefs.edit();
+            editor.putBoolean(HAS_DESIGNER, true);
+            editor.commit();
+            invalidateOptionsMenu();
+            Toast.makeText(context, R.string.designer_purchase_toast, Toast.LENGTH_LONG).show();
+        }
+        else {
             try {
                 iabHelper.consumeAsync(purchase, new IabHelper.OnConsumeFinishedListener() {
                     @Override
@@ -2076,6 +2106,7 @@ public class MainActivity extends AppCompatActivity implements
     private void consumePurchases(){
         iabHelper = new IabHelper(this, getString(R.string.base64EncodedPublicKey));
         final ArrayList<String> skuList = new ArrayList<>();
+        skuList.add(SKU_DESIGNER);
         skuList.add(SKU_1000_JEWELS);
         skuList.add(SKU_SPECIAL_PKG);
         skuList.add(SKU_REMOVE_ADS);
@@ -2388,12 +2419,17 @@ public class MainActivity extends AppCompatActivity implements
     private static int RC_SELECT_PLAYERS = 9002;
     private int matchLevelXmlId;
     private String matchId;
-    private boolean retryTakeMatchTurn = false, retryAcceptInvitation = false;
+    private boolean retryTakeMatchTurn = false, retryAcceptInvitation = false, retryStartMatch = false;
     private void startMatchClick(int levelXmlId){
         matchLevelXmlId = levelXmlId;
-        Intent intent =
-                Games.TurnBasedMultiplayer.getSelectOpponentsIntent(mGoogleApiClient, 1, 1, true);
-        startActivityForResult(intent, RC_SELECT_PLAYERS);
+        if (mGoogleApiClient.isConnected()) {
+            retryStartMatch = false;
+            Intent intent =
+                    Games.TurnBasedMultiplayer.getSelectOpponentsIntent(mGoogleApiClient, 1, 1, true);
+            startActivityForResult(intent, RC_SELECT_PLAYERS);
+        } else if (mAutoStartSignInFlow) {
+            retryStartMatch = true;
+        }
     }
 
     private void refreshMatchList(){
@@ -2551,7 +2587,18 @@ public class MainActivity extends AppCompatActivity implements
 
             // Initialize match
             TurnBasedMatch match = result.getMatch();
-            ArithmosLevel level = new ArithmosLevel(context, matchLevelXmlId);
+            ArithmosLevel level;
+            if (matchLevelXmlId == -1) {
+                try {
+                    File levelFile = new File(getFilesDir(), LevelDesignerActivity.XML_FILE_NAME);
+                    level = new ArithmosLevel(levelFile);
+                } catch (XmlPullParserException | IOException e){
+                    e.printStackTrace();
+                    Toast.makeText(context, getString(R.string.error_loading_level), Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            } else
+                level = new ArithmosLevel(context, matchLevelXmlId);
             ArrayList<String> playerIds = match.getParticipantIds();
             ArithmosGame game = new ArithmosGame(level, playerIds.get(0), playerIds.get(1));
             game.setCurrentPlayer(match.getCreatorId());
@@ -2745,6 +2792,9 @@ public class MainActivity extends AppCompatActivity implements
 
         if (retryTakeMatchTurn)
             takeMatchTurn(matchId);
+
+        if (retryStartMatch)
+            startMatchClick(matchLevelXmlId);
 
         if (retryAcceptInvitation)
             acceptInvitation(matchId);

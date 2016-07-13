@@ -3,8 +3,6 @@
 
     <string name="action_settings">Settings</string>
 
-    <string name="play_button_text">Create game</string>
-
     <!-- Utility Strings -->
     <string name="number_before_x">%d x</string>
     <string name="number_after_x">x %d</string>
@@ -172,7 +170,9 @@
     <string name="error_lock_between">Lock bonus must be between numbers</string>
     <string name="error_run_length">Run must contain at least two numbers</string>
     <string name="error_goal_list_length">Need at least one number</string>
-
+    <string name="play_button_text">Play</string>
+    <string name="error_loading_level">Error loading custom level</string>
+    <string name="designer_purchase_toast">The Level Designer can be accessed from the menu bar</string>
 
 
     <!-- Game Activity Strings -->

@@ -1,5 +1,6 @@
 package com.nakedape.arithmos;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -36,15 +37,18 @@ import java.util.TimerTask;
 public class LevelDesignerActivity extends AppCompatActivity {
     private static final String LOG_TAG = "LevelDesignerActivity";
 
+    public static final String XML_FILE_NAME = "my_level.xml";
+
     private RelativeLayout rootLayout;
     private int gridSize = 4, goalMode = ArithmosLevel.GOAL_MULT_NUM;
     private ArrayList<String> goalList;
     private ArrayList<String[]> runs;
     private ArrayList<String[]> goalLists;
     private String[] gridNumbers;
-    private int runIndex = 0;
     private Timer timer;
     private Context context;
+    private ArithmosLevel level;
+    private File levelFile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +58,9 @@ public class LevelDesignerActivity extends AppCompatActivity {
         rootLayout = (RelativeLayout)findViewById(R.id.root_layout);
 
         // Setup defaults
+        runs = new ArrayList<>();
+        goalLists = new ArrayList<>();
+
         Spinner goalModeSpinner = (Spinner)rootLayout.findViewById(R.id.goal_mode_spinner);
         GoalTypeAdapter goalTypeAdapter = new GoalTypeAdapter();
         goalModeSpinner.setAdapter(goalTypeAdapter);
@@ -64,14 +71,14 @@ public class LevelDesignerActivity extends AppCompatActivity {
         gridSizeSpinner.setAdapter(gridSizeAdapter);
         gridSizeSpinner.setOnItemSelectedListener(gridSizeSelectListener);
 
+        // Load saved level if present before setting text watchers
+        loadFromXmlFile();
+
         EditText gridEditText = (EditText)rootLayout.findViewById(R.id.grid_numbers);
         gridEditText.addTextChangedListener(gridTextWatcher);
 
         EditText goalEditText = (EditText)rootLayout.findViewById(R.id.goal_numbers);
         goalEditText.addTextChangedListener(goalTextWatcher);
-
-        runs = new ArrayList<>();
-        goalLists = new ArrayList<>();
 
         EditText bonusEditText = (EditText)rootLayout.findViewById(R.id.apple_count);
         bonusEditText.addTextChangedListener(bonusWatcher);
@@ -84,6 +91,99 @@ public class LevelDesignerActivity extends AppCompatActivity {
         bonusEditText = (EditText)rootLayout.findViewById(R.id.balloon_count);
         bonusEditText.addTextChangedListener(bonusWatcher);
 
+    }
+
+    private void loadFromXmlFile(){
+        levelFile = new File(getFilesDir(), XML_FILE_NAME);
+        if (levelFile.exists()) {
+            try {
+                level = new ArithmosLevel(levelFile);
+            } catch (XmlPullParserException | IOException e) {e.printStackTrace();}
+            if (level != null){
+                setupUI();
+            }
+        }
+    }
+
+    private void setupUI(){
+        // Setup defaults
+        Spinner goalModeSpinner = (Spinner)rootLayout.findViewById(R.id.goal_mode_spinner);
+        switch (level.getGoalType()){
+            case ArithmosLevel.GOAL_MULT_NUM:
+                goalModeSpinner.setSelection(0);
+                break;
+            case ArithmosLevel.GOAL_301:
+                goalModeSpinner.setSelection(1);
+                break;
+            case ArithmosLevel.GOAL_SINGLE_NUM:
+                goalModeSpinner.setSelection(2);
+                break;
+        }
+
+        Spinner gridSizeSpinner = (Spinner)rootLayout.findViewById(R.id.grid_size_spinner);
+        gridSizeSpinner.setSelection(level.getGridSize() - 4);
+
+        EditText gridEditText = (EditText)rootLayout.findViewById(R.id.grid_numbers);
+        String text = "";
+        for (int x : level.getGridNumbers())
+            text += String.valueOf(x) + ", ";
+        gridEditText.setText(text);
+
+        EditText goalEditText = (EditText)rootLayout.findViewById(R.id.goal_numbers);
+        text = "";
+        for (int x : level.getGoalNumbers())
+            text += String.valueOf(x) + ", ";
+        goalEditText.setText(text);
+
+        EditText goalCountView = (EditText)rootLayout.findViewById(R.id.goals_to_win);
+        goalCountView.setText(String.valueOf(level.getNumGoalsToWin()));
+
+        if (level.getBonuses().containsKey(ArithmosLevel.BONUS_APPLE))
+            ((EditText)rootLayout.findViewById(R.id.apple_count)).setText(String.valueOf(level.getBonuses().get(ArithmosLevel.BONUS_APPLE)));
+
+        if (level.getBonuses().containsKey(ArithmosLevel.BONUS_BANANAS))
+            ((EditText)rootLayout.findViewById(R.id.banana_count)).setText(String.valueOf(level.getBonuses().get(ArithmosLevel.BONUS_BANANAS)));
+
+        if (level.getBonuses().containsKey(ArithmosLevel.BONUS_BOMB))
+            ((EditText)rootLayout.findViewById(R.id.bomb_count)).setText(String.valueOf(level.getBonuses().get(ArithmosLevel.BONUS_BOMB)));
+
+        if (level.getBonuses().containsKey(ArithmosLevel.BONUS_CHERRIES))
+            ((EditText)rootLayout.findViewById(R.id.cherry_count)).setText(String.valueOf(level.getBonuses().get(ArithmosLevel.BONUS_CHERRIES)));
+
+        if (level.getBonuses().containsKey(ArithmosLevel.BONUS_BALLOONS))
+            ((EditText)rootLayout.findViewById(R.id.balloon_count)).setText(String.valueOf(level.getBonuses().get(ArithmosLevel.BONUS_BALLOONS)));
+
+        for (int i = 0; i < level.getRuns().size(); i++){
+            String[] run = level.getRuns().get(i);
+            text = "";
+            for (String x : run){
+                switch (x){
+                    case ArithmosLevel.BONUS_LOCK_ADD:
+                        text += "+, ";
+                        break;
+                    case ArithmosLevel.BONUS_LOCK_DIV:
+                        text += "/, ";
+                        break;
+                    case ArithmosLevel.BONUS_LOCK_MULT:
+                        text += "*, ";
+                        break;
+                    case ArithmosLevel.BONUS_LOCK_SUB:
+                        text += "-, ";
+                        break;
+                    case "?":
+                        break;
+                    default:
+                        text += x + ", ";
+                }
+            }
+            addNewRunItem(text);
+        }
+        rootLayout.post(new Runnable() {
+            @Override
+            public void run() {
+                generatePreview();
+            }
+        });
     }
 
     // Grid & goal numbers and goal types
@@ -314,6 +414,7 @@ public class LevelDesignerActivity extends AppCompatActivity {
                                 if (!text.equals(origText)) {
                                     s.replace(0, s.length(), text);
                                     timer.cancel();
+                                    generatePreview();
                                 }
                             }
                         });
@@ -431,7 +532,7 @@ public class LevelDesignerActivity extends AppCompatActivity {
 
     private RunWatcher runWatcher = new RunWatcher();
 
-    private void addNewRunItem(){
+    private View addNewRunItem(String text){
         final LinearLayout runsLayout = (LinearLayout)rootLayout.findViewById(R.id.runs_linearlayout);
         int index = runsLayout.getChildCount();
         final View runView = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.predefined_run_list_item, null);
@@ -442,6 +543,7 @@ public class LevelDesignerActivity extends AppCompatActivity {
         goalLists.add(null);
 
         EditText runEditText = (EditText)runView.findViewById(R.id.run_edittext);
+        runEditText.setText(text);
 
         runEditText.addTextChangedListener(runWatcher);
 
@@ -455,6 +557,11 @@ public class LevelDesignerActivity extends AppCompatActivity {
         });
 
         runsLayout.addView(runView);
+        return runEditText;
+    }
+
+    private void addNewRunItem(){
+        addNewRunItem("").requestFocus();
     }
 
     private void indexRuns(){
@@ -477,6 +584,11 @@ public class LevelDesignerActivity extends AppCompatActivity {
                 goalList.add(s);
             }
         }
+        TextView goalTotalView = (TextView)rootLayout.findViewById(R.id.total_goals);
+        goalTotalView.setText(getString(R.string.of_x_to_pass, goalList.size()));
+
+        EditText goalCountView = (EditText)rootLayout.findViewById(R.id.goals_to_win);
+        goalCountView.setHint(String.valueOf(goalList.size()));
         return goalList.size() > 0;
     }
 
@@ -496,6 +608,10 @@ public class LevelDesignerActivity extends AppCompatActivity {
         }
         // Update color coding in pre-defined runs
         updateGoalList();
+        updateGoalSelections();
+    }
+
+    private void updateGoalSelections(){
         LinearLayout runsLayout = (LinearLayout)rootLayout.findViewById(R.id.runs_linearlayout);
         for (int i = 0; i < runsLayout.getChildCount(); i++){
             View v = runsLayout.getChildAt(i);
@@ -816,43 +932,11 @@ public class LevelDesignerActivity extends AppCompatActivity {
         }.parse();
     }
 
-    // Preview and Testing
+    // Preview and level play
     private void generatePreview(){
-        EditText gridNumsEditText = (EditText)rootLayout.findViewById(R.id.grid_numbers);
-        gridNumsEditText.setError(null);
-        EditText goalsEditText = (EditText)rootLayout.findViewById(R.id.goal_numbers);
-        goalsEditText.setError(null);
-        if (updateGridNumList()) {
-            updateRunList();
-            // Create bonus hashmap
-            HashMap<String, Integer> bonuses = new HashMap<>(5);
-            EditText editText = (EditText) rootLayout.findViewById(R.id.apple_count);
-            String text = editText.getText().toString();
-            if (!text.equals("") && !text.equals("0"))
-                bonuses.put(ArithmosLevel.BONUS_APPLE, Integer.valueOf(text));
-
-            editText = (EditText) rootLayout.findViewById(R.id.banana_count);
-            text = editText.getText().toString();
-            if (!text.equals("") && !text.equals("0"))
-                bonuses.put(ArithmosLevel.BONUS_BANANAS, Integer.valueOf(text));
-
-            editText = (EditText) rootLayout.findViewById(R.id.bomb_count);
-            text = editText.getText().toString();
-            if (!text.equals("") && !text.equals("0"))
-                bonuses.put(ArithmosLevel.BONUS_BOMB, Integer.valueOf(text));
-
-            editText = (EditText) rootLayout.findViewById(R.id.cherry_count);
-            text = editText.getText().toString();
-            if (!text.equals("") && !text.equals("0"))
-                bonuses.put(ArithmosLevel.BONUS_CHERRIES, Integer.valueOf(text));
-
-            editText = (EditText) rootLayout.findViewById(R.id.balloon_count);
-            text = editText.getText().toString();
-            if (!text.equals("") && !text.equals("0"))
-                bonuses.put(ArithmosLevel.BONUS_BALLOONS, Integer.valueOf(text));
-
+        if (saveLevel()) {
             GamePreview gamePreview = (GamePreview) rootLayout.findViewById(R.id.game_board_preview);
-            gamePreview.setupBoard(gridSize, gridNumbers, bonuses, runs);
+            gamePreview.setupBoard(level.getGridSize(), level.getGridNumbers(), level.getBonuses(), level.getRuns());
 
             View showRunsView = rootLayout.findViewById(R.id.show_runs_button);
             gamePreview.setShowRuns(showRunsView.isSelected());
@@ -861,16 +945,14 @@ public class LevelDesignerActivity extends AppCompatActivity {
     }
 
     public void PlayButtonClick(View v){
-        File levelFile = saveLevel();
-        if (levelFile.exists()){
+        if (saveLevel()){
             Intent intent = new Intent(this, GameActivity.class);
             intent.putExtra(GameActivity.LEVEL_FILE_PATH, levelFile.getAbsolutePath());
             startActivity(intent);
         }
     }
 
-    private File saveLevel(){
-        File levelFile = null;
+    private boolean saveLevel(){
         EditText gridNumsEditText = (EditText)rootLayout.findViewById(R.id.grid_numbers);
         gridNumsEditText.setError(null);
         EditText goalsEditText = (EditText)rootLayout.findViewById(R.id.goal_numbers);
@@ -878,13 +960,13 @@ public class LevelDesignerActivity extends AppCompatActivity {
         if (updateGridNumList()) {
             updateRunList();
             updateGoalList();
+            updateGoalSelections();
             // Create bonus hashmap
             HashMap<String, Integer> bonuses = new HashMap<>(5);
             EditText editText = (EditText) rootLayout.findViewById(R.id.apple_count);
             String text = editText.getText().toString();
             if (!text.equals("") && !text.equals("0"))
                 bonuses.put(ArithmosLevel.BONUS_APPLE, Integer.valueOf(text));
-            Log.d(LOG_TAG, "Apple count = " + text);
 
             editText = (EditText) rootLayout.findViewById(R.id.banana_count);
             text = editText.getText().toString();
@@ -911,24 +993,39 @@ public class LevelDesignerActivity extends AppCompatActivity {
                 goalNumbers[i] = goalList.get(i);
             }
 
-            ArithmosLevel level = new ArithmosLevel(gridSize, gridNumbers, goalNumbers, bonuses, runs);
+            if (goalMode != ArithmosLevel.GOAL_301 && goalNumbers.length < 1) {
+                goalsEditText.setError(getString(R.string.error_goal_list_length));
+                return false;
+            }
+
+            int goalCount = goalNumbers.length;
+            EditText goalCountView = (EditText)rootLayout.findViewById(R.id.goals_to_win);
+            text = goalCountView.getText().toString();
+            if (!text.equals(""))
+                goalCount = Integer.valueOf(text);
+
+            level = new ArithmosLevel(gridSize, gridNumbers, goalNumbers, goalCount, goalMode, bonuses, runs);
             try {
-                File storageDir = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+                File storageDir = getFilesDir();
                 if (storageDir != null && storageDir.exists()) {
-                    levelFile = new File(storageDir, "my_level.xml");
+                    levelFile = new File(storageDir, XML_FILE_NAME);
                     if (levelFile.exists()) levelFile.delete();
-                    if (levelFile.createNewFile()) {
-                        Log.d(LOG_TAG, "Level file created: " + levelFile.getAbsolutePath());
-                        level.Serialize(levelFile);
-                    } else
-                        Log.d(LOG_TAG, "Error creating file");
+                    level.Serialize(levelFile);
+                    return true;
                 }
             } catch (IOException | XmlPullParserException e){e.printStackTrace();}
+            return false;
         }
-        return levelFile;
+        return false;
     }
 
-    private void playGame(){
+    public void MatchButtonClick(View v){
+        setResult(Activity.RESULT_OK);
+        finish();
+    }
 
+    public void ExitButtonClick(View v){
+        setResult(Activity.RESULT_CANCELED);
+        finish();
     }
 }

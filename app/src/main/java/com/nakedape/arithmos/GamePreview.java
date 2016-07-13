@@ -40,7 +40,7 @@ public class GamePreview extends View {
         selectionPaint.setStrokeJoin(Paint.Join.ROUND);
     }
 
-    public void setupBoard(int size, String[] numberList, HashMap<String, Integer> bonuses, ArrayList<String[]> runs){
+    public void setupBoard(int size, int[] numberList, HashMap<String, Integer> bonuses, ArrayList<String[]> runs){
         gameBoard = new String[2*size - 1][2*size - 1];
         class Helper {
             Random random = new Random();
@@ -229,7 +229,7 @@ public class GamePreview extends View {
             for (int c = 0; c < gameBoard[0].length; c++) {
                 if (r % 2 == 0 && c % 2 == 0) {
                     // Even row & col corresponds to a number
-                    num = numberList[random.nextInt(numberList.length)];
+                    num = String.valueOf(numberList[random.nextInt(numberList.length)]);
                     if (gameBoard[r][c] == null) gameBoard[r][c] = num;
                 } else if (gameBoard[r][c] == null || gameBoard[r][c].equals(UNDEF)) {
                     // Odd row or col corresponds to a bonus space
@@ -272,6 +272,7 @@ public class GamePreview extends View {
                     tileDimensions[r][c] = new RectF(horzMargin + c * width, vertMargin + r * height, horzMargin + c * width + width - 1, vertMargin + r * height + height - 1);
                 }
 
+            if (gameBoardBitmap != null) gameBoardBitmap.recycle();
             gameBoardBitmap = getGameBoardBitmap(w, h);
 
         }
