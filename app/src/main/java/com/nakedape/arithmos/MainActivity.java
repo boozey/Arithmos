@@ -1505,7 +1505,8 @@ public class MainActivity extends AppCompatActivity implements
                                 startMatchClick(ArithmosGameBase.getLevelXmlIds(getGroup(groupPosition))[childPosition]);
                             }
                         });
-                    }
+                    } else
+                        matchButton.setVisibility(View.GONE);
                 } else {
                     button2.setVisibility(View.GONE);
                     matchButton.setVisibility(View.GONE);
