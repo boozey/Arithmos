@@ -156,6 +156,10 @@ public class MainActivity extends AppCompatActivity implements
 
         // Load cached data if it exists
         gameBase = new ArithmosGameBase();
+        File oldCacheFile = new File(getCacheDir(), gameCacheFileName);
+        if (oldCacheFile.exists()){
+            copyCacheToFiles();
+        }
         loadCachedGame();
 
         File matchCacheFile = new File(getCacheDir(), MatchGameActivity.matchCacheFileName);
@@ -1101,7 +1105,7 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void run() {
                 if (gameCacheFile == null)
-                    gameCacheFile = new File(getCacheDir(), gameCacheFileName);
+                    gameCacheFile = new File(getFilesDir(), gameCacheFileName);
                 FileOutputStream outputStream;
                 try {
                     outputStream = new FileOutputStream(gameCacheFile);
@@ -1118,7 +1122,7 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private boolean loadCachedGame(){
-        gameCacheFile = new File(getCacheDir(), gameCacheFileName);
+        gameCacheFile = new File(getFilesDir(), gameCacheFileName);
         if (gameCacheFile.exists()){
             FileInputStream inputStream;
             try {
@@ -1149,6 +1153,18 @@ public class MainActivity extends AppCompatActivity implements
         }
 
         return false;
+    }
+
+    private void copyCacheToFiles(){
+        File oldCacheFile = new File(getCacheDir(), gameCacheFileName);
+        gameCacheFile = new File(getFilesDir(), gameCacheFileName);
+        try {
+            Utils.CopyFile(oldCacheFile, gameCacheFile);
+            oldCacheFile.delete();
+            Log.d(LOG_TAG, "Cache transfered to Files directory");
+        } catch (IOException e){
+            e.printStackTrace();
+        }
     }
 
     private void saveGameState(){

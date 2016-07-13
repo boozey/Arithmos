@@ -867,7 +867,7 @@ public class GameActivity extends AppCompatActivity implements
 
     private void cacheGame(){
         if (gameCache == null)
-            gameCache = new File(getCacheDir(), gameCacheFileName);
+            gameCache = new File(getFilesDir(), gameCacheFileName);
         FileOutputStream outputStream;
         try {
             outputStream = new FileOutputStream(gameCache);
@@ -881,7 +881,7 @@ public class GameActivity extends AppCompatActivity implements
     }
 
     private boolean loadCachedGame(){
-        gameCache = new File(getCacheDir(), gameCacheFileName);
+        gameCache = new File(getFilesDir(), gameCacheFileName);
         if (gameCache.exists()){
             FileInputStream inputStream;
             try {
