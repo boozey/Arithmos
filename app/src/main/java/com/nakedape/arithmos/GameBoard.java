@@ -1036,7 +1036,7 @@ public class GameBoard extends View {
             RectF coords;
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
-                    selectedPieces = new ArrayList<int[]>();
+                    selectedPieces = new ArrayList<>();
                     location = getTileLocation(x, y);
                     // Ensure path will start on a number tile
                     if (location[0] % 2 == 0 && location[1] % 2 == 0) {
@@ -1049,13 +1049,17 @@ public class GameBoard extends View {
                         return false;
                     }
                 case MotionEvent.ACTION_MOVE:
-                    selectionPath.rewind();
-                    location = selectedPieces.get(0);
-                    coords = tileDimensions[location[0]][location[1]];
-                    selectionPath.moveTo(coords.centerX(), coords.centerY());
-                    selectionPath.lineTo(x, y);
-                    invalidate();
-                    return true;
+                    if (selectedPieces.size() > 0) {
+                        selectionPath.rewind();
+                        location = selectedPieces.get(0);
+                        coords = tileDimensions[location[0]][location[1]];
+                        selectionPath.moveTo(coords.centerX(), coords.centerY());
+                        selectionPath.lineTo(x, y);
+                        invalidate();
+                        return true;
+                    } else {
+                        return false;
+                    }
                 case MotionEvent.ACTION_UP:
                     if (game.availableOperations().length == 0){
                         Toast.makeText(thisView.getContext(), R.string.no_ops_available, Toast.LENGTH_SHORT).show();
@@ -1205,10 +1209,12 @@ public class GameBoard extends View {
             public void onAnimationUpdate(ValueAnimator animation) {
                 int n = (int) animation.getAnimatedValue();
 
-                for (int i = 0; i < operationAnimationValues.size(); i++) {
-                    operationAnimationValues.set(i, ArithmosGame.getOperationDisplayString(game.availableOperations()[(n + i) % game.availableOperations().length]));
+                if (operationAnimationValues != null) {
+                    for (int i = 0; i < operationAnimationValues.size(); i++) {
+                        operationAnimationValues.set(i, ArithmosGame.getOperationDisplayString(game.availableOperations()[(n + i) % game.availableOperations().length]));
+                    }
+                    invalidate();
                 }
-                invalidate();
                 if (!isProcessing && animation.getCurrentPlayTime() > 1000) animation.cancel();
             }
         });
